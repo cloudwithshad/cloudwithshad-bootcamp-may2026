@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 3 · Lab 5 — Auto-Scaling App with ALB | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --cyan-light: #E0F7FA;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: var(--cyan); width: 0%; transition: width 0.4s ease; }
+
+  .hero { background: var(--navy); padding: 48px 24px 40px; text-align: center; border-bottom: 3px solid var(--cyan); }
+  .hero-badge { display: inline-block; background: var(--cyan); color: var(--navy); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 16px; }
+  .hero h1 { font-size: 32px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+  .hero h1 span { color: var(--cyan); }
+  .hero-sub { font-size: 15px; color: #90CAF9; margin-bottom: 24px; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .hero-meta { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 20px; text-align: center; }
+  .hero-meta-item .val { font-size: 18px; font-weight: 700; color: var(--cyan); }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 820px) { .page { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { position: sticky; top: 56px; }
+  .sidebar-card { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; margin-bottom: 16px; }
+  .sidebar-title { background: var(--navy); color: var(--white); font-size: 12px; font-weight: 700; padding: 10px 14px; letter-spacing: 0.5px; }
+  .sidebar-steps { padding: 8px 0; }
+  .sidebar-step { display: block; padding: 9px 16px; font-size: 13px; color: var(--gray); text-decoration: none; border-left: 3px solid transparent; transition: all 0.2s; }
+  .sidebar-step:hover { background: var(--lgray); color: var(--navy); }
+  .sidebar-step.active { background: var(--cyan-light); border-left-color: var(--cyan); color: var(--navy); font-weight: 600; }
+  .sidebar-step .num { display: inline-block; width: 22px; height: 22px; background: var(--lgray); color: var(--gray); border-radius: 50%; text-align: center; font-size: 11px; font-weight: 700; margin-right: 8px; line-height: 22px; }
+  .sidebar-step.active .num { background: var(--cyan); color: var(--white); }
+  .sidebar-step.done .num { background: var(--green-mid); color: var(--white); }
+  .sidebar-step.done .num::after { content: '✓'; }
+  .sidebar-step.done .num span { display: none; }
+
+  .content { background: var(--white); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 36px 40px; }
+  @media(max-width: 600px) { .content { padding: 24px 18px; } }
+
+  .step { padding-bottom: 32px; border-bottom: 1px solid #E2E8F0; margin-bottom: 32px; }
+  .step:last-child { border-bottom: none; margin-bottom: 0; }
+  .step-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .step-num { width: 38px; height: 38px; background: var(--cyan); color: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .step-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+  .step-time { font-size: 12px; color: var(--gray); margin-left: auto; background: var(--lgray); padding: 4px 10px; border-radius: 6px; }
+
+  .step p { margin: 12px 0; color: var(--dark); font-size: 15px; }
+  .step ul, .step ol { margin: 12px 0 12px 20px; }
+  .step li { margin-bottom: 8px; font-size: 15px; color: var(--dark); }
+  .step strong { color: var(--navy); }
+
+  .code-block { background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 14px 0; white-space: pre; }
+  .code-block .cmd { color: #82B1FF; }
+  .code-block .comment { color: #B0BEC5; font-style: italic; }
+  .code-block .green { color: #69F0AE; }
+  .code-block .yellow { color: #FFD54F; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 18px 0; border-left: 5px solid; font-size: 14px; }
+  .callout.tip { background: var(--yellow); border-color: var(--yellow-border); color: #5D4037; }
+  .callout.warn { background: var(--red); border-color: var(--red-border); color: #B71C1C; }
+  .callout.info { background: var(--light); border-color: var(--blue); color: #0D47A1; }
+  .callout.exam { background: var(--purple); border-color: var(--purple-border); color: #4A148C; }
+  .callout.success { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .callout .label { font-weight: 700; display: inline-block; margin-right: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  .callout p { margin: 4px 0; font-size: 14px; }
+
+  .field-table { width: 100%; border-collapse: collapse; margin: 14px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .field-table th { background: var(--navy); color: var(--white); padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 700; }
+  .field-table td { padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-size: 13px; }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table td:first-child { font-weight: 600; color: var(--navy); width: 40%; }
+  .field-table td code { background: var(--lgray); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--blue); }
+
+  .arch-diagram { background: var(--lgray); border: 2px dashed #CBD5E1; border-radius: 12px; padding: 28px 20px; margin: 18px 0; text-align: center; }
+  .arch-diagram svg { max-width: 100%; height: auto; }
+  .arch-caption { font-size: 12px; color: var(--gray); margin-top: 10px; font-style: italic; }
+
+  .console-mock { background: var(--white); border: 1px solid #CFD8DC; border-radius: 10px; overflow: hidden; margin: 14px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .console-mock-header { background: #232F3E; color: white; padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .console-mock-header .brand-aws { background: #FF9900; color: #232F3E; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 3px; letter-spacing: -0.5px; }
+  .console-mock-body { padding: 16px 20px; }
+  .console-mock-field { margin-bottom: 12px; }
+  .console-mock-field-label { font-size: 11px; color: #545B64; font-weight: 600; margin-bottom: 4px; }
+  .console-mock-input { background: #FAFAFA; border: 1px solid #D5DBDB; padding: 7px 10px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 12px; color: #232F3E; }
+
+  .completion { background: linear-gradient(135deg, var(--green-light), #F1F8E9); border: 2px solid var(--green-mid); border-radius: 14px; padding: 28px; text-align: center; margin-top: 28px; }
+  .completion-icon { font-size: 48px; margin-bottom: 12px; }
+  .completion h2 { font-size: 24px; color: var(--green); margin-bottom: 8px; }
+  .completion p { color: #2E7D32; font-size: 14px; }
+
+  .cleanup-card { background: #FFF8E1; border: 1px solid #F9A825; border-radius: 10px; padding: 18px 22px; margin: 18px 0; }
+  .cleanup-card h4 { color: #E65100; margin-bottom: 10px; font-size: 16px; }
+  .cleanup-card ul { margin-left: 22px; }
+  .cleanup-card li { color: #5D4037; font-size: 13.5px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Week 3 · Lab 5 · Auto-Scaling App with ALB</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">GUIDED LAB · ~90 MINUTES</div>
+  <h1>Build an <span>auto-scaling app</span> with ALB</h1>
+  <p class="hero-sub">Build a load-balanced app that automatically scales from 2 → 6 servers when CPU spikes, then scales back down when traffic dies. The exact pattern Netflix and Spotify use every night.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="val">7</div><div class="lbl">STEPS</div></div>
+    <div class="hero-meta-item"><div class="val">90 min</div><div class="lbl">DURATION</div></div>
+    <div class="hero-meta-item"><div class="val">~$1</div><div class="lbl">EST. COST</div></div>
+    <div class="hero-meta-item"><div class="val">ALB + ASG</div><div class="lbl">SERVICES</div></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">LAB STEPS</div>
+      <div class="sidebar-steps">
+        <a href="#step1" class="sidebar-step active"><span class="num"><span>1</span></span>The plan</a>
+        <a href="#step2" class="sidebar-step"><span class="num"><span>2</span></span>Launch Template</a>
+        <a href="#step3" class="sidebar-step"><span class="num"><span>3</span></span>Target Group</a>
+        <a href="#step4" class="sidebar-step"><span class="num"><span>4</span></span>Application Load Balancer</a>
+        <a href="#step5" class="sidebar-step"><span class="num"><span>5</span></span>Auto Scaling Group</a>
+        <a href="#step6" class="sidebar-step"><span class="num"><span>6</span></span>Trigger a scale-out</a>
+        <a href="#step7" class="sidebar-step"><span class="num"><span>7</span></span>Clean up</a>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">QUICK REFS</div>
+      <div style="padding: 12px 14px; font-size: 12px; color: var(--gray); line-height: 1.7;">
+        <div><strong style="color: var(--navy);">Min capacity:</strong> 2</div>
+        <div><strong style="color: var(--navy);">Desired:</strong> 2</div>
+        <div><strong style="color: var(--navy);">Max:</strong> 6</div>
+        <div><strong style="color: var(--navy);">Scale at:</strong> 50% CPU</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- STEP 1 -->
+    <section class="step" id="step1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">The plan — what we're building</div>
+        <div class="step-time">5 min</div>
+      </div>
+      <p>Here's the architecture. <strong>Plan it on paper first</strong> — same discipline as Week 2.</p>
+
+      <div class="arch-diagram">
+        <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg">
+          <!-- Users at top -->
+          <circle cx="120" cy="40" r="12" fill="#00B4D8"/>
+          <circle cx="160" cy="40" r="12" fill="#00B4D8"/>
+          <circle cx="200" cy="40" r="12" fill="#00B4D8"/>
+          <circle cx="240" cy="40" r="12" fill="#00B4D8"/>
+          <text x="180" y="78" text-anchor="middle" font-family="Segoe UI" font-size="11" fill="#00B4D8">Users</text>
+
+          <!-- Lots of arrows -->
+          <line x1="180" y1="55" x2="350" y2="105" stroke="#64748B" stroke-width="1" stroke-dasharray="3,3"/>
+
+          <!-- ALB -->
+          <rect x="240" y="100" width="240" height="50" rx="8" fill="#F4B942" stroke="#C99320" stroke-width="2"/>
+          <text x="360" y="125" text-anchor="middle" font-family="Segoe UI" font-size="13" font-weight="700" fill="#0A1628">Application Load Balancer</text>
+          <text x="360" y="140" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#0A1628">DNS: cloudwithshad-alb-xxx.elb.amazonaws.com</text>
+
+          <!-- ASG container -->
+          <rect x="80" y="180" width="560" height="160" rx="10" fill="white" stroke="#1B5E20" stroke-width="2" stroke-dasharray="6,4"/>
+          <text x="100" y="205" font-family="Segoe UI" font-size="12" font-weight="700" fill="#1B5E20">Auto Scaling Group  ·  min:2 · desired:2 · max:6</text>
+
+          <!-- ALB lines to EC2s -->
+          <line x1="280" y1="150" x2="170" y2="240" stroke="#F4B942" stroke-width="1.5"/>
+          <line x1="360" y1="150" x2="360" y2="240" stroke="#F4B942" stroke-width="1.5"/>
+          <line x1="440" y1="150" x2="550" y2="240" stroke="#F4B942" stroke-width="1.5"/>
+
+          <!-- 3 EC2 instances -->
+          <rect x="110" y="240" width="120" height="80" rx="6" fill="#00B4D8" stroke="#0288A8"/>
+          <text x="170" y="270" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">EC2 #1</text>
+          <text x="170" y="290" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">af-south-1a</text>
+          <text x="170" y="308" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">healthy ✓</text>
+
+          <rect x="300" y="240" width="120" height="80" rx="6" fill="#00B4D8" stroke="#0288A8"/>
+          <text x="360" y="270" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">EC2 #2</text>
+          <text x="360" y="290" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">af-south-1b</text>
+          <text x="360" y="308" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">healthy ✓</text>
+
+          <rect x="490" y="240" width="120" height="80" rx="6" fill="#00B4D8" stroke="#0288A8" stroke-dasharray="4,2" opacity="0.7"/>
+          <text x="550" y="270" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">EC2 #3</text>
+          <text x="550" y="290" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">launches if</text>
+          <text x="550" y="308" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">CPU &gt; 50%</text>
+
+          <!-- CloudWatch eye -->
+          <circle cx="680" cy="265" r="20" fill="#9B59B6"/>
+          <text x="680" y="270" text-anchor="middle" font-family="Segoe UI" font-size="9" font-weight="700" fill="white">📊</text>
+          <text x="680" y="295" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#9B59B6">CloudWatch</text>
+          <line x1="660" y1="265" x2="620" y2="280" stroke="#9B59B6" stroke-width="1" stroke-dasharray="2,2"/>
+        </svg>
+        <div class="arch-caption">2 EC2s always running. ASG spins up more when CPU > 50%. ALB balances traffic across all of them.</div>
+      </div>
+
+      <table class="field-table">
+        <tr><th>Component</th><th>Configuration</th></tr>
+        <tr><td>VPC</td><td>Use your <strong>default VPC</strong> (saves time — we focused on custom VPCs in Week 2)</td></tr>
+        <tr><td>Subnets</td><td>2 public subnets in 2 different AZs (high availability)</td></tr>
+        <tr><td>EC2 type</td><td><code>t2.micro</code> or <code>t3.micro</code> (free tier)</td></tr>
+        <tr><td>ASG min / desired / max</td><td>2 / 2 / 6</td></tr>
+        <tr><td>Scaling trigger</td><td>Target tracking: CPU &gt; 50%</td></tr>
+      </table>
+
+      <div class="callout warn">
+        <span class="label">Heads up on cost</span>
+        <p>An ALB costs <strong>~$0.50/day</strong> even with zero traffic. It's small, but it's not free. <strong>Delete the ALB the moment you finish this lab</strong> — don't leave it running overnight.</p>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="step" id="step2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Create the Launch Template</div>
+        <div class="step-time">15 min</div>
+      </div>
+      <p>A <strong>Launch Template</strong> is a blueprint for an EC2 instance. The Auto Scaling Group will use it whenever it needs to spin up a new server.</p>
+
+      <p>Navigate to <strong>EC2 → Launch Templates → Create launch template</strong>.</p>
+
+      <div class="console-mock">
+        <div class="console-mock-header"><span class="brand-aws">aws</span> EC2 → Launch Templates → Create</div>
+        <div class="console-mock-body">
+          <div class="console-mock-field">
+            <div class="console-mock-field-label">Launch template name</div>
+            <div class="console-mock-input">cloudwithshad-web-template</div>
+          </div>
+          <div class="console-mock-field">
+            <div class="console-mock-field-label">AMI</div>
+            <div class="console-mock-input">Amazon Linux 2023 (free tier eligible)</div>
+          </div>
+          <div class="console-mock-field">
+            <div class="console-mock-field-label">Instance type</div>
+            <div class="console-mock-input">t2.micro</div>
+          </div>
+          <div class="console-mock-field">
+            <div class="console-mock-field-label">Key pair</div>
+            <div class="console-mock-input">Use existing (from Week 1)</div>
+          </div>
+          <div class="console-mock-field">
+            <div class="console-mock-field-label">Security group</div>
+            <div class="console-mock-input">Create new: web-sg (allow port 80 from 0.0.0.0/0)</div>
+          </div>
+          <div class="console-mock-field">
+            <div class="console-mock-field-label">User data (Advanced details)</div>
+            <div class="console-mock-input">See script below</div>
+          </div>
+        </div>
+      </div>
+
+      <p>The user data script makes each new EC2 instance auto-install nginx, show its own instance ID (so we can see load balancing in action), and install <strong>stress</strong> (a tool to artificially spike CPU later):</p>
+
+      <div class="code-block">
+<span class="cmd">#!/bin/bash</span>
+yum update -y
+yum install -y nginx stress
+
+<span class="comment"># Get this instance's metadata so we can display it</span>
+INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+
+<span class="comment"># Build a unique page so we can see which server is responding</span>
+cat &gt; /usr/share/nginx/html/index.html &lt;&lt;EOF
+&lt;html&gt;&lt;head&gt;&lt;title&gt;cloudwithshad ASG&lt;/title&gt;&lt;/head&gt;
+&lt;body style="font-family: sans-serif; background:#0A1628; color:#fff; text-align:center; padding:50px;"&gt;
+  &lt;h1&gt;☁️ cloudwithshad Auto-Scaling Demo&lt;/h1&gt;
+  &lt;h2 style="color:#00B4D8;"&gt;Instance: $INSTANCE_ID&lt;/h2&gt;
+  &lt;p&gt;AZ: $AZ&lt;/p&gt;
+  &lt;p style="opacity:0.7;"&gt;Refresh the page — you should see different instance IDs!&lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;
+EOF
+
+systemctl start nginx
+systemctl enable nginx
+      </div>
+
+      <p>Click <strong>Create launch template</strong>.</p>
+
+      <div class="callout exam">
+        <span class="label">Exam tip</span>
+        <p>Launch Templates replaced "Launch Configurations" (the older, deprecated way). On the exam, both might appear — but in real life and the console UI, <strong>always use Launch Templates</strong>.</p>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="step" id="step3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Create the Target Group</div>
+        <div class="step-time">10 min</div>
+      </div>
+      <p>The <strong>Target Group</strong> is the list of EC2 instances the ALB sends traffic to. Think of it as the "team roster".</p>
+
+      <p>Navigate to <strong>EC2 → Target Groups → Create target group</strong>.</p>
+
+      <table class="field-table">
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Target type</td><td>Instances</td></tr>
+        <tr><td>Target group name</td><td><code>cloudwithshad-tg</code></td></tr>
+        <tr><td>Protocol / Port</td><td>HTTP / 80</td></tr>
+        <tr><td>VPC</td><td>Your default VPC</td></tr>
+        <tr><td>Protocol version</td><td>HTTP1</td></tr>
+        <tr><td><strong>Health check path</strong></td><td><code>/</code></td></tr>
+        <tr><td>Health check interval</td><td>30 seconds</td></tr>
+        <tr><td>Healthy threshold</td><td>2 consecutive successes</td></tr>
+      </table>
+
+      <p>Click <strong>Next</strong>, then <strong>Create target group</strong> (don't add any instances yet — the ASG will do that).</p>
+
+      <div class="callout info">
+        <span class="label">What "healthy threshold" means</span>
+        <p>The ALB will ping <code>/</code> on each instance every 30 seconds. It only marks the instance as healthy after <strong>2 consecutive successful pings</strong>. This prevents accidentally serving traffic to a still-booting server.</p>
+      </div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="step" id="step4">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">Create the Application Load Balancer</div>
+        <div class="step-time">15 min</div>
+      </div>
+      <p>Now the star of the show. Navigate to <strong>EC2 → Load Balancers → Create load balancer</strong>.</p>
+
+      <ol>
+        <li>Select <strong>Application Load Balancer</strong> → Create</li>
+        <li>Name: <code>cloudwithshad-alb</code></li>
+        <li>Scheme: <strong>Internet-facing</strong></li>
+        <li>IP address type: IPv4</li>
+        <li>VPC: your default VPC</li>
+        <li>Mappings: tick <strong>at least 2 AZs</strong> and select the public subnets in each</li>
+        <li>Security group: create new → <code>alb-sg</code> with port 80 open to 0.0.0.0/0</li>
+        <li>Listeners and routing: HTTP/80 → forward to <code>cloudwithshad-tg</code></li>
+        <li>Click <strong>Create load balancer</strong></li>
+      </ol>
+
+      <p>ALB takes about 2-3 minutes to provision. While you wait:</p>
+
+      <div class="callout exam">
+        <span class="label">Why 2 AZs is required</span>
+        <p>ALBs require subnets in at least 2 AZs. This is the same Multi-AZ requirement you saw with RDS in Week 2 — it's how AWS enforces high availability. Even if one AZ has an outage, your ALB keeps routing through the other.</p>
+      </div>
+
+      <p>Once the state shows <strong>"Active"</strong>, copy the <strong>DNS name</strong> (looks like <code>cloudwithshad-alb-1234567890.eu-west-1.elb.amazonaws.com</code>). Save it — we'll need it after Step 5.</p>
+    </section>
+
+    <!-- STEP 5 -->
+    <section class="step" id="step5">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">Create the Auto Scaling Group</div>
+        <div class="step-time">15 min</div>
+      </div>
+      <p>This is the magic. Navigate to <strong>EC2 → Auto Scaling Groups → Create Auto Scaling Group</strong>.</p>
+
+      <table class="field-table">
+        <tr><th>Setting</th><th>Value</th></tr>
+        <tr><td>Name</td><td><code>cloudwithshad-asg</code></td></tr>
+        <tr><td>Launch template</td><td><code>cloudwithshad-web-template</code> (from Step 2)</td></tr>
+        <tr><td>VPC</td><td>Default VPC</td></tr>
+        <tr><td>Availability Zones</td><td>Pick at least 2 (same as your ALB)</td></tr>
+        <tr><td><strong>Load balancing</strong></td><td>Attach to <strong>existing load balancer</strong></td></tr>
+        <tr><td>Target groups</td><td><code>cloudwithshad-tg</code></td></tr>
+        <tr><td>Health checks</td><td>Enable <strong>ELB health checks</strong></td></tr>
+        <tr><td>Desired capacity</td><td>2</td></tr>
+        <tr><td>Min capacity</td><td>2</td></tr>
+        <tr><td>Max capacity</td><td>6</td></tr>
+        <tr><td><strong>Scaling policies</strong></td><td>Target tracking</td></tr>
+        <tr><td>Metric</td><td>Average CPU utilization</td></tr>
+        <tr><td>Target value</td><td>50</td></tr>
+      </table>
+
+      <p>Click <strong>Create Auto Scaling group</strong>.</p>
+
+      <p>Within 2 minutes, the ASG launches <strong>2 EC2 instances</strong> automatically and registers them with your Target Group. Once they pass health checks (about 60 seconds), open the ALB's DNS name in your browser. <strong>Refresh the page a few times</strong> — you should see different instance IDs each time.</p>
+
+      <div class="callout success">
+        <span class="label">First win</span>
+        <p>If you see two different instance IDs as you refresh, <strong>your load balancer is working</strong>. Traffic is being spread across multiple EC2 servers. Take a screenshot of both pages side by side.</p>
+      </div>
+    </section>
+
+    <!-- STEP 6 -->
+    <section class="step" id="step6">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div class="step-title">Trigger a scale-out</div>
+        <div class="step-time">20 min</div>
+      </div>
+      <p>Now the fun part — let's <strong>force a CPU spike</strong> and watch Auto Scaling do its thing.</p>
+
+      <p>SSH into <strong>one</strong> of the EC2 instances:</p>
+
+      <div class="code-block">
+<span class="cmd">ssh -i your-key.pem ec2-user@&lt;EC2-PUBLIC-IP&gt;</span>
+      </div>
+
+      <p>Now run <strong>stress</strong> to peg the CPU at 100% for 10 minutes:</p>
+
+      <div class="code-block">
+<span class="cmd">stress --cpu 2 --timeout 600s &amp;</span>
+<span class="comment"># --cpu 2 = use 2 CPU workers</span>
+<span class="comment"># --timeout 600s = run for 10 minutes</span>
+<span class="comment"># &amp; = run in background so SSH stays usable</span>
+      </div>
+
+      <p>Now <strong>watch the magic</strong>. Open three browser tabs:</p>
+      <ol>
+        <li><strong>EC2 → Instances</strong> — count rises from 2 to 3, then 4...</li>
+        <li><strong>EC2 → Auto Scaling Groups → cloudwithshad-asg → Activity</strong> — shows live scaling events</li>
+        <li><strong>CloudWatch → Metrics → EC2 → CPU utilization</strong> — see the spike that triggered it</li>
+      </ol>
+
+      <p>Within 3-5 minutes, you'll see ASG launch new instances. After your stress test ends and CPU drops, give it 10-15 minutes — ASG will <strong>scale back down</strong> to the desired capacity (2).</p>
+
+      <div class="callout success">
+        <span class="label">Screenshot worthy moment</span>
+        <p>Take a screenshot of the ASG <strong>Activity history</strong> showing both a scale-out event ("Launching a new EC2 instance") AND a later scale-in event ("Terminating EC2 instance"). That's your Lab 5 submission.</p>
+      </div>
+
+      <div class="callout tip">
+        <span class="label">If scale-out is slow</span>
+        <p>Auto Scaling uses a 5-minute "cooldown" by default — it waits to see if the spike is sustained before reacting. This is intentional. In production you'd never want ASG launching servers for a 30-second CPU spike.</p>
+      </div>
+    </section>
+
+    <!-- STEP 7 -->
+    <section class="step" id="step7">
+      <div class="step-header">
+        <div class="step-num">7</div>
+        <div class="step-title">Clean up (DO NOT SKIP — costs money!)</div>
+        <div class="step-time">10 min</div>
+      </div>
+      <p>Out of all the labs in this bootcamp, <strong>this is the most expensive one to forget about</strong>. An ALB left running for a month costs ~$16. Multiple weeks = real money.</p>
+
+      <div class="cleanup-card">
+        <h4>⚠ Cleanup order matters!</h4>
+        <ul>
+          <li><strong>Auto Scaling Group:</strong> EC2 → ASG → cloudwithshad-asg → <strong>Delete</strong>. This terminates all EC2 instances automatically. Wait ~2 minutes.</li>
+          <li><strong>Load Balancer:</strong> EC2 → Load Balancers → cloudwithshad-alb → Actions → <strong>Delete</strong></li>
+          <li><strong>Target Group:</strong> EC2 → Target Groups → cloudwithshad-tg → Actions → <strong>Delete</strong></li>
+          <li><strong>Launch Template:</strong> EC2 → Launch Templates → cloudwithshad-web-template → Actions → <strong>Delete</strong></li>
+          <li><strong>Security Groups:</strong> Delete alb-sg and web-sg (EC2 → Security Groups)</li>
+          <li><strong>Confirm:</strong> EC2 → Instances should show 0 running instances</li>
+        </ul>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Don't delete the ALB before the ASG</span>
+        <p>If you delete the ALB first, the ASG keeps running and trying to register new instances with a dead target group. Always: <strong>ASG → ALB → TG → Template</strong>.</p>
+      </div>
+    </section>
+
+    <div class="completion">
+      <div class="completion-icon">🚀</div>
+      <h2>Lab 5 complete!</h2>
+      <p>You just built the same auto-scaling pattern that powers every major web service in the world. Netflix, Spotify, Airbnb, your bank — all of them use exactly this.</p>
+      <p style="margin-top: 12px; font-size: 13px;"><strong>Next:</strong> Lab 6 — CI/CD Pipeline (GitHub → AWS)</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function updateProgress() {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / docHeight) * 100;
+    document.getElementById('progressFill').style.width = Math.min(100, pct) + '%';
+  }
+  window.addEventListener('scroll', updateProgress);
+
+  const steps = document.querySelectorAll('.step');
+  const sidebarLinks = document.querySelectorAll('.sidebar-step');
+  function updateActiveStep() {
+    let activeIdx = 0;
+    steps.forEach((step, idx) => {
+      const rect = step.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.4) activeIdx = idx;
+    });
+    sidebarLinks.forEach((link, idx) => {
+      link.classList.remove('active');
+      if (idx < activeIdx) link.classList.add('done'); else link.classList.remove('done');
+      if (idx === activeIdx) link.classList.add('active');
+    });
+  }
+  window.addEventListener('scroll', updateActiveStep);
+  updateActiveStep();
+</script>
+
+</body>
+</html>

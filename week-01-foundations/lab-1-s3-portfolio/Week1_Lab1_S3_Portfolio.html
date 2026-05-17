@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 1 · Lab 1 — Portfolio on S3 + CloudFront | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --blue-light: #1976D2;
+    --cyan: #00B4D8;
+    --cyan-light: #E0F7FA;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: var(--cyan); width: 0%; transition: width 0.4s ease; }
+
+  .hero { background: var(--navy); padding: 48px 24px 40px; text-align: center; border-bottom: 3px solid var(--cyan); }
+  .hero-badge { display: inline-block; background: var(--cyan); color: var(--navy); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 16px; }
+  .hero h1 { font-size: 32px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+  .hero h1 span { color: var(--cyan); }
+  .hero-sub { font-size: 15px; color: #90CAF9; margin-bottom: 24px; }
+  .hero-meta { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 20px; text-align: center; }
+  .hero-meta-item .val { font-size: 18px; font-weight: 700; color: var(--cyan); }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 820px) { .page { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { position: sticky; top: 56px; }
+  .sidebar-card { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; margin-bottom: 16px; }
+  .sidebar-title { background: var(--navy); color: var(--white); font-size: 12px; font-weight: 700; padding: 10px 14px; letter-spacing: 0.5px; }
+  .sidebar-steps { padding: 8px 0; }
+  .sidebar-step { display: flex; align-items: center; gap: 10px; padding: 7px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; text-decoration: none; }
+  .sidebar-step:hover { background: var(--lgray); border-left-color: var(--cyan); }
+  .sidebar-step.active { background: var(--light); border-left-color: var(--cyan); }
+  .step-dot { width: 22px; height: 22px; border-radius: 50%; background: #CBD5E1; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--white); flex-shrink: 0; transition: background 0.3s; }
+  .step-dot.active { background: var(--cyan); }
+  .step-label { font-size: 12px; color: var(--dark); }
+  .step-time { font-size: 10px; color: var(--gray); margin-left: auto; white-space: nowrap; }
+
+  .build-overview { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; padding: 24px; margin-bottom: 24px; }
+  .build-overview h2 { font-size: 18px; color: var(--dark); font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .build-overview h2::before { content: ''; display: inline-block; width: 4px; height: 20px; background: var(--cyan); border-radius: 2px; }
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .overview-item { background: var(--lgray); border-radius: 8px; padding: 14px; }
+  .overview-item .icon { font-size: 22px; margin-bottom: 6px; }
+  .overview-item h4 { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-item p { font-size: 13px; color: var(--gray); line-height: 1.5; }
+
+  .arch-section { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; padding: 24px; margin-bottom: 24px; }
+  .arch-section h2 { font-size: 18px; color: var(--dark); font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .arch-section h2::before { content: ''; display: inline-block; width: 4px; height: 20px; background: var(--cyan); border-radius: 2px; }
+  .arch-flow { background: #F8FAFC; border: 2px dashed #B0BEC5; border-radius: 12px; padding: 20px; }
+  .arch-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .arch-node { background: var(--white); border: 2px solid var(--cyan); border-radius: 10px; padding: 12px 24px; font-size: 13px; font-weight: 700; color: var(--navy); text-align: center; min-width: 220px; }
+  .arch-node.user { background: var(--navy); color: var(--cyan); border-color: var(--cyan); }
+  .arch-node.cloudfront { background: var(--cyan-light); border-color: var(--cyan); color: var(--navy); }
+  .arch-node.s3 { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .arch-node small { display: block; font-size: 11px; font-weight: 400; color: var(--gray); margin-top: 4px; }
+  .arch-arrow { color: var(--cyan); font-size: 22px; line-height: 1; }
+
+  .step-card { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 24px; overflow: hidden; scroll-margin-top: 70px; }
+  .step-header { display: flex; align-items: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid #F1F5F9; }
+  .step-number { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: white; flex-shrink: 0; }
+  .step-header-text { flex: 1; }
+  .step-header-text h2 { font-size: 17px; font-weight: 700; color: var(--dark); }
+  .step-header-text p { font-size: 13px; color: var(--gray); margin-top: 2px; }
+  .step-time-badge { background: var(--lgray); color: var(--gray); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  .step-body { padding: 24px; }
+
+  .explainer { background: var(--light); border-left: 4px solid var(--blue); border-radius: 0 8px 8px 0; padding: 14px 16px; margin-bottom: 20px; }
+  .explainer h4 { font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+  .explainer p, .explainer li { font-size: 13px; color: var(--dark); line-height: 1.7; }
+  .explainer ul { padding-left: 18px; }
+
+  .instruction-list { list-style: none; padding: 0; margin-bottom: 16px; }
+  .instruction-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F1F5F9; align-items: flex-start; }
+  .instruction-list li:last-child { border-bottom: none; }
+  .inst-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .inst-content { flex: 1; }
+  .inst-content strong { font-size: 13px; color: var(--dark); display: block; margin-bottom: 3px; }
+  .inst-content span { font-size: 13px; color: var(--gray); }
+  .inst-content .nav-path { font-size: 12px; color: var(--blue); font-weight: 600; background: var(--light); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 3px; }
+
+  .field-row { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: center; padding: 8px 12px; background: var(--lgray); border-radius: 6px; margin-bottom: 6px; }
+  .field-label { font-size: 12px; color: var(--gray); font-weight: 600; }
+  .field-value { font-size: 13px; color: var(--dark); font-family: 'Courier New', monospace; background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #E2E8F0; word-break: break-all; }
+  .field-value.highlight { color: var(--blue); font-weight: 700; }
+  @media(max-width: 500px) { .field-row { grid-template-columns: 1fr; } }
+
+  .code-block { background: var(--code-bg); border-radius: 8px; padding: 16px 18px; margin: 12px 0; position: relative; overflow-x: auto; }
+  .code-block pre { font-family: 'Courier New', Consolas, monospace; font-size: 13px; color: var(--code-text); line-height: 1.7; white-space: pre; margin: 0; }
+  .code-label { font-size: 10px; color: #7986CB; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #B0BEC5; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+  .copy-btn.copied { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+  .code-comment { color: #546E7A; }
+  .code-cmd { color: #80CBC4; }
+  .code-flag { color: #FFD54F; }
+  .code-path { color: #A5D6A7; }
+
+  .tip { background: var(--yellow); border: 1px solid var(--yellow-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .tip-header { font-size: 12px; font-weight: 700; color: #E65100; margin-bottom: 5px; }
+  .tip p, .tip li { font-size: 13px; color: #4E342E; line-height: 1.6; }
+  .tip ul { padding-left: 16px; margin-top: 4px; }
+
+  .warn { background: var(--red); border: 1px solid var(--red-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .warn-header { font-size: 12px; font-weight: 700; color: var(--red-border); margin-bottom: 5px; }
+  .warn p, .warn li { font-size: 13px; color: #4a0000; line-height: 1.6; }
+
+  .info { background: var(--purple); border: 1px solid var(--purple-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .info-header { font-size: 12px; font-weight: 700; color: var(--purple-border); margin-bottom: 5px; }
+  .info p { font-size: 13px; color: #2D1B69; line-height: 1.6; }
+
+  .exam-tip { background: #E8EAF6; border: 1px solid #3949AB; border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .exam-tip-header { font-size: 12px; font-weight: 700; color: #1A237E; margin-bottom: 5px; }
+  .exam-tip p { font-size: 13px; color: #1A237E; line-height: 1.6; }
+
+  .verify-box { background: var(--green-light); border: 1px solid #81C784; border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
+  .verify-box h4 { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+  .verify-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .verify-item:last-child { margin-bottom: 0; }
+  .verify-item input[type=checkbox] { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--green-mid); cursor: pointer; flex-shrink: 0; }
+  .verify-item label { font-size: 13px; color: var(--dark); cursor: pointer; line-height: 1.5; }
+  .verify-item label.checked { text-decoration: line-through; color: var(--gray); }
+
+  .screenshot-prompt { background: #FFF8E1; border: 1px dashed #FFA000; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 13px; color: #4E342E; }
+  .screenshot-prompt strong { color: #E65100; }
+
+  .section-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 16px; }
+  .section-divider span { font-size: 12px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: #E2E8F0; }
+
+  .expected { background: #F0FFF4; border: 1px solid #68D391; border-radius: 8px; padding: 14px 16px; margin: 12px 0; }
+  .expected h4 { font-size: 12px; font-weight: 700; color: #276749; margin-bottom: 8px; }
+  .expected p, .expected li { font-size: 13px; color: #1C4532; line-height: 1.6; }
+  .expected ul { padding-left: 16px; }
+
+  .troubleshoot { background: var(--orange); border: 1px solid var(--orange-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .troubleshoot h4 { font-size: 12px; font-weight: 700; color: var(--orange-border); margin-bottom: 8px; }
+  .ts-item { margin-bottom: 10px; }
+  .ts-item .ts-problem { font-size: 13px; font-weight: 600; color: #BF360C; margin-bottom: 3px; }
+  .ts-item .ts-fix { font-size: 13px; color: #4E342E; }
+
+  .completion-banner { background: linear-gradient(135deg, #0A1628 0%, #1565C0 100%); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px; border: 2px solid var(--cyan); }
+  .completion-banner h2 { font-size: 24px; color: white; font-weight: 700; margin-bottom: 8px; }
+  .completion-banner p { font-size: 14px; color: #90CAF9; margin-bottom: 20px; }
+  .completion-checklist { text-align: left; background: rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 20px; }
+  .completion-checklist .verify-item label { color: #E3F2FD; }
+  .completion-checklist .verify-item label.checked { color: #546E7A; }
+
+  .cleanup-card { background: var(--white); border-radius: 12px; border: 2px solid #EF9A9A; margin-bottom: 24px; overflow: hidden; }
+  .cleanup-header { background: #C62828; color: white; padding: 14px 24px; font-size: 14px; font-weight: 700; }
+  .cleanup-body { padding: 20px 24px; }
+  .cleanup-step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .cleanup-num { background: #C62828; color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cleanup-text { font-size: 13px; color: var(--dark); line-height: 1.6; }
+  .cleanup-text .nav-path { font-size: 12px; color: var(--blue); font-weight: 600; background: var(--light); padding: 2px 8px; border-radius: 4px; display: inline; }
+
+  .footer { background: var(--navy); color: var(--gray); text-align: center; padding: 20px; font-size: 12px; }
+  .footer span { color: var(--cyan); font-weight: 600; }
+
+  @media print { .topnav, .sidebar { display: none; } .page { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Week 1 · Lab 1 · AWS Cloud Practitioner Bootcamp</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">WEEK 1 · LAB 1 (GUIDED)</div>
+  <h1>Host Your <span>Portfolio</span> on AWS<br>with S3 + CloudFront</h1>
+  <p class="hero-sub">Get a real, public website live on the internet — in under an hour</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="val">7</div><div class="lbl">Steps</div></div>
+    <div class="hero-meta-item"><div class="val">~60 min</div><div class="lbl">Estimated time</div></div>
+    <div class="hero-meta-item"><div class="val">CLF-C02</div><div class="lbl">Cert aligned</div></div>
+    <div class="hero-meta-item"><div class="val">Free Tier</div><div class="lbl">$0 if you clean up</div></div>
+  </div>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">LAB STEPS</div>
+      <div class="sidebar-steps">
+        <a class="sidebar-step" href="#step0"><div class="step-dot" id="dot0">0</div><span class="step-label">Before you start</span><span class="step-time">5 min</span></a>
+        <a class="sidebar-step" href="#step1"><div class="step-dot" id="dot1">1</div><span class="step-label">Prepare your files</span><span class="step-time">5 min</span></a>
+        <a class="sidebar-step" href="#step2"><div class="step-dot" id="dot2">2</div><span class="step-label">Create S3 bucket</span><span class="step-time">8 min</span></a>
+        <a class="sidebar-step" href="#step3"><div class="step-dot" id="dot3">3</div><span class="step-label">Upload your files</span><span class="step-time">5 min</span></a>
+        <a class="sidebar-step" href="#step4"><div class="step-dot" id="dot4">4</div><span class="step-label">Enable static hosting</span><span class="step-time">8 min</span></a>
+        <a class="sidebar-step" href="#step5"><div class="step-dot" id="dot5">5</div><span class="step-label">Make it public</span><span class="step-time">8 min</span></a>
+        <a class="sidebar-step" href="#step6"><div class="step-dot" id="dot6">6</div><span class="step-label">Add CloudFront CDN</span><span class="step-time">12 min</span></a>
+        <a class="sidebar-step" href="#step7"><div class="step-dot" id="dot7">7</div><span class="step-label">Test &amp; share</span><span class="step-time">5 min</span></a>
+        <a class="sidebar-step" href="#complete"><div class="step-dot" id="dot8" style="background:var(--green-mid)">✓</div><span class="step-label">Complete + Cleanup</span></a>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">WHAT YOU'LL BUILD</div>
+      <div style="padding:12px 14px;font-size:12px;color:var(--gray);line-height:1.7">
+        A real portfolio website hosted on AWS S3, served globally through CloudFront's CDN. You'll get a public URL you can share on LinkedIn, in your CV, or with potential employers — today.
+      </div>
+    </div>
+  </aside>
+
+  <main>
+
+    <div class="build-overview">
+      <h2>What you'll build</h2>
+      <div class="overview-grid">
+        <div class="overview-item">
+          <div class="icon">📦</div>
+          <h4>S3 Bucket</h4>
+          <p>Your storage container — holds the files that make up your website</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🌐</div>
+          <h4>Static Hosting</h4>
+          <p>S3's built-in feature that turns a bucket into a website</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🔓</div>
+          <h4>Bucket Policy</h4>
+          <p>JSON rules that allow the world to read your files (read-only)</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">⚡</div>
+          <h4>CloudFront</h4>
+          <p>AWS's global CDN — serves your site fast from 400+ edge locations</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🔗</div>
+          <h4>Public URL</h4>
+          <p>A shareable link to your portfolio you can put on your CV today</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">📸</div>
+          <h4>Portfolio Site</h4>
+          <p>A simple HTML page showcasing you — your name, skills, and CV link</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-section">
+      <h2>Architecture</h2>
+      <div class="arch-flow">
+        <div class="arch-row">
+          <div class="arch-node user">🌍 Visitor anywhere in the world</div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-node cloudfront">⚡ CloudFront CDN<small>Closest edge location · 400+ worldwide</small></div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-node s3">📦 Amazon S3 bucket<small>index.html · style.css · cv.pdf · images/</small></div>
+        </div>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--gray)">
+          <strong>How it works:</strong> Visitor types your URL → CloudFront serves the cached copy from the nearest edge location → if not cached, CloudFront fetches it from S3 once, then caches it.
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 0 -->
+    <div class="step-card" id="step0">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--gray)">0</div>
+        <div class="step-header-text">
+          <h2>Before you start — what you need</h2>
+          <p>Get everything ready before touching AWS</p>
+        </div>
+        <div class="step-time-badge">5 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>Read this first</h4>
+          <p>This is your first AWS lab. The goal is one thing: <strong>get your portfolio live on the internet today</strong>. We'll teach the concepts as you go. Don't worry about understanding every detail on the first pass — the live session and the second lab will reinforce everything.</p>
+          <p style="margin-top:8px">By the end of this lab you'll have a public URL you can share. That alone puts you ahead of 90% of people who say they're "learning the cloud" but have never deployed anything.</p>
+        </div>
+
+        <div class="section-divider"><span>Requirements</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>AWS Account with Free Tier active</strong>
+              <span>Sign up at <a href="https://aws.amazon.com/free" target="_blank" style="color:var(--blue)">aws.amazon.com/free</a> if you haven't already. Card required, but everything in this lab is FREE under the 12-month free tier.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Set your AWS Region</strong>
+              <span>Click the region name top-right of the AWS console. Choose one and stick with it for the whole bootcamp.</span>
+              <div class="nav-path">Console top-right → Region dropdown → us-east-1 (N. Virginia) recommended</div>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>A simple HTML file (or two)</strong>
+              <span>You don't need to be a designer. We'll provide a template HTML file you can use. If you already have a portfolio HTML/CSS, even better — bring that.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">4</div>
+            <div class="inst-content">
+              <strong>A text editor</strong>
+              <span>VS Code, Sublime, Notepad++ — anything that lets you save .html files. Even Notepad works.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="warn">
+          <div class="warn-header">⚠️ Set a billing alarm before you do anything</div>
+          <p>Day-one habit: go to <strong>Billing → Budgets → Create budget → Zero-spend budget</strong>. Set it for $1. AWS will email you the moment any service starts charging. This habit will save you from horror stories.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Ready to go when:</h4>
+          <div class="verify-item"><input type="checkbox" id="c0a" onchange="markCheck(this)"><label for="c0a">Logged into AWS console</label></div>
+          <div class="verify-item"><input type="checkbox" id="c0b" onchange="markCheck(this)"><label for="c0b">Region is set (top-right of console)</label></div>
+          <div class="verify-item"><input type="checkbox" id="c0c" onchange="markCheck(this)"><label for="c0c">Billing alarm set ($1 zero-spend budget)</label></div>
+          <div class="verify-item"><input type="checkbox" id="c0d" onchange="markCheck(this)"><label for="c0d">Text editor open and ready</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step-card" id="step1">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--blue)">1</div>
+        <div class="step-header-text">
+          <h2>Prepare your portfolio files</h2>
+          <p>Create a simple HTML page about yourself</p>
+        </div>
+        <div class="step-time-badge">5 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>Why we start here</h4>
+          <p>S3 doesn't care what's in the file — it'll host any HTML you give it. So our first job is to have a file ready. Use the template below if you don't have your own. You can always upgrade the design later.</p>
+        </div>
+
+        <div class="section-divider"><span>Create your portfolio file</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Create a new folder on your computer</strong>
+              <span>Call it <code style="background:var(--lgray);padding:2px 6px;border-radius:3px">portfolio</code>. This is where all your site files will live.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Open your text editor and create a file called <code style="background:var(--lgray);padding:2px 6px;border-radius:3px">index.html</code></strong>
+              <span>The filename matters — S3's static hosting looks for "index.html" by default.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Paste this template into index.html</strong>
+              <span>Replace the placeholders with your own info — name, role, skills, etc.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="code-block">
+          <div class="code-label">index.html — paste &amp; customise</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Your Name — Portfolio&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: system-ui, sans-serif; max-width: 720px;
+           margin: 60px auto; padding: 0 20px; color: #1a1a1a;
+           line-height: 1.6; }
+    h1 { font-size: 42px; margin-bottom: 4px; }
+    .role { color: #00B4D8; font-weight: 600; margin-bottom: 30px; }
+    .skill { background: #E8F4FD; color: #1565C0; padding: 4px 10px;
+             border-radius: 14px; font-size: 13px; margin-right: 6px; }
+    a { color: #1565C0; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Your Name&lt;/h1&gt;
+  &lt;p class="role"&gt;Aspiring Cloud Engineer · Accra, Ghana&lt;/p&gt;
+  &lt;h2&gt;About&lt;/h2&gt;
+  &lt;p&gt;I'm learning AWS through the cloudwithshad bootcamp.
+     This site is hosted on S3 + CloudFront — built in week 1.&lt;/p&gt;
+  &lt;h2&gt;Skills&lt;/h2&gt;
+  &lt;p&gt;
+    &lt;span class="skill"&gt;AWS&lt;/span&gt;
+    &lt;span class="skill"&gt;S3&lt;/span&gt;
+    &lt;span class="skill"&gt;EC2&lt;/span&gt;
+    &lt;span class="skill"&gt;Linux&lt;/span&gt;
+  &lt;/p&gt;
+  &lt;h2&gt;Contact&lt;/h2&gt;
+  &lt;p&gt;Email: &lt;a href="mailto:you@example.com"&gt;you@example.com&lt;/a&gt;&lt;br&gt;
+     LinkedIn: &lt;a href="https://linkedin.com/in/your-handle"&gt;your-handle&lt;/a&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 Optional bonuses</div>
+          <p>If you have time, also drop these into your <code style="background:rgba(0,0,0,0.1);padding:2px 5px;border-radius:3px">portfolio</code> folder:</p>
+          <ul>
+            <li><strong>cv.pdf</strong> — your CV. We'll link to it.</li>
+            <li><strong>profile.jpg</strong> — a photo of you. Add <code>&lt;img src="profile.jpg" width="160"&gt;</code> in your HTML.</li>
+            <li><strong>error.html</strong> — a "page not found" page (any HTML). S3 will use it for 404s.</li>
+          </ul>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c1a" onchange="markCheck(this)"><label for="c1a">Folder called "portfolio" created</label></div>
+          <div class="verify-item"><input type="checkbox" id="c1b" onchange="markCheck(this)"><label for="c1b">index.html exists with your name in it</label></div>
+          <div class="verify-item"><input type="checkbox" id="c1c" onchange="markCheck(this)"><label for="c1c">Opened the file in your browser to confirm it looks OK locally</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-card" id="step2">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--blue)">2</div>
+        <div class="step-header-text">
+          <h2>Create your S3 bucket</h2>
+          <p>This is where your portfolio files will live</p>
+        </div>
+        <div class="step-time-badge">8 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>What is an S3 bucket?</h4>
+          <p>A bucket is a container for files in S3. Think of it like a folder in the cloud — but with global reach. Each file (S3 calls them "objects") lives inside a bucket and gets its own URL. Bucket names are <strong>globally unique</strong> across all of AWS, so you'll need a creative name.</p>
+        </div>
+
+        <div class="section-divider"><span>Console steps</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Navigate to the S3 service</strong>
+              <div class="nav-path">AWS Console → Search bar → type "S3" → click S3</div>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Click "Create bucket"</strong>
+              <span>Big orange button, top-right of the buckets page.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="section-divider"><span>Fill in these values</span></div>
+        <div class="field-row"><div class="field-label">Bucket name</div><div class="field-value highlight">cloudwithshad-yourname-portfolio</div></div>
+        <div class="field-row"><div class="field-label">AWS Region</div><div class="field-value">Same as where you've been working (e.g. us-east-1)</div></div>
+        <div class="field-row"><div class="field-label">Object Ownership</div><div class="field-value">ACLs disabled (recommended) — leave default</div></div>
+        <div class="field-row"><div class="field-label">Block Public Access</div><div class="field-value highlight">UNCHECK "Block all public access"</div></div>
+        <div class="field-row"><div class="field-label">Acknowledgement</div><div class="field-value">Check the warning box that appears</div></div>
+        <div class="field-row"><div class="field-label">Bucket Versioning</div><div class="field-value">Disable (we don't need this for the lab)</div></div>
+        <div class="field-row"><div class="field-label">Encryption</div><div class="field-value">Leave default (SSE-S3)</div></div>
+
+        <div class="warn">
+          <div class="warn-header">⚠️ The "Block all public access" toggle</div>
+          <p>By default, AWS blocks public access to S3 buckets — this is a GOOD default that prevents accidental data leaks. But for a public website, we need the world to read our files. We're explicitly opting in to public access. The acknowledgement box AWS shows is exactly the kind of safety prompt you want to see.</p>
+          <p style="margin-top:6px"><strong>Important:</strong> only do this for buckets you intend to be public (websites, public images). NEVER for private data.</p>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 Why the bucket name needs your name in it</div>
+          <p>Bucket names are globally unique across all AWS accounts on Earth. "portfolio" is taken. "my-bucket" is taken. "cloudwithshad-portfolio" might be taken too. Adding <strong>your-name</strong> in there makes it almost certainly available — and easier to find later.</p>
+        </div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Click "Create bucket" at the bottom</strong>
+              <span>If the name is taken, AWS will tell you. Try a different one.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected">
+          <h4>✅ What you should see</h4>
+          <ul>
+            <li>Green success banner: "Successfully created bucket"</li>
+            <li>Your bucket name appears in the list of buckets</li>
+            <li>Region matches what you selected</li>
+            <li>Access shows "Objects can be public"</li>
+          </ul>
+        </div>
+
+        <div class="exam-tip">
+          <div class="exam-tip-header">📝 Cloud Practitioner Exam Tip</div>
+          <p>Memorise: S3 bucket names are <strong>globally unique</strong>. They're DNS-compatible (no spaces, no underscores, lowercase only). They're tied to a region but the name is global. Bucket names appear in URLs.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c2a" onchange="markCheck(this)"><label for="c2a">Bucket created with your unique name</label></div>
+          <div class="verify-item"><input type="checkbox" id="c2b" onchange="markCheck(this)"><label for="c2b">"Block all public access" is OFF</label></div>
+          <div class="verify-item"><input type="checkbox" id="c2c" onchange="markCheck(this)"><label for="c2c">Bucket appears in your S3 console</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-card" id="step3">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--blue)">3</div>
+        <div class="step-header-text">
+          <h2>Upload your files</h2>
+          <p>Put your portfolio into the bucket</p>
+        </div>
+        <div class="step-time-badge">5 min</div>
+      </div>
+      <div class="step-body">
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Click on your bucket name</strong>
+              <span>This opens the bucket. You'll see an empty "Objects" tab.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Click "Upload"</strong>
+              <span>Either click the orange Upload button OR drag your files into the page.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Add your files</strong>
+              <span>Click "Add files" and select your <code style="background:var(--lgray);padding:2px 6px;border-radius:3px">index.html</code> (and any others — cv.pdf, profile.jpg, etc.).</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">4</div>
+            <div class="inst-content">
+              <strong>Leave all permissions/properties as default</strong>
+              <span>We'll set the public access via a bucket policy in Step 5 — that's cleaner than per-file permissions.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">5</div>
+            <div class="inst-content">
+              <strong>Click "Upload" at the bottom</strong>
+              <span>Wait for the green "Upload succeeded" message.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected">
+          <h4>✅ What you should see</h4>
+          <ul>
+            <li>"Upload succeeded" green banner</li>
+            <li>Files listed in the Objects tab of your bucket</li>
+            <li>Each file shows a size, type, and last modified date</li>
+          </ul>
+        </div>
+
+        <div class="screenshot-prompt"><strong>📸 Take a screenshot</strong> — show your S3 bucket with files uploaded. Great for your portfolio later.</div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c3a" onchange="markCheck(this)"><label for="c3a">index.html is in the bucket</label></div>
+          <div class="verify-item"><input type="checkbox" id="c3b" onchange="markCheck(this)"><label for="c3b">Any other files (CV, photo) are uploaded</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-card" id="step4">
+      <div class="step-header">
+        <div class="step-number" style="background:#0288D1">4</div>
+        <div class="step-header-text">
+          <h2>Enable static website hosting</h2>
+          <p>Turn the bucket into a website</p>
+        </div>
+        <div class="step-time-badge">8 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>What "static hosting" actually does</h4>
+          <p>By default, S3 is just a file store — each file has its own URL but they're not "linked together" as a website. Enabling static hosting tells S3: <em>"this bucket is a website. When someone visits the bucket's root URL, serve them index.html. If a page is missing, show error.html."</em></p>
+        </div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Go to Properties tab</strong>
+              <span>Inside your bucket, click the <strong>Properties</strong> tab at the top.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Scroll all the way to the bottom</strong>
+              <span>Find <strong>"Static website hosting"</strong> at the very bottom of Properties.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Click "Edit"</strong>
+            </div>
+          </li>
+        </ul>
+
+        <div class="section-divider"><span>Fill in these values</span></div>
+        <div class="field-row"><div class="field-label">Static website hosting</div><div class="field-value highlight">Enable</div></div>
+        <div class="field-row"><div class="field-label">Hosting type</div><div class="field-value highlight">Host a static website</div></div>
+        <div class="field-row"><div class="field-label">Index document</div><div class="field-value highlight">index.html</div></div>
+        <div class="field-row"><div class="field-label">Error document</div><div class="field-value">error.html (optional — leave blank if you didn't create one)</div></div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">4</div>
+            <div class="inst-content">
+              <strong>Click "Save changes"</strong>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">5</div>
+            <div class="inst-content">
+              <strong>Copy the website endpoint URL</strong>
+              <span>After saving, scroll back down to the same section. You'll see <strong>"Bucket website endpoint"</strong> — copy that URL. It looks like: <code style="background:var(--lgray);padding:2px 5px;border-radius:3px;font-size:11px">http://your-bucket.s3-website-us-east-1.amazonaws.com</code></span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">6</div>
+            <div class="inst-content">
+              <strong>Open the URL in a new tab</strong>
+              <span>You should see... wait for it...</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="warn">
+          <div class="warn-header">⚠️ Expected error: 403 Forbidden</div>
+          <p>You'll get a 403 Forbidden right now — that's NORMAL and EXPECTED. The bucket allows public access in theory, but we haven't told it WHICH files to share with the public yet. That's the next step.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c4a" onchange="markCheck(this)"><label for="c4a">Static website hosting is enabled</label></div>
+          <div class="verify-item"><input type="checkbox" id="c4b" onchange="markCheck(this)"><label for="c4b">index.html set as the index document</label></div>
+          <div class="verify-item"><input type="checkbox" id="c4c" onchange="markCheck(this)"><label for="c4c">Bucket website endpoint URL copied somewhere</label></div>
+          <div class="verify-item"><input type="checkbox" id="c4d" onchange="markCheck(this)"><label for="c4d">Visiting the URL gave a 403 (we'll fix in Step 5)</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-card" id="step5">
+      <div class="step-header">
+        <div class="step-number" style="background:#6A1B9A">5</div>
+        <div class="step-header-text">
+          <h2>Make your files public with a bucket policy</h2>
+          <p>The JSON that grants the world read-only access</p>
+        </div>
+        <div class="step-time-badge">8 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>What is a bucket policy?</h4>
+          <p>A bucket policy is a JSON document that tells AWS who can do what to the files in your bucket. It's part of <strong>IAM (Identity and Access Management)</strong> — one of the 4 services we covered in the lecture today.</p>
+          <p style="margin-top:8px">We'll write a policy that says: <em>"Everyone in the world can READ files from this bucket — but they can't write, delete, or list anything."</em> That's exactly what a public website needs.</p>
+        </div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Go to Permissions tab</strong>
+              <span>Still inside your bucket, click the <strong>Permissions</strong> tab at the top.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Find "Bucket policy" section</strong>
+              <span>Scroll down → click <strong>Edit</strong> next to "Bucket policy".</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Paste this policy — REPLACE the bucket name</strong>
+              <span>Change <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">YOUR-BUCKET-NAME</code> to your actual bucket name (twice in the policy).</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="code-block">
+          <div class="code-label">Bucket Policy — public read access</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+    }
+  ]
+}</pre>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 Decoding the policy line by line</div>
+          <ul>
+            <li><strong>Effect: Allow</strong> — we're granting permission</li>
+            <li><strong>Principal: *</strong> — to everyone (the asterisk means anonymous public)</li>
+            <li><strong>Action: s3:GetObject</strong> — only the action of reading a file. Not deleting, not listing, not modifying.</li>
+            <li><strong>Resource: arn:aws:s3:::your-bucket/*</strong> — applies to every file inside the bucket (the /* means "all objects")</li>
+          </ul>
+          <p style="margin-top:6px">This is the same JSON-with-Effect/Principal/Action/Resource pattern used everywhere in AWS IAM. Learn it once — use it forever.</p>
+        </div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">4</div>
+            <div class="inst-content">
+              <strong>Click "Save changes"</strong>
+              <span>If you get a syntax error, you probably forgot to replace YOUR-BUCKET-NAME. AWS will tell you what's wrong.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">5</div>
+            <div class="inst-content">
+              <strong>Refresh your S3 website URL in the browser</strong>
+              <span>Now visit your bucket website endpoint again — the one from Step 4.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected">
+          <h4>✅ What you should see</h4>
+          <ul>
+            <li><strong>Your portfolio page is LIVE on the public internet 🎉</strong></li>
+            <li>Your name, role, skills — all rendered as a real website</li>
+            <li>The URL bar shows your S3 bucket website endpoint</li>
+          </ul>
+        </div>
+
+        <div class="screenshot-prompt"><strong>📸 Take a screenshot — share it in the bootcamp group chat!</strong> Your first cloud-hosted website. This is a real moment.</div>
+
+        <div class="exam-tip">
+          <div class="exam-tip-header">📝 Cloud Practitioner Exam Tip</div>
+          <p>Bucket policies vs ACLs vs IAM policies — all three control S3 access. <strong>Bucket policies</strong> are the modern, recommended approach for bucket-wide rules. Memorise: Effect, Principal, Action, Resource.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c5a" onchange="markCheck(this)"><label for="c5a">Bucket policy saved (no syntax errors)</label></div>
+          <div class="verify-item"><input type="checkbox" id="c5b" onchange="markCheck(this)"><label for="c5b">Visiting the S3 website URL shows your portfolio</label></div>
+          <div class="verify-item"><input type="checkbox" id="c5c" onchange="markCheck(this)"><label for="c5c">Permissions tab shows "Publicly accessible" red badge (this is intentional!)</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="step-card" id="step6">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--cyan)">6</div>
+        <div class="step-header-text">
+          <h2>Add CloudFront CDN for global speed</h2>
+          <p>Serve your site from 400+ edge locations worldwide</p>
+        </div>
+        <div class="step-time-badge">12 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>Why we add CloudFront</h4>
+          <p>Right now your site lives in ONE region (e.g. Virginia). A visitor from Tokyo has to fetch every file from Virginia — slow. CloudFront is AWS's <strong>Content Delivery Network (CDN)</strong>: it caches your site at 400+ edge locations globally, so visitors get served from the closest one.</p>
+          <p style="margin-top:8px">Bonus: CloudFront also gives you HTTPS for free, hides your S3 URL from visitors, and makes the site faster everywhere — including West Africa.</p>
+        </div>
+
+        <div class="section-divider"><span>Create the CloudFront distribution</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Navigate to CloudFront</strong>
+              <div class="nav-path">AWS Console → Search "CloudFront" → click CloudFront</div>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Click "Create distribution"</strong>
+            </div>
+          </li>
+        </ul>
+
+        <div class="section-divider"><span>Origin settings</span></div>
+        <div class="field-row"><div class="field-label">Origin domain</div><div class="field-value highlight">Click the dropdown — select your S3 bucket from the list</div></div>
+        <div class="field-row"><div class="field-label">Origin path</div><div class="field-value">Leave blank</div></div>
+        <div class="field-row"><div class="field-label">Name</div><div class="field-value">Auto-filled — leave it</div></div>
+        <div class="field-row"><div class="field-label">Origin access</div><div class="field-value highlight">Public — Use this if your bucket is already public (which ours is)</div></div>
+
+        <div class="info">
+          <div class="info-header">ℹ️ "Origin Access Control (OAC)" alternative</div>
+          <p>You'll see an option for <strong>OAC</strong> (Origin Access Control). That's the more secure pattern — it makes CloudFront the ONLY way to access your bucket, and re-locks the bucket to private. We're using the simpler "Public" path for this lab — we'll cover OAC in Week 3.</p>
+        </div>
+
+        <div class="section-divider"><span>Default cache behavior</span></div>
+        <div class="field-row"><div class="field-label">Viewer protocol policy</div><div class="field-value highlight">Redirect HTTP to HTTPS</div></div>
+        <div class="field-row"><div class="field-label">Allowed HTTP methods</div><div class="field-value">GET, HEAD (default — leave it)</div></div>
+        <div class="field-row"><div class="field-label">Cache policy</div><div class="field-value">CachingOptimized (default)</div></div>
+
+        <div class="section-divider"><span>Settings</span></div>
+        <div class="field-row"><div class="field-label">Price class</div><div class="field-value highlight">Use only North America and Europe (cheapest, still global enough)</div></div>
+        <div class="field-row"><div class="field-label">WAF</div><div class="field-value">Do not enable security protections (saves cost for now)</div></div>
+        <div class="field-row"><div class="field-label">Default root object</div><div class="field-value highlight">index.html</div></div>
+
+        <div class="tip">
+          <div class="tip-header">💡 Why "Default root object" matters</div>
+          <p>Without it, visiting <code>your-distribution.cloudfront.net/</code> (with no file specified) will return an error. Setting it to "index.html" makes CloudFront serve your homepage when someone hits the root URL — exactly like a normal website.</p>
+        </div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Click "Create distribution"</strong>
+              <span>CloudFront takes 5–10 minutes to deploy globally. Status will show "Deploying" then change to "Enabled".</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">4</div>
+            <div class="inst-content">
+              <strong>Copy your CloudFront domain</strong>
+              <span>Once status = Enabled, copy the <strong>Distribution domain name</strong> — looks like <code style="background:var(--lgray);padding:2px 5px;border-radius:3px;font-size:11px">d1234abc.cloudfront.net</code></span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">5</div>
+            <div class="inst-content">
+              <strong>Open it in a NEW browser tab (not refreshed S3 tab)</strong>
+              <span>You should see your portfolio — but now served via HTTPS, from a CloudFront edge location near you.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected">
+          <h4>✅ What you should see</h4>
+          <ul>
+            <li>URL starts with <strong>https://</strong> (not http)</li>
+            <li>The CloudFront domain in the address bar (d-something.cloudfront.net)</li>
+            <li>Your portfolio loads — possibly faster than the S3 URL</li>
+            <li>Browser shows a lock icon (HTTPS = secure)</li>
+          </ul>
+        </div>
+
+        <div class="screenshot-prompt"><strong>📸 Take a screenshot</strong> — your CloudFront-hosted, HTTPS-secured portfolio. This is the link you put on your CV.</div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c6a" onchange="markCheck(this)"><label for="c6a">CloudFront distribution status = Enabled</label></div>
+          <div class="verify-item"><input type="checkbox" id="c6b" onchange="markCheck(this)"><label for="c6b">CloudFront URL loads your portfolio</label></div>
+          <div class="verify-item"><input type="checkbox" id="c6c" onchange="markCheck(this)"><label for="c6c">URL is HTTPS, not HTTP</label></div>
+          <div class="verify-item"><input type="checkbox" id="c6d" onchange="markCheck(this)"><label for="c6d">CloudFront URL saved somewhere safe</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 7 -->
+    <div class="step-card" id="step7">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--green-mid)">7</div>
+        <div class="step-header-text">
+          <h2>Test, share, and update</h2>
+          <p>Make sure it really works — and learn how to push updates</p>
+        </div>
+        <div class="step-time-badge">5 min</div>
+      </div>
+      <div class="step-body">
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Test on your phone</strong>
+              <span>Open your CloudFront URL on your phone (not on your laptop's WiFi network — use mobile data to really test). It should load and look correct.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Share it with a friend</strong>
+              <span>Send the link to a friend on a different continent if you can. Ask them: <em>"is it fast?"</em> — that's CloudFront working.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Update your portfolio (the workflow)</strong>
+              <span>Edit your local index.html → upload the new version to S3 (replaces the old) → wait ~1 minute → refresh CloudFront. Your changes appear.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="tip">
+          <div class="tip-header">💡 CloudFront caching gotcha</div>
+          <p>If you update index.html and the new version doesn't show up after refresh, CloudFront might still be serving the old cached copy. To force a refresh:</p>
+          <ul>
+            <li><strong>Quick fix:</strong> open in incognito mode (bypasses your local cache)</li>
+            <li><strong>Proper fix:</strong> CloudFront → Distribution → Invalidations tab → Create invalidation → path <code>/*</code> (this clears the CDN cache)</li>
+          </ul>
+        </div>
+
+        <div class="info">
+          <div class="info-header">🚀 What you've actually learned</div>
+          <p>You've now used 3 of the most important AWS services: <strong>S3</strong> (storage), <strong>IAM via bucket policies</strong> (permissions), and <strong>CloudFront</strong> (global delivery). This same architecture pattern hosts millions of real-world websites — yours is technically the same setup as the marketing pages of major SaaS companies. That's not nothing.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Final check:</h4>
+          <div class="verify-item"><input type="checkbox" id="c7a" onchange="markCheck(this)"><label for="c7a">CloudFront URL loads on phone (mobile data)</label></div>
+          <div class="verify-item"><input type="checkbox" id="c7b" onchange="markCheck(this)"><label for="c7b">URL shared in bootcamp group chat</label></div>
+          <div class="verify-item"><input type="checkbox" id="c7c" onchange="markCheck(this)"><label for="c7c">Tested updating a file and seeing changes</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-banner" id="complete">
+      <h2>🎉 Lab 1 Complete!</h2>
+      <p>You just hosted a real website on AWS using S3 + CloudFront. The same architecture used by major SaaS marketing sites. You're officially in the cloud.</p>
+      <div class="completion-checklist">
+        <div style="font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:12px">Final checklist:</div>
+        <div class="verify-item"><input type="checkbox" id="f1" onchange="markCheck(this)"><label for="f1">S3 bucket created with unique name</label></div>
+        <div class="verify-item"><input type="checkbox" id="f2" onchange="markCheck(this)"><label for="f2">Portfolio files uploaded</label></div>
+        <div class="verify-item"><input type="checkbox" id="f3" onchange="markCheck(this)"><label for="f3">Static website hosting enabled</label></div>
+        <div class="verify-item"><input type="checkbox" id="f4" onchange="markCheck(this)"><label for="f4">Public bucket policy in place</label></div>
+        <div class="verify-item"><input type="checkbox" id="f5" onchange="markCheck(this)"><label for="f5">CloudFront distribution deployed</label></div>
+        <div class="verify-item"><input type="checkbox" id="f6" onchange="markCheck(this)"><label for="f6">Site loads via HTTPS</label></div>
+        <div class="verify-item"><input type="checkbox" id="f7" onchange="markCheck(this)"><label for="f7">URL ready for your CV / LinkedIn</label></div>
+      </div>
+    </div>
+
+    <!-- CLEANUP -->
+    <div class="cleanup-card">
+      <div class="cleanup-header">🗑️ Cleanup — only if you don't want to keep the site</div>
+      <div class="cleanup-body">
+        <p style="font-size:13px;color:var(--gray);margin-bottom:16px">
+          <strong>Most students keep the site running</strong> — it's basically free under free tier and looks great on a CV. But if you want to delete everything, follow these steps in order.
+        </p>
+
+        <div class="cleanup-step">
+          <div class="cleanup-num">1</div>
+          <div class="cleanup-text"><strong>Disable &amp; delete CloudFront distribution</strong><br>
+          <span class="nav-path">CloudFront → select distribution → Disable → wait until "Disabled" → Delete</span><br>
+          CloudFront takes 5–15 minutes to disable before it can be deleted.</div>
+        </div>
+        <div class="cleanup-step">
+          <div class="cleanup-num">2</div>
+          <div class="cleanup-text"><strong>Empty the S3 bucket</strong><br>
+          <span class="nav-path">S3 → click your bucket → "Empty" button (top-right) → type "permanently delete" → Empty</span><br>
+          You can't delete a bucket that contains files.</div>
+        </div>
+        <div class="cleanup-step">
+          <div class="cleanup-num">3</div>
+          <div class="cleanup-text"><strong>Delete the bucket</strong><br>
+          <span class="nav-path">S3 → select your empty bucket → Delete → type bucket name → Delete</span></div>
+        </div>
+
+        <div class="warn" style="margin-top:16px">
+          <div class="warn-header">⚠️ Why most students keep it</div>
+          <p>S3 charges ~$0.023 per GB stored per month. Your portfolio is probably under 5 MB = effectively $0. CloudFront's free tier covers up to 1 TB/month outbound. For a portfolio site with normal traffic, this is permanently free. Keep it. Show it off.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHAT'S NEXT -->
+    <div class="build-overview">
+      <h2>What's next — Lab 2</h2>
+      <div class="overview-grid">
+        <div class="overview-item">
+          <div class="icon">🖥️</div>
+          <h4>Launch EC2</h4>
+          <p>Spin up a real Linux server you can SSH into from your laptop</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🔑</div>
+          <h4>SSH Access</h4>
+          <p>Connect to your server with a key pair — like a real engineer</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">⚙️</div>
+          <h4>Deploy a Web App</h4>
+          <p>Install Nginx, host a dynamic page on YOUR server</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="footer">
+  <span>cloudwithshad</span> · Instructor: Shadrack Darku · AWS Cloud Practitioner Bootcamp · Week 1 Lab 1
+</div>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.body.scrollHeight - window.innerHeight;
+    const progress = (scrollTop / docHeight) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+  });
+
+  function markCheck(el) {
+    const label = el.nextElementSibling;
+    if (el.checked) label.classList.add('checked');
+    else label.classList.remove('checked');
+  }
+
+  function copyCode(btn) {
+    const pre = btn.nextElementSibling;
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  const stepIds = ['step0','step1','step2','step3','step4','step5','step6','step7','complete'];
+  window.addEventListener('scroll', () => {
+    let current = 0;
+    stepIds.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 100) current = i;
+    });
+    document.querySelectorAll('.sidebar-step').forEach((s, i) => {
+      s.classList.toggle('active', i === current);
+    });
+    document.querySelectorAll('.step-dot').forEach((d, i) => {
+      if (i < current) d.style.background = 'var(--green-mid)';
+      else if (i === current) d.style.background = 'var(--cyan)';
+      else d.style.background = '#CBD5E1';
+    });
+  });
+</script>
+</body>
+</html>

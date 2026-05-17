@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 3 · Quiz — Build the Auto-Scaling Pipeline | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --gray: #64748B;
+    --white: #FFFFFF;
+    --green-mid: #2E7D32;
+    --orange: #E65100;
+    --red: #C62828;
+    --gold: #FFC107;
+    --gold-warm: #F4B942;
+    --terracotta: #C8512A;
+    --purple: #9B59B6;
+    --github-green: #2EA043;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+
+  .topnav { background: rgba(0,0,0,0.3); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .brand { font-size: 16px; }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-meta { font-size: 12px; color: var(--gray); }
+
+  .layout { max-width: 1200px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 900px) { .layout { grid-template-columns: 1fr; } .canvas-panel { position: static !important; min-height: 380px !important; } }
+
+  .quiz-panel { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 28px; }
+  @media (max-width: 600px) { .quiz-panel { padding: 22px 18px; } }
+  .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .quiz-progress { font-size: 12px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; }
+  .stats { display: flex; gap: 8px; align-items: center; }
+  .stat-pill { padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 700; border: 1px solid; }
+  .pill-score { background: rgba(0,180,216,0.15); border-color: var(--cyan); color: var(--cyan); }
+  .pill-streak { background: rgba(255,193,7,0.15); border-color: var(--gold); color: var(--gold); }
+  .pill-streak.flash { animation: flash 0.6s; }
+  @keyframes flash { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+  .progress-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--gold)); width: 0%; transition: width 0.5s; }
+
+  .question { font-size: 20px; font-weight: 600; line-height: 1.4; margin-bottom: 20px; min-height: 60px; }
+  @media (max-width: 600px) { .question { font-size: 17px; } }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 18px; cursor: pointer; transition: all 0.2s; font-size: 14px; color: var(--white); text-align: left; font-family: inherit; }
+  .option:hover:not(:disabled) { background: rgba(0,180,216,0.1); border-color: var(--cyan); transform: translateY(-1px); }
+  .option.correct { background: rgba(46,125,50,0.2); border-color: var(--green-mid); color: #A5D6A7; }
+  .option.wrong { background: rgba(198,40,40,0.2); border-color: var(--red); color: #EF9A9A; }
+  .option:disabled { cursor: not-allowed; }
+
+  .feedback { margin-top: 18px; min-height: 24px; font-size: 13px; color: var(--cyan); font-weight: 600; }
+  .feedback.wrong { color: #EF9A9A; }
+
+  .why-panel { margin-top: 16px; background: rgba(0,180,216,0.05); border: 1px solid rgba(0,180,216,0.25); border-radius: 10px; overflow: hidden; max-height: 0; transition: all 0.5s; opacity: 0; }
+  .why-panel.show { max-height: 600px; opacity: 1; }
+  .why-toggle { background: transparent; border: none; color: var(--cyan); font-size: 13px; font-weight: 600; padding: 12px 16px; cursor: pointer; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; font-family: inherit; }
+  .why-toggle:hover { background: rgba(0,180,216,0.05); }
+  .why-toggle .arr { transition: transform 0.3s; }
+  .why-panel.expanded .why-toggle .arr { transform: rotate(180deg); }
+  .why-content { padding: 0 16px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.7; max-height: 0; overflow: hidden; transition: max-height 0.4s; }
+  .why-panel.expanded .why-content { max-height: 500px; }
+  .why-content strong { color: var(--cyan); }
+  .why-content code { background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+
+  .next-btn { margin-top: 18px; background: var(--cyan); color: var(--navy); border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-family: inherit; }
+  .next-btn.show { opacity: 1; pointer-events: auto; }
+  .next-btn:hover { background: #00C8F0; transform: translateY(-1px); }
+
+  .canvas-panel { background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2); border-radius: 14px; padding: 24px; min-height: 580px; position: sticky; top: 20px; }
+  .canvas-title { font-size: 11px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; text-align: center; }
+  .canvas-container { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+  .arch-piece { opacity: 0; transform: translateY(-12px) scale(0.85); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; min-width: 240px; text-align: center; border: 2px solid; }
+  .arch-piece.visible { opacity: 1; transform: translateY(0) scale(1); }
+  .arch-piece.pulse { animation: pulse 0.8s; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,216,0); } 50% { box-shadow: 0 0 0 12px rgba(0,180,216,0.3); } }
+  .arch-piece small { display: block; font-size: 10px; font-weight: 400; opacity: 0.85; margin-top: 4px; }
+
+  .piece-user { background: rgba(255,255,255,0.08); border-color: var(--white); }
+  .piece-github { background: rgba(13,17,23,0.7); border-color: #30363D; color: white; }
+  .piece-actions { background: rgba(46,160,67,0.15); border-color: var(--github-green); color: var(--github-green); }
+  .piece-alb { background: rgba(244,185,66,0.15); border-color: var(--gold-warm); color: var(--gold-warm); }
+  .piece-asg { background: rgba(155,89,182,0.15); border-color: var(--purple); color: var(--purple); }
+  .piece-ec2-row { display: flex; gap: 8px; }
+  .piece-ec2 { background: rgba(0,180,216,0.2); border-color: var(--cyan); color: var(--cyan); min-width: 75px; padding: 8px 10px; font-size: 11px; }
+  .piece-cw { background: rgba(155,89,182,0.18); border-color: var(--purple); color: var(--purple); }
+  .piece-s3 { background: rgba(46,125,50,0.15); border-color: var(--green-mid); color: #A5D6A7; }
+
+  .connector { opacity: 0; height: 14px; width: 2px; background: var(--gray); transition: opacity 0.4s; position: relative; }
+  .connector.visible { opacity: 1; }
+  .connector::after { content: '↓'; position: absolute; top: -2px; left: -5px; color: var(--gray); font-size: 11px; }
+
+  .results-card { background: linear-gradient(135deg, rgba(46,125,50,0.15), rgba(0,180,216,0.1)); border: 2px solid var(--cyan); border-radius: 14px; padding: 32px; text-align: center; display: none; }
+  .results-card.show { display: block; }
+  .results-icon { font-size: 56px; margin-bottom: 12px; }
+  .results-card h2 { color: var(--cyan); font-size: 26px; margin-bottom: 8px; }
+  .results-card .score-big { font-size: 48px; font-weight: 800; color: var(--gold); margin: 14px 0; }
+  .results-card .score-message { font-size: 16px; color: rgba(255,255,255,0.9); line-height: 1.6; margin-bottom: 18px; }
+  .restart-btn { background: var(--gold); color: var(--navy); border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 10px; }
+
+  .canvas-complete { text-align: center; padding: 16px; opacity: 0; transition: opacity 0.6s; }
+  .canvas-complete.visible { opacity: 1; }
+  .canvas-complete-icon { font-size: 36px; margin-bottom: 8px; }
+  .canvas-complete h4 { color: var(--gold); font-size: 16px; margin-bottom: 6px; }
+  .canvas-complete p { font-size: 12px; color: rgba(255,255,255,0.7); }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">cloud<span>withshad</span></div>
+  <div class="nav-meta">Week 3 · Quiz · Build the Pipeline</div>
+</div>
+
+<div class="layout">
+
+  <div class="quiz-panel" id="quizPanel">
+    <div class="quiz-header">
+      <div class="quiz-progress">Question <span id="qNum">1</span> of <span id="qTotal">10</span></div>
+      <div class="stats">
+        <div class="stat-pill pill-score">SCORE <span id="scoreVal">0</span></div>
+        <div class="stat-pill pill-streak" id="streakPill">🔥 <span id="streakVal">0</span></div>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="question" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="feedback" id="feedbackText"></div>
+
+    <div class="why-panel" id="whyPanel">
+      <button class="why-toggle" id="whyToggle">
+        <span>Why this answer?</span>
+        <span class="arr">▾</span>
+      </button>
+      <div class="why-content" id="whyContent"></div>
+    </div>
+
+    <button class="next-btn" id="nextBtn">Next question →</button>
+  </div>
+
+  <div class="results-card" id="resultsCard">
+    <div class="results-icon">🚀</div>
+    <h2 id="resultsTitle">Week 3 Quiz Complete</h2>
+    <div class="score-big" id="finalScore">0 / 10</div>
+    <div class="score-message" id="resultsMessage"></div>
+    <button class="restart-btn" onclick="restartQuiz()">Try again</button>
+  </div>
+
+  <div class="canvas-panel" id="canvasPanel">
+    <div class="canvas-title">YOUR LIVE DEPLOYMENT PIPELINE</div>
+    <div class="canvas-container" id="canvasContainer">
+      <div class="arch-piece piece-user" data-step="0">
+        👤 DEVELOPER
+        <small>writes code, runs git push</small>
+      </div>
+      <div class="connector" data-step="0"></div>
+
+      <div class="arch-piece piece-github" data-step="1">
+        🐙 GITHUB REPO
+        <small>your-username/your-app</small>
+      </div>
+      <div class="connector" data-step="1"></div>
+
+      <div class="arch-piece piece-actions" data-step="2">
+        ⚙️ GITHUB ACTIONS
+        <small>builds + tests + deploys</small>
+      </div>
+      <div class="connector" data-step="2"></div>
+
+      <div class="arch-piece piece-alb" data-step="3">
+        🌐 APPLICATION LOAD BALANCER
+        <small>spreads traffic across servers</small>
+      </div>
+      <div class="connector" data-step="3"></div>
+
+      <div class="arch-piece piece-asg" data-step="4">
+        📈 AUTO SCALING GROUP  ·  min:2 · max:6
+        <small>adds servers when CPU spikes</small>
+      </div>
+
+      <div class="piece-ec2-row">
+        <div class="arch-piece piece-ec2" data-step="5">EC2 #1</div>
+        <div class="arch-piece piece-ec2" data-step="6">EC2 #2</div>
+        <div class="arch-piece piece-ec2" data-step="7">EC2 #3</div>
+      </div>
+
+      <div class="connector" data-step="7"></div>
+
+      <div class="arch-piece piece-cw" data-step="8">
+        📊 CLOUDWATCH  ·  watches CPU
+        <small>fires alarm when threshold breaches</small>
+      </div>
+
+      <div class="canvas-complete" id="canvasComplete">
+        <div class="canvas-complete-icon">⚡</div>
+        <h4>Full DevOps pipeline assembled!</h4>
+        <p>Push code → tests run → deploys automatically. Servers scale to match traffic. The same setup powers Netflix, Spotify, and every modern web app.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "Your app runs on one big EC2 instance. Traffic doubles overnight. The server crashes under load. What's the BEST fix for the future?",
+    options: [
+      "Upgrade to the biggest EC2 instance type and hope it's enough",
+      "Add a CDN in front to cache responses",
+      "Use horizontal scaling — multiple smaller servers behind a load balancer",
+      "Reboot the server every hour to clear memory"
+    ],
+    correct: 2,
+    why: "<strong>Horizontal scaling</strong> (more boxes) beats vertical scaling (one bigger box) for web traffic. It removes the single point of failure, has no hard ceiling, and lets you scale up AND down. Vertical scaling hits a ceiling (the biggest instance) and still leaves you with one server that can crash.",
+    unlocks: 1
+  },
+  {
+    q: "What's the role of an Application Load Balancer?",
+    options: [
+      "Encrypts data at rest",
+      "Distributes incoming traffic across multiple servers + does health checks",
+      "Stores user sessions in memory",
+      "Replaces the need for a database"
+    ],
+    correct: 1,
+    why: "An ALB does <strong>three critical things</strong>: spreads traffic across all healthy servers (so no single one gets overwhelmed), pings each server every 30 seconds to check it's alive, and stops sending traffic to any server that fails the check. Without it, horizontal scaling doesn't work — traffic would just go to one IP.",
+    unlocks: 2
+  },
+  {
+    q: "ALB works at which network layer?",
+    options: [
+      "Layer 2 (Data Link)",
+      "Layer 3 (Network / IP)",
+      "Layer 4 (Transport / TCP)",
+      "Layer 7 (Application / HTTP)"
+    ],
+    correct: 3,
+    why: "<strong>ALB works at Layer 7</strong> — HTTP and HTTPS. That's how it can do clever things like route <code>/api</code> to one target group and <code>/static</code> to another based on the URL path. <strong>NLB</strong> (Network Load Balancer) is Layer 4 — useful for raw TCP/UDP. This is a frequent Cloud Practitioner exam question.",
+    unlocks: 2
+  },
+  {
+    q: "Auto Scaling Group settings: min=1, desired=3, max=10. What happens if CPU drops to 5% for 20 minutes?",
+    options: [
+      "ASG terminates all instances to save money",
+      "ASG scales down — but never below the min of 1",
+      "ASG ignores the metric since traffic is low",
+      "ASG launches more instances as a backup"
+    ],
+    correct: 1,
+    why: "The <strong>min capacity is the floor</strong>. ASG will scale down past your desired (3) toward the min (1) — but it will <strong>never go below the min</strong>. Setting min=1 in production protects you against a complete outage if traffic temporarily zeroes out.",
+    unlocks: 3
+  },
+  {
+    q: "Where does CloudWatch fit into Auto Scaling?",
+    options: [
+      "It hosts the EC2 instances",
+      "It collects metrics (CPU, network) and triggers ASG actions when thresholds break",
+      "It replaces the Load Balancer for low-traffic apps",
+      "It only works with Lambda, not EC2"
+    ],
+    correct: 1,
+    why: "CloudWatch is the <strong>sensor and trigger</strong>. The chain is: EC2 reports CPU to CloudWatch → CloudWatch alarm fires when CPU > 50% → alarm tells ASG to launch a new instance. Without CloudWatch, Auto Scaling can't act — it has no eyes.",
+    unlocks: 4
+  },
+  {
+    q: "What does 'CI' stand for in CI/CD, and what does it actually do?",
+    options: [
+      "Cloud Integration — connects multiple AWS accounts together",
+      "Continuous Integration — automatically tests every code commit",
+      "Customer Insight — tracks how users interact with your app",
+      "Code Inspection — does manual security review of pull requests"
+    ],
+    correct: 1,
+    why: "<strong>CI = Continuous Integration</strong>. Every time someone pushes code, an automated pipeline runs the tests, builds the app, and verifies nothing's broken. It catches bugs <strong>before</strong> they reach production. The CD that follows (Continuous Deployment) only fires if CI passes.",
+    unlocks: 5
+  },
+  {
+    q: "Your team wants every push to main branch to auto-deploy to AWS. Where do you store the AWS credentials for the pipeline?",
+    options: [
+      "In a config file committed to the repo",
+      "In a comment at the top of the workflow YAML",
+      "In GitHub Secrets (encrypted, repo-scoped)",
+      "In a public S3 bucket the pipeline can read"
+    ],
+    correct: 2,
+    why: "<strong>GitHub Secrets</strong> are encrypted and scoped to the repo. The workflow reads them as <code>${{ secrets.AWS_ACCESS_KEY_ID }}</code> at runtime. <strong>NEVER commit credentials to git</strong> — even private repos get accidentally exposed, and AWS keys leaked online get auto-scanned by bots within minutes.",
+    unlocks: 6
+  },
+  {
+    q: "An ALB has 3 EC2 targets. EC2 #2 starts returning 500 errors. What happens?",
+    options: [
+      "The whole ALB goes down",
+      "The ALB health check marks #2 unhealthy and stops sending traffic to it",
+      "Users get a random mix of 500 errors and good responses forever",
+      "The ASG terminates ALB"
+    ],
+    correct: 1,
+    why: "ALB pings each target every 30 seconds with a configurable path (usually <code>/health</code> or <code>/</code>). After a few failed pings, the ALB <strong>marks the instance unhealthy</strong> and routes all traffic to the remaining healthy instances. The user never sees the broken one. If ELB health checks are linked to ASG, ASG will also replace the bad instance.",
+    unlocks: 7
+  },
+  {
+    q: "What's the biggest reason to delete an ALB after a lab?",
+    options: [
+      "It uses up your free EC2 hours",
+      "It costs ~$16/month even with zero traffic — the most expensive thing to forget",
+      "AWS rate-limits accounts with too many ALBs",
+      "Leaving it running means others can see your data"
+    ],
+    correct: 1,
+    why: "<strong>ALBs aren't free tier eligible</strong>. They cost about $0.50/day (~$16/month) even if zero traffic flows through them. EC2 you can forget (auto-stop). RDS you can stop. ALB just keeps charging. Always delete it the same day you finish a lab.",
+    unlocks: 8
+  },
+  {
+    q: "Your CI/CD pipeline lets you push code to live in under 2 minutes. What's the MAIN benefit?",
+    options: [
+      "Lower AWS bills",
+      "Faster, safer, more frequent releases — bugs caught early, fixes shipped fast",
+      "You don't need to write tests anymore",
+      "It replaces the need for a load balancer"
+    ],
+    correct: 1,
+    why: "CI/CD's superpower is <strong>shipping faster with more confidence</strong>. Smaller, more frequent deploys = smaller blast radius if something breaks. Automated tests catch bugs before users see them. Manual deploys are slow, scary, and error-prone — automation makes shipping boring (in a good way).",
+    unlocks: 8
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+
+function init() {
+  document.getElementById('qTotal').textContent = QUESTIONS.length;
+  loadQuestion();
+}
+
+function loadQuestion() {
+  if (currentQ >= QUESTIONS.length) {
+    showResults();
+    return;
+  }
+  const q = QUESTIONS[currentQ];
+  document.getElementById('qNum').textContent = currentQ + 1;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('progressFill').style.width = ((currentQ / QUESTIONS.length) * 100) + '%';
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(idx);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('feedbackText').textContent = '';
+  document.getElementById('feedbackText').className = 'feedback';
+  document.getElementById('whyPanel').classList.remove('show', 'expanded');
+  document.getElementById('nextBtn').classList.remove('show');
+  answered = false;
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[currentQ];
+  const options = document.querySelectorAll('.option');
+  options.forEach(o => o.disabled = true);
+
+  if (idx === q.correct) {
+    options[idx].classList.add('correct');
+    score++;
+    streak++;
+    document.getElementById('feedbackText').textContent = '✓ Correct! ' + (streak >= 3 ? '🔥 You\'re on fire!' : 'Nice one.');
+    document.getElementById('feedbackText').className = 'feedback';
+    document.getElementById('streakPill').classList.add('flash');
+    setTimeout(() => document.getElementById('streakPill').classList.remove('flash'), 600);
+    revealArchPiece(q.unlocks);
+  } else {
+    options[idx].classList.add('wrong');
+    options[q.correct].classList.add('correct');
+    streak = 0;
+    document.getElementById('feedbackText').textContent = '✗ Not quite. The correct answer is highlighted.';
+    document.getElementById('feedbackText').className = 'feedback wrong';
+  }
+
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('streakVal').textContent = streak;
+  document.getElementById('whyContent').innerHTML = q.why;
+  document.getElementById('whyPanel').classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function revealArchPiece(stepNum) {
+  const pieces = document.querySelectorAll(`[data-step="${stepNum}"]`);
+  pieces.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.add('visible');
+      if (el.classList.contains('arch-piece')) {
+        el.classList.add('pulse');
+        setTimeout(() => el.classList.remove('pulse'), 800);
+      }
+    }, i * 120);
+  });
+  if (stepNum === 8 || score === QUESTIONS.length) {
+    setTimeout(() => {
+      document.getElementById('canvasComplete').classList.add('visible');
+    }, 600);
+  }
+}
+
+document.getElementById('nextBtn').onclick = () => {
+  currentQ++;
+  loadQuestion();
+};
+
+document.getElementById('whyToggle').onclick = () => {
+  document.getElementById('whyPanel').classList.toggle('expanded');
+};
+
+function showResults() {
+  document.getElementById('quizPanel').style.display = 'none';
+  document.getElementById('canvasPanel').style.minHeight = 'auto';
+  document.getElementById('progressFill').style.width = '100%';
+  const card = document.getElementById('resultsCard');
+  document.getElementById('finalScore').textContent = score + ' / ' + QUESTIONS.length;
+  let msg;
+  if (score === QUESTIONS.length) {
+    msg = '🏆 Perfect! You understand modern cloud architecture better than most working engineers. Bring on Week 4.';
+  } else if (score >= 8) {
+    msg = '🎯 Excellent. Your DevOps instincts are solid. Quick re-read on any missed answers and you\'re ready for production work.';
+  } else if (score >= 6) {
+    msg = '💪 Good effort. Revisit the ALB + Auto Scaling slides — those concepts power most of what you\'ll see in production AWS.';
+  } else {
+    msg = '📚 Worth a second pass. Re-watch the Week 3 session, redo Lab 5 from memory, then retake. The patterns lock in with repetition.';
+  }
+  document.getElementById('resultsMessage').textContent = msg;
+  card.classList.add('show');
+}
+
+function restartQuiz() {
+  currentQ = 0;
+  score = 0;
+  streak = 0;
+  document.getElementById('scoreVal').textContent = 0;
+  document.getElementById('streakVal').textContent = 0;
+  document.getElementById('quizPanel').style.display = 'block';
+  document.getElementById('resultsCard').classList.remove('show');
+  document.querySelectorAll('.arch-piece, .connector').forEach(el => el.classList.remove('visible'));
+  document.querySelector('.piece-user').classList.add('visible');
+  document.getElementById('canvasComplete').classList.remove('visible');
+  loadQuestion();
+}
+
+document.querySelector('.piece-user').classList.add('visible');
+init();
+</script>
+
+</body>
+</html>

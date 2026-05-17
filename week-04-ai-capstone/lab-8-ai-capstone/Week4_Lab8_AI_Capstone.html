@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 4 · Lab 8 — AI Customer Feedback Hub (Capstone) | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: #F4B942; width: 0%; transition: width 0.4s ease; }
+
+  /* Special capstone hero with gradient */
+  .hero { background: linear-gradient(135deg, #0A1628 0%, #13243A 50%, #1A2F4A 100%); padding: 60px 24px 50px; text-align: center; border-bottom: 4px solid #F4B942; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -50%; right: -10%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(244,185,66,0.15) 0%, transparent 70%); pointer-events: none; }
+  .hero::after { content: ''; position: absolute; bottom: -50%; left: -10%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,180,216,0.12) 0%, transparent 70%); pointer-events: none; }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-badge { display: inline-block; background: #F4B942; color: var(--navy); font-size: 11px; font-weight: 700; padding: 5px 16px; border-radius: 20px; letter-spacing: 1.5px; margin-bottom: 18px; }
+  .hero-trophy { font-size: 40px; margin-bottom: 8px; }
+  .hero h1 { font-size: 36px; color: var(--white); font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .hero h1 span { color: #F4B942; }
+  .hero-sub { font-size: 16px; color: #FFD580; margin-bottom: 28px; max-width: 720px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+  .hero-meta { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 22px; text-align: center; }
+  .hero-meta-item .val { font-size: 18px; font-weight: 700; color: #F4B942; }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+  .independent-banner { background: linear-gradient(135deg, #FFF9C4, #FFF3E0); border: 2px solid #F9A825; border-radius: 12px; padding: 22px 26px; margin-bottom: 28px; display: flex; gap: 18px; align-items: flex-start; }
+  .independent-banner-icon { font-size: 36px; flex-shrink: 0; }
+  .independent-banner h3 { color: #BF360C; font-size: 19px; margin-bottom: 6px; }
+  .independent-banner p { color: #5D4037; font-size: 14px; margin: 0; }
+
+  .content { background: var(--white); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 36px 40px; }
+  @media(max-width: 600px) { .content { padding: 24px 18px; } }
+
+  .section-block { padding-bottom: 32px; border-bottom: 1px solid #E2E8F0; margin-bottom: 32px; }
+  .section-block:last-of-type { border-bottom: none; margin-bottom: 0; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .section-num { width: 38px; height: 38px; background: #F4B942; color: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .section-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+
+  .section-block p { margin: 12px 0; color: var(--dark); font-size: 15px; }
+  .section-block ul, .section-block ol { margin: 12px 0 12px 20px; }
+  .section-block li { margin-bottom: 8px; font-size: 15px; color: var(--dark); }
+  .section-block strong { color: var(--navy); }
+
+  .code-block { background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 14px 0; white-space: pre; }
+  .code-block .cmd { color: #82B1FF; }
+  .code-block .comment { color: #B0BEC5; font-style: italic; }
+  .code-block .green { color: #69F0AE; }
+  .code-block .yellow { color: #FFD54F; }
+  .code-block .pink { color: #FF80AB; }
+  .code-block .orange { color: #FFAB91; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 18px 0; border-left: 5px solid; font-size: 14px; }
+  .callout.tip { background: var(--yellow); border-color: var(--yellow-border); color: #5D4037; }
+  .callout.warn { background: var(--red); border-color: var(--red-border); color: #B71C1C; }
+  .callout.info { background: var(--light); border-color: var(--blue); color: #0D47A1; }
+  .callout.exam { background: var(--purple); border-color: var(--purple-border); color: #4A148C; }
+  .callout.success { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .callout .label { font-weight: 700; display: inline-block; margin-right: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  .callout p { margin: 4px 0; font-size: 14px; }
+
+  .checklist { background: var(--lgray); border-radius: 10px; padding: 20px 24px; margin: 16px 0; }
+  .checklist-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #E2E8F0; align-items: flex-start; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-num { background: #F4B942; color: var(--navy); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .checklist-content { font-size: 14px; }
+  .checklist-content strong { color: var(--navy); }
+
+  .arch-diagram { background: var(--lgray); border: 2px dashed #CBD5E1; border-radius: 12px; padding: 28px 20px; margin: 18px 0; text-align: center; }
+  .arch-diagram svg { max-width: 100%; height: auto; }
+  .arch-caption { font-size: 12px; color: var(--gray); margin-top: 10px; font-style: italic; }
+
+  .hint-toggle { background: var(--light); border: 1px solid var(--blue); border-radius: 10px; margin: 14px 0; overflow: hidden; }
+  .hint-toggle summary { padding: 12px 18px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--blue); list-style: none; display: flex; align-items: center; gap: 8px; }
+  .hint-toggle summary::-webkit-details-marker { display: none; }
+  .hint-toggle summary::before { content: '💡'; font-size: 16px; }
+  .hint-toggle[open] summary { border-bottom: 1px solid #BBDEFB; }
+  .hint-toggle .hint-body { padding: 14px 18px; background: var(--white); }
+  .hint-toggle .hint-body p { font-size: 14px; margin: 6px 0; }
+
+  .bonus-banner { background: linear-gradient(135deg, var(--purple), #E1BEE7); border: 2px solid var(--purple-border); border-radius: 12px; padding: 20px 24px; margin: 24px 0; }
+  .bonus-banner h4 { color: var(--purple-border); margin-bottom: 8px; font-size: 17px; }
+  .bonus-banner p { color: #4A148C; font-size: 14px; margin: 0; }
+
+  /* Portfolio submission box */
+  .portfolio-box { background: linear-gradient(135deg, #FFF8E1, #FFF3E0); border: 2px solid #F4B942; border-radius: 14px; padding: 24px 28px; margin: 24px 0; }
+  .portfolio-box h4 { color: #BF360C; font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .portfolio-box p { color: #5D4037; font-size: 14.5px; line-height: 1.7; margin: 8px 0; }
+  .portfolio-box ul { margin-left: 22px; margin-top: 10px; }
+  .portfolio-box li { color: #5D4037; font-size: 14px; margin-bottom: 6px; }
+
+  .completion { background: linear-gradient(135deg, #FFF8E1, #FFFDE7, #F1F8E9); border: 2px solid #F4B942; border-radius: 16px; padding: 40px 28px; text-align: center; margin-top: 32px; position: relative; overflow: hidden; }
+  .completion::before { content: ''; position: absolute; top: -40px; right: -40px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(244,185,66,0.3), transparent 70%); }
+  .completion-icon { font-size: 60px; margin-bottom: 14px; position: relative; }
+  .completion h2 { font-size: 28px; color: #BF360C; margin-bottom: 10px; position: relative; font-weight: 800; }
+  .completion p { color: #5D4037; font-size: 15px; line-height: 1.7; position: relative; max-width: 600px; margin: 8px auto; }
+  .completion p strong { color: #BF360C; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Week 4 · Lab 8 · CAPSTONE PROJECT</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-trophy">🏆</div>
+    <div class="hero-badge">CAPSTONE PROJECT · BUILD-ON-YOUR-OWN</div>
+    <h1>AI Customer <span>Feedback Hub</span></h1>
+    <p class="hero-sub">The final project. A real production system you'll show employers. Customers submit feedback through a web form → AI analyzes it → you see the dashboard. This combines everything from weeks 1-4 into one portfolio piece.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="val">5</div><div class="lbl">PHASES</div></div>
+      <div class="hero-meta-item"><div class="val">3-5 hours</div><div class="lbl">DURATION</div></div>
+      <div class="hero-meta-item"><div class="val">FREE</div><div class="lbl">TIER OK</div></div>
+      <div class="hero-meta-item"><div class="val">6 services</div><div class="lbl">CHAINED</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="independent-banner">
+    <div class="independent-banner-icon">🚀</div>
+    <div>
+      <h3>This is YOUR capstone</h3>
+      <p>The capstone has <strong>one rule</strong>: it must work end-to-end. How you get there is up to you. We provide the architecture, the success criteria, and the starter code. The implementation details are your portfolio piece. Stuck? Use the hints (💡). Beat the lab? Submit a deployed URL.</p>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <!-- THE GOAL -->
+    <section class="section-block" id="goal">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title">What you're building</div>
+      </div>
+      <p>A real production system with <strong>three parts</strong>:</p>
+
+      <ol>
+        <li><strong>A public web form</strong> where anyone can submit feedback (name, email, message)</li>
+        <li><strong>An AI backend</strong> that analyzes every submission for sentiment and named entities</li>
+        <li><strong>A dashboard</strong> showing aggregate stats: sentiment breakdown, top entities, recent submissions</li>
+      </ol>
+
+      <div class="arch-diagram">
+        <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg">
+          <!-- User -->
+          <circle cx="50" cy="60" r="20" fill="#00B4D8"/>
+          <text x="50" y="100" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="#00B4D8">Customer</text>
+
+          <line x1="73" y1="60" x2="125" y2="60" stroke="#64748B" stroke-width="2" stroke-dasharray="3,3"/>
+          <text x="98" y="50" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#64748B">submits form</text>
+
+          <!-- S3 Web Form -->
+          <rect x="130" y="30" width="120" height="60" rx="8" fill="#1B5E20" stroke="#1B5E20"/>
+          <text x="190" y="55" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">S3 (Frontend)</text>
+          <text x="190" y="72" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">static web form</text>
+
+          <line x1="250" y1="60" x2="300" y2="60" stroke="#F4B942" stroke-width="2"/>
+          <polygon points="300,60 293,56 293,64" fill="#F4B942"/>
+          <text x="275" y="50" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#F4B942" font-weight="700">API call</text>
+
+          <!-- API Gateway -->
+          <rect x="305" y="30" width="120" height="60" rx="8" fill="#9B59B6" stroke="#7D3C98"/>
+          <text x="365" y="55" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">API Gateway</text>
+          <text x="365" y="72" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">POST /feedback</text>
+
+          <line x1="425" y1="60" x2="475" y2="60" stroke="#F4B942" stroke-width="2"/>
+          <polygon points="475,60 468,56 468,64" fill="#F4B942"/>
+
+          <!-- Lambda -->
+          <rect x="480" y="30" width="120" height="60" rx="8" fill="#F4B942" stroke="#C99320"/>
+          <text x="540" y="55" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="#0A1628">Lambda λ</text>
+          <text x="540" y="72" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#0A1628">process-feedback</text>
+
+          <!-- Comprehend branch -->
+          <line x1="540" y1="90" x2="540" y2="155" stroke="#9B59B6" stroke-width="1.5"/>
+          <rect x="475" y="160" width="130" height="50" rx="6" fill="#9B59B6" stroke="#7D3C98"/>
+          <text x="540" y="183" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="white">Comprehend</text>
+          <text x="540" y="198" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">sentiment, entities</text>
+
+          <!-- Down to DynamoDB -->
+          <line x1="540" y1="210" x2="540" y2="265" stroke="#00B4D8" stroke-width="1.5"/>
+          <rect x="475" y="270" width="130" height="60" rx="8" fill="#00B4D8" stroke="#0288A8"/>
+          <text x="540" y="295" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">DynamoDB</text>
+          <text x="540" y="313" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">feedback table</text>
+
+          <!-- Dashboard side: connects to DDB -->
+          <line x1="475" y1="300" x2="380" y2="300" stroke="#1B5E20" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <rect x="240" y="270" width="140" height="60" rx="8" fill="#1B5E20" stroke="#1B5E20"/>
+          <text x="310" y="295" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">S3 (Dashboard)</text>
+          <text x="310" y="313" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">stats + charts</text>
+
+          <line x1="240" y1="300" x2="115" y2="300" stroke="#64748B" stroke-width="2" stroke-dasharray="3,3"/>
+
+          <!-- You / Admin -->
+          <circle cx="80" cy="300" r="20" fill="#F4B942"/>
+          <text x="80" y="345" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="#F4B942">You (Admin)</text>
+        </svg>
+        <div class="arch-caption">Two front-ends (form + dashboard). One backend pipeline. Everything is serverless.</div>
+      </div>
+
+      <p><strong>Why this is a great portfolio piece:</strong></p>
+      <ul>
+        <li>It's a complete app — frontend, backend, database, AI, all wired together</li>
+        <li>It uses 6+ AWS services in a real-world pattern</li>
+        <li>Solo developers can build it in a weekend</li>
+        <li>It demonstrates the most-demanded skill in cloud: <strong>service integration</strong></li>
+      </ul>
+    </section>
+
+    <!-- PHASE 1: Frontend -->
+    <section class="section-block" id="phase1">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title">Phase 1 — The submission form (Frontend)</div>
+      </div>
+      <p>Build a simple HTML form. <strong>Single file, vanilla JS, no frameworks needed.</strong> Host it on S3 like Week 1.</p>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content">Create a new S3 bucket named <code>cloudwithshad-capstone-form-&lt;yourname&gt;</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content">Enable static website hosting (Properties → Static website hosting → Enable, index = index.html)</div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content">Unblock public access + add public-read bucket policy</div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content">Upload a single <code>index.html</code> file (starter code below)</div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">Open the bucket website URL — you should see your form</div></div>
+      </div>
+
+      <p>Here's a clean starter HTML form (style it however you want — make it look like YOU):</p>
+
+      <div class="code-block">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Customer Feedback&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: sans-serif; max-width: 500px; margin: 60px auto; padding: 24px; background: <span class="green">#0A1628</span>; color: <span class="green">#fff</span>; }
+    h1 { color: <span class="green">#00B4D8</span>; }
+    label { display: block; margin: 16px 0 6px; font-weight: 600; }
+    input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid <span class="green">#374151</span>; background: <span class="green">#1A2F4A</span>; color: <span class="green">#fff</span>; font-size: 14px; }
+    textarea { min-height: 100px; }
+    button { background: <span class="green">#00B4D8</span>; color: <span class="green">#0A1628</span>; padding: 12px 24px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;☁️ Tell us how we did&lt;/h1&gt;
+  &lt;form id=<span class="green">"feedback-form"</span>&gt;
+    &lt;label&gt;Your name&lt;/label&gt;
+    &lt;input type=<span class="green">"text"</span> id=<span class="green">"name"</span> required&gt;
+    &lt;label&gt;Your email&lt;/label&gt;
+    &lt;input type=<span class="green">"email"</span> id=<span class="green">"email"</span> required&gt;
+    &lt;label&gt;Your feedback&lt;/label&gt;
+    &lt;textarea id=<span class="green">"message"</span> required&gt;&lt;/textarea&gt;
+    &lt;button type=<span class="green">"submit"</span>&gt;Submit feedback&lt;/button&gt;
+    &lt;div id=<span class="green">"status"</span> style=<span class="green">"margin-top:14px;"</span>&gt;&lt;/div&gt;
+  &lt;/form&gt;
+
+  &lt;script&gt;
+    document.getElementById(<span class="green">'feedback-form'</span>).addEventListener(<span class="green">'submit'</span>, <span class="cmd">async</span> (e) =&gt; {
+      e.preventDefault();
+      <span class="cmd">const</span> data = {
+        name: name.value, email: email.value, message: message.value
+      };
+      <span class="comment">// TODO: replace with your API Gateway URL after Phase 4</span>
+      <span class="cmd">const</span> API_URL = <span class="green">'YOUR_API_GATEWAY_URL_HERE'</span>;
+      <span class="cmd">const</span> res = <span class="cmd">await</span> fetch(API_URL, {
+        method: <span class="green">'POST'</span>,
+        headers: { <span class="green">'Content-Type'</span>: <span class="green">'application/json'</span> },
+        body: JSON.stringify(data)
+      });
+      status.textContent = res.ok ? <span class="green">'✓ Thank you!'</span> : <span class="green">'Something went wrong.'</span>;
+      <span class="cmd">if</span> (res.ok) e.target.reset();
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+      </div>
+
+      <div class="callout tip">
+        <span class="label">Make it yours</span>
+        <p>The starter is intentionally plain. <strong>Customize the design, the colors, the copy</strong> — make it feel like your brand. This is a portfolio piece. Employers notice taste.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 2: DynamoDB -->
+    <section class="section-block" id="phase2">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title">Phase 2 — DynamoDB table</div>
+      </div>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content">DynamoDB → Create table</div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content">Table name: <code>cloudwithshad-feedback</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content">Partition key: <code>feedback_id</code> (String)</div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content">Defaults: on-demand, no sort key</div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">Create table</div></div>
+      </div>
+
+      <p>Items will store: id, name, email, message, sentiment, entities, timestamp.</p>
+    </section>
+
+    <!-- PHASE 3: Lambda -->
+    <section class="section-block" id="phase3">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title">Phase 3 — The Lambda + IAM role</div>
+      </div>
+
+      <p>First, the IAM role. Lambda needs to call Comprehend and write to DynamoDB.</p>
+
+      <ol>
+        <li>IAM → Create role → AWS service → Lambda</li>
+        <li>Attach: <code>AWSLambdaBasicExecutionRole</code>, <code>ComprehendFullAccess</code>, <code>AmazonDynamoDBFullAccess</code></li>
+        <li>Role name: <code>cloudwithshad-feedback-role</code></li>
+      </ol>
+
+      <p>Now the Lambda function:</p>
+
+      <ol>
+        <li>Lambda → Create function → Author from scratch</li>
+        <li>Name: <code>cloudwithshad-process-feedback</code></li>
+        <li>Runtime: Python 3.12 | Role: <code>cloudwithshad-feedback-role</code></li>
+        <li>Paste the code below, then <strong>Deploy</strong></li>
+      </ol>
+
+      <div class="code-block">
+<span class="cmd">import</span> boto3
+<span class="cmd">import</span> json
+<span class="cmd">import</span> uuid
+<span class="cmd">from</span> datetime <span class="cmd">import</span> datetime
+
+comprehend = boto3.client(<span class="green">'comprehend'</span>)
+dynamo     = boto3.resource(<span class="green">'dynamodb'</span>)
+table      = dynamo.Table(<span class="green">'cloudwithshad-feedback'</span>)
+
+<span class="comment"># CORS headers so the form can call this Lambda from S3</span>
+CORS = {
+    <span class="green">'Access-Control-Allow-Origin'</span>: <span class="green">'*'</span>,
+    <span class="green">'Access-Control-Allow-Headers'</span>: <span class="green">'Content-Type'</span>,
+    <span class="green">'Access-Control-Allow-Methods'</span>: <span class="green">'POST, OPTIONS'</span>,
+}
+
+<span class="cmd">def</span> <span class="yellow">lambda_handler</span>(event, context):
+    <span class="comment"># Handle preflight OPTIONS request</span>
+    <span class="cmd">if</span> event.get(<span class="green">'httpMethod'</span>) == <span class="green">'OPTIONS'</span>:
+        <span class="cmd">return</span> {<span class="green">'statusCode'</span>: <span class="orange">200</span>, <span class="green">'headers'</span>: CORS, <span class="green">'body'</span>: <span class="green">''</span>}
+
+    <span class="cmd">try</span>:
+        body = json.loads(event[<span class="green">'body'</span>])
+        name = body[<span class="green">'name'</span>]
+        email = body[<span class="green">'email'</span>]
+        message = body[<span class="green">'message'</span>][:<span class="orange">5000</span>]  <span class="comment"># Comprehend limit</span>
+
+        <span class="comment"># Sentiment analysis</span>
+        sentiment = comprehend.detect_sentiment(Text=message, LanguageCode=<span class="green">'en'</span>)
+
+        <span class="comment"># Entity extraction</span>
+        entities_raw = comprehend.detect_entities(Text=message, LanguageCode=<span class="green">'en'</span>)
+        entities = [
+            {<span class="green">'text'</span>: e[<span class="green">'Text'</span>], <span class="green">'type'</span>: e[<span class="green">'Type'</span>]}
+            <span class="cmd">for</span> e <span class="cmd">in</span> entities_raw[<span class="green">'Entities'</span>][:<span class="orange">10</span>]
+        ]
+
+        <span class="comment"># Save to DynamoDB</span>
+        feedback_id = <span class="cmd">str</span>(uuid.uuid4())
+        table.put_item(Item={
+            <span class="green">'feedback_id'</span>: feedback_id,
+            <span class="green">'name'</span>: name,
+            <span class="green">'email'</span>: email,
+            <span class="green">'message'</span>: message,
+            <span class="green">'sentiment'</span>: sentiment[<span class="green">'Sentiment'</span>],
+            <span class="green">'sentiment_score'</span>: <span class="cmd">str</span>(sentiment[<span class="green">'SentimentScore'</span>][sentiment[<span class="green">'Sentiment'</span>].title()]),
+            <span class="green">'entities'</span>: entities,
+            <span class="green">'submitted_at'</span>: datetime.utcnow().isoformat()
+        })
+
+        <span class="cmd">return</span> {
+            <span class="green">'statusCode'</span>: <span class="orange">200</span>,
+            <span class="green">'headers'</span>: CORS,
+            <span class="green">'body'</span>: json.dumps({<span class="green">'success'</span>: <span class="cmd">True</span>, <span class="green">'id'</span>: feedback_id, <span class="green">'sentiment'</span>: sentiment[<span class="green">'Sentiment'</span>]})
+        }
+    <span class="cmd">except</span> Exception <span class="cmd">as</span> e:
+        <span class="cmd">return</span> {
+            <span class="green">'statusCode'</span>: <span class="orange">500</span>,
+            <span class="green">'headers'</span>: CORS,
+            <span class="green">'body'</span>: json.dumps({<span class="green">'error'</span>: <span class="cmd">str</span>(e)})
+        }
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Bump timeout</span>
+        <p>Configuration → General → Edit → Set Timeout to 30 seconds. Comprehend calls can take several seconds.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 4: API Gateway -->
+    <section class="section-block" id="phase4">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title">Phase 4 — Wire it up with API Gateway</div>
+      </div>
+      <p>The browser can't call Lambda directly — we need a public HTTP endpoint. <strong>API Gateway</strong> gives us exactly that.</p>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content">API Gateway → Create API → <strong>HTTP API</strong> → Build</div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content">API name: <code>cloudwithshad-feedback-api</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content">Integrations: Add integration → <strong>Lambda</strong> → pick <code>cloudwithshad-process-feedback</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content">Configure routes: Method = <code>POST</code>, Resource path = <code>/feedback</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">Stage: $default (auto-deploy)</div></div>
+        <div class="checklist-item"><div class="checklist-num">6</div><div class="checklist-content">Create. Copy the <strong>Invoke URL</strong> at the top of your API page</div></div>
+        <div class="checklist-item"><div class="checklist-num">7</div><div class="checklist-content">Add CORS: API → CORS → Allow origin: <code>*</code>, Allow methods: POST, OPTIONS, Allow headers: <code>Content-Type</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">8</div><div class="checklist-content">Paste the full URL (Invoke URL + <code>/feedback</code>) into your <code>index.html</code> at the API_URL placeholder</div></div>
+        <div class="checklist-item"><div class="checklist-num">9</div><div class="checklist-content">Re-upload index.html to your S3 form bucket</div></div>
+      </div>
+
+      <details class="hint-toggle">
+        <summary>Hint: testing if your API endpoint works</summary>
+        <div class="hint-body">
+          <p>From your laptop terminal:</p>
+          <p><code>curl -X POST https://YOUR-API-URL/feedback -H "Content-Type: application/json" -d '{"name":"Test","email":"a@b.c","message":"Great service!"}'</code></p>
+          <p>If you get back <code>{"success": true, "sentiment": "POSITIVE", ...}</code> — the API works. Check your DynamoDB table for the new item.</p>
+        </div>
+      </details>
+
+      <div class="callout success">
+        <span class="label">Test it live</span>
+        <p>Open your S3 form URL in a browser. Submit some feedback. Check DynamoDB. <strong>You just built a real production AI app.</strong> Take a screenshot of the form + the DynamoDB item that appeared.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 5: Dashboard -->
+    <section class="section-block" id="phase5">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title">Phase 5 — Build the admin dashboard</div>
+      </div>
+
+      <p>The final piece. A separate webpage (also hosted on S3) that <strong>fetches the data</strong> and shows aggregate stats.</p>
+
+      <p><strong>Two ways to do this:</strong></p>
+
+      <ol>
+        <li><strong>Easy:</strong> Add a GET route to your existing API that scans DynamoDB and returns all feedback. The dashboard calls it.</li>
+        <li><strong>Harder (better!):</strong> Use Amazon Athena to run SQL queries over DynamoDB-exported S3 data. More work, more impressive.</li>
+      </ol>
+
+      <p>For the bootcamp, go with option 1. Add a second Lambda function:</p>
+
+      <div class="code-block">
+<span class="cmd">import</span> boto3
+<span class="cmd">import</span> json
+<span class="cmd">from</span> collections <span class="cmd">import</span> Counter
+<span class="cmd">from</span> decimal <span class="cmd">import</span> Decimal
+
+dynamo = boto3.resource(<span class="green">'dynamodb'</span>)
+table = dynamo.Table(<span class="green">'cloudwithshad-feedback'</span>)
+
+<span class="cmd">class</span> <span class="yellow">DecimalEncoder</span>(json.JSONEncoder):
+    <span class="cmd">def</span> <span class="yellow">default</span>(self, obj):
+        <span class="cmd">if</span> <span class="cmd">isinstance</span>(obj, Decimal):
+            <span class="cmd">return</span> <span class="cmd">float</span>(obj)
+        <span class="cmd">return</span> <span class="cmd">super</span>().default(obj)
+
+<span class="cmd">def</span> <span class="yellow">lambda_handler</span>(event, context):
+    <span class="comment"># Scan all feedback (fine for small datasets)</span>
+    response = table.scan()
+    items = response[<span class="green">'Items'</span>]
+
+    <span class="comment"># Aggregate sentiment counts</span>
+    sentiment_counts = Counter(item[<span class="green">'sentiment'</span>] <span class="cmd">for</span> item <span class="cmd">in</span> items)
+
+    <span class="comment"># Top entities</span>
+    entity_counts = Counter()
+    <span class="cmd">for</span> item <span class="cmd">in</span> items:
+        <span class="cmd">for</span> e <span class="cmd">in</span> item.get(<span class="green">'entities'</span>, []):
+            entity_counts[e[<span class="green">'text'</span>]] += <span class="orange">1</span>
+    top_entities = entity_counts.most_common(<span class="orange">10</span>)
+
+    <span class="cmd">return</span> {
+        <span class="green">'statusCode'</span>: <span class="orange">200</span>,
+        <span class="green">'headers'</span>: {<span class="green">'Access-Control-Allow-Origin'</span>: <span class="green">'*'</span>},
+        <span class="green">'body'</span>: json.dumps({
+            <span class="green">'total'</span>: <span class="cmd">len</span>(items),
+            <span class="green">'sentiment_breakdown'</span>: <span class="cmd">dict</span>(sentiment_counts),
+            <span class="green">'top_entities'</span>: top_entities,
+            <span class="green">'recent'</span>: <span class="cmd">sorted</span>(items, key=<span class="cmd">lambda</span> x: x.get(<span class="green">'submitted_at'</span>, <span class="green">''</span>), reverse=<span class="cmd">True</span>)[:<span class="orange">10</span>]
+        }, cls=DecimalEncoder)
+    }
+      </div>
+
+      <p>Add a new route in API Gateway (GET /stats → this Lambda), then create a <code>dashboard.html</code> that fetches and renders the data. Get creative with charts — use Chart.js (one CDN link, beautiful results).</p>
+
+      <details class="hint-toggle">
+        <summary>Hint: simple Chart.js dashboard structure</summary>
+        <div class="hint-body">
+          <p>Add <code>&lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;</code> to your HTML. Then call your /stats endpoint with fetch(), and render a doughnut chart for sentiment plus a horizontal bar chart for top entities. The Chart.js docs have copy-paste examples for every chart type.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- PORTFOLIO -->
+    <div class="portfolio-box">
+      <h4>📦 Portfolio submission requirements</h4>
+      <p>This is your <strong>capstone deliverable</strong>. Submit a single message in the cohort WhatsApp group with:</p>
+      <ul>
+        <li>The <strong>S3 URL of your live form</strong> (someone in the group will test it!)</li>
+        <li>The <strong>S3 URL of your dashboard</strong></li>
+        <li>A <strong>GitHub repo link</strong> with all your HTML, Lambda code, and a README explaining the architecture</li>
+        <li>One <strong>screenshot</strong> of the dashboard showing real data after a few submissions</li>
+      </ul>
+      <p style="margin-top: 14px;"><strong>Bonus points</strong> for: custom design, a README that's well-written, a deployed CloudFront distribution in front of S3, and a brief architecture diagram.</p>
+    </div>
+
+    <!-- BONUS -->
+    <div class="bonus-banner">
+      <h4>🚀 Make it employer-impressive</h4>
+      <p>Want to really stand out? Try one or more:</p>
+      <ul style="margin-top: 10px; margin-left: 20px;">
+        <li><strong>SNS notifications:</strong> Send yourself an email every time NEGATIVE feedback comes in</li>
+        <li><strong>Multi-language:</strong> Detect language with Comprehend first, then call Translate to convert to English before analysis</li>
+        <li><strong>Auth:</strong> Protect the dashboard behind Cognito so only you can see the data</li>
+        <li><strong>CI/CD pipeline:</strong> Hook up GitHub Actions (like Week 3 Lab 6) so pushes auto-deploy</li>
+        <li><strong>CloudFront + custom domain:</strong> Hook up a real domain name (Route 53 + ACM cert)</li>
+        <li><strong>Custom Comprehend classifier:</strong> Train a model to categorize feedback by topic (billing, support, product, etc.)</li>
+      </ul>
+    </div>
+
+    <!-- CLEANUP -->
+    <section class="section-block" id="cleanup">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div class="section-title">Clean up (or keep it running!)</div>
+      </div>
+      <p>This setup is genuinely <strong>cheap to keep running</strong>. Lambda + API Gateway + S3 + DynamoDB at zero traffic costs basically nothing. <strong>Many students choose to leave it up</strong> as their portfolio.</p>
+
+      <p>If you want to keep it running:</p>
+      <ul>
+        <li>Set a billing alarm at $1 so you'll know if anything spikes</li>
+        <li>Rotate the IAM keys every 90 days</li>
+        <li>Add basic auth to the dashboard so it isn't world-readable</li>
+      </ul>
+
+      <p>If you want to delete everything:</p>
+      <ul>
+        <li>API Gateway → APIs → delete the API</li>
+        <li>Lambda → delete both functions</li>
+        <li>DynamoDB → delete the table</li>
+        <li>S3 → empty + delete both buckets (form + dashboard)</li>
+        <li>IAM → delete the role</li>
+      </ul>
+    </section>
+
+    <div class="completion">
+      <div class="completion-icon">🏆</div>
+      <h2>You did it.</h2>
+      <p>You started 4 weeks ago — possibly never having touched AWS. Today you finished a real production AI application. <strong>That is genuinely rare.</strong></p>
+      <p>Take a screenshot of your live form. Save your GitHub link. Add it to your LinkedIn under "Projects". Apply for cloud roles with confidence — because <strong>you've already built what they're asking about</strong>.</p>
+      <p style="margin-top: 16px;"><strong>The cloud is yours now. Go ship something.</strong></p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function updateProgress() {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / docHeight) * 100;
+    document.getElementById('progressFill').style.width = Math.min(100, pct) + '%';
+  }
+  window.addEventListener('scroll', updateProgress);
+</script>
+
+</body>
+</html>

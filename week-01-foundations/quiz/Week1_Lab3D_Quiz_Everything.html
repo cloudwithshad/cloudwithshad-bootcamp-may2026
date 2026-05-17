@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 1 · Lab 3D — Build the Architecture | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --gray: #64748B;
+    --white: #FFFFFF;
+    --green-mid: #2E7D32;
+    --orange: #E65100;
+    --red: #C62828;
+    --gold: #FFC107;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+
+  .topnav { background: rgba(0,0,0,0.3); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .brand { font-size: 16px; }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-meta { font-size: 12px; color: var(--gray); }
+
+  .layout { max-width: 1200px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .quiz-panel { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 28px; }
+  .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .quiz-progress { font-size: 12px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; }
+  .stats { display: flex; gap: 8px; align-items: center; }
+  .stat-pill { padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 700; border: 1px solid; }
+  .pill-score { background: rgba(0,180,216,0.15); border-color: var(--cyan); color: var(--cyan); }
+  .pill-streak { background: rgba(255,193,7,0.15); border-color: var(--gold); color: var(--gold); }
+  .pill-streak.flash { animation: flash 0.6s; }
+  @keyframes flash { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+  .progress-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--gold)); width: 0%; transition: width 0.5s; }
+
+  .question { font-size: 20px; font-weight: 600; line-height: 1.4; margin-bottom: 20px; min-height: 60px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 18px; cursor: pointer; transition: all 0.2s; font-size: 14px; color: var(--white); text-align: left; font-family: inherit; }
+  .option:hover:not(:disabled) { background: rgba(0,180,216,0.1); border-color: var(--cyan); transform: translateY(-1px); }
+  .option.correct { background: rgba(46,125,50,0.2); border-color: var(--green-mid); color: #A5D6A7; }
+  .option.wrong { background: rgba(198,40,40,0.2); border-color: var(--red); color: #EF9A9A; }
+  .option:disabled { cursor: not-allowed; }
+
+  .feedback { margin-top: 18px; min-height: 24px; font-size: 13px; color: var(--cyan); font-weight: 600; }
+  .feedback.wrong { color: #EF9A9A; }
+
+  .why-panel { margin-top: 16px; background: rgba(0,180,216,0.05); border: 1px solid rgba(0,180,216,0.25); border-radius: 10px; overflow: hidden; max-height: 0; transition: all 0.5s; opacity: 0; }
+  .why-panel.show { max-height: 600px; opacity: 1; }
+  .why-toggle { background: transparent; border: none; color: var(--cyan); font-size: 13px; font-weight: 600; padding: 12px 16px; cursor: pointer; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; font-family: inherit; }
+  .why-toggle:hover { background: rgba(0,180,216,0.05); }
+  .why-toggle .arr { transition: transform 0.3s; }
+  .why-panel.expanded .why-toggle .arr { transform: rotate(180deg); }
+  .why-content { padding: 0 16px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.7; max-height: 0; overflow: hidden; transition: max-height 0.4s; }
+  .why-panel.expanded .why-content { max-height: 500px; }
+  .why-content strong { color: var(--cyan); }
+  .why-content code { background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+
+  .next-btn { margin-top: 18px; background: var(--cyan); color: var(--navy); border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-family: inherit; }
+  .next-btn.show { opacity: 1; pointer-events: auto; }
+
+  .canvas-panel { background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2); border-radius: 14px; padding: 24px; min-height: 540px; position: sticky; top: 20px; }
+  .canvas-title { font-size: 11px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; text-align: center; }
+  .canvas-container { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+  .arch-piece { opacity: 0; transform: translateY(-12px) scale(0.85); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; min-width: 220px; text-align: center; border: 2px solid; }
+  .arch-piece.visible { opacity: 1; transform: translateY(0) scale(1); }
+  .arch-piece.pulse { animation: pulse 0.8s; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,216,0); } 50% { box-shadow: 0 0 0 12px rgba(0,180,216,0.3); } }
+  .arch-piece small { display: block; font-size: 10px; font-weight: 400; opacity: 0.85; margin-top: 4px; }
+
+  .piece-visitor { background: rgba(255,255,255,0.08); border-color: var(--white); }
+  .piece-cdn { background: rgba(0,180,216,0.15); border-color: var(--cyan); color: var(--cyan); }
+  .piece-s3 { background: rgba(46,125,50,0.15); border-color: var(--green-mid); color: #A5D6A7; }
+  .piece-sg { background: rgba(230,81,0,0.15); border-color: var(--orange); color: #FFB74D; }
+  .piece-ec2 { background: rgba(255,143,101,0.15); border-color: #FF8A65; color: #FFAB91; }
+  .piece-iam { background: rgba(106,27,154,0.2); border-color: #BA68C8; color: #CE93D8; }
+
+  .arrow { color: var(--cyan); font-size: 22px; opacity: 0; transition: opacity 0.4s; }
+  .arrow.visible { opacity: 0.6; }
+  .canvas-empty { color: var(--gray); font-size: 13px; text-align: center; padding: 40px 20px; }
+
+  /* GRAND FINALE */
+  .finale { position: fixed; inset: 0; background: rgba(10, 22, 40, 0.97); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.6s; overflow-y: auto; }
+  .finale.show { display: flex; opacity: 1; }
+  .finale-content { max-width: 900px; width: 100%; text-align: center; padding: 20px; }
+
+  .badge-display { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 60px; border: 4px solid; animation: badgePop 0.8s 0.3s backwards; }
+  .badge-gold { background: rgba(255,193,7,0.2); border-color: var(--gold); }
+  .badge-silver { background: rgba(192,192,192,0.2); border-color: #C0C0C0; }
+  .badge-bronze { background: rgba(205,127,50,0.2); border-color: #CD7F32; }
+  @keyframes badgePop { 0% { transform: scale(0) rotate(-180deg); } 100% { transform: scale(1) rotate(0deg); } }
+
+  .finale h1 { font-size: 32px; color: var(--cyan); margin-bottom: 8px; animation: fadeInUp 0.8s 0.5s backwards; }
+  .finale-rank { font-size: 16px; color: var(--gold); margin-bottom: 20px; font-weight: 700; animation: fadeInUp 0.8s 0.6s backwards; }
+  .finale-score { font-size: 18px; color: rgba(255,255,255,0.8); margin-bottom: 24px; animation: fadeInUp 0.8s 0.7s backwards; }
+
+  .finale-arch { background: rgba(255,255,255,0.04); border: 2px solid var(--cyan); border-radius: 16px; padding: 24px; margin: 16px 0; animation: fadeInUp 0.8s 0.8s backwards; }
+  .finale-arch h3 { font-size: 13px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+  .finale-flow { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .finale-piece { padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; min-width: 280px; border: 2px solid; }
+  .finale-piece small { display: block; font-size: 11px; font-weight: 400; opacity: 0.8; margin-top: 4px; }
+  .finale-arrow { color: var(--cyan); font-size: 20px; }
+
+  .finale-message { font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.7; max-width: 600px; margin: 20px auto; animation: fadeInUp 0.8s 0.9s backwards; }
+
+  .finale-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; animation: fadeInUp 0.8s 1s backwards; }
+  .action-btn { padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: transform 0.2s; }
+  .action-btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--cyan); color: var(--navy); }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: var(--white); border: 1px solid rgba(255,255,255,0.2); }
+  .btn-share { background: var(--gold); color: var(--navy); }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* CONFETTI */
+  .confetti-piece { position: fixed; width: 8px; height: 8px; top: -20px; opacity: 0.9; pointer-events: none; z-index: 200; }
+  @keyframes confettiFall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+  .layout.hide { display: none; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: rgba(46,125,50,0.95); color: white; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand">cloud<span>withshad</span></div>
+  <div class="nav-meta">Week 1 · Lab 3D · Variant D: Everything (Recommended)</div>
+</nav>
+
+<div class="layout" id="mainLayout">
+  <div class="quiz-panel">
+    <div class="quiz-header">
+      <div class="quiz-progress" id="progressLabel">Question 1 / 8</div>
+      <div class="stats">
+        <div class="stat-pill pill-streak" id="streakPill">🔥 0</div>
+        <div class="stat-pill pill-score" id="scorePill">0 / 8</div>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div id="quizContent">
+      <div class="question" id="questionText">Loading...</div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="feedback" id="feedbackText"></div>
+
+      <div class="why-panel" id="whyPanel">
+        <button class="why-toggle" onclick="toggleWhy()">
+          <span>💡 Why does this matter in real life?</span>
+          <span class="arr">▼</span>
+        </button>
+        <div class="why-content" id="whyContent"></div>
+      </div>
+
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next →</button>
+    </div>
+  </div>
+
+  <div class="canvas-panel">
+    <div class="canvas-title">Week 1 Architecture</div>
+    <div class="canvas-container" id="canvas">
+      <div class="canvas-empty" id="canvasEmpty">Answer correctly to assemble the architecture →</div>
+    </div>
+  </div>
+</div>
+
+<div class="finale" id="finale">
+  <div class="finale-content">
+    <div class="badge-display" id="badgeDisplay">🥇</div>
+    <h1>🎉 Architecture complete!</h1>
+    <div class="finale-rank" id="finaleRank">Cloud Apprentice</div>
+    <div class="finale-score" id="finaleScore">You scored 8/8</div>
+
+    <div class="finale-arch">
+      <h3>This is what you built in Week 1</h3>
+      <div class="finale-flow">
+        <div class="finale-piece" style="background:rgba(255,255,255,0.08);border-color:var(--white)">
+          🌍 Visitor anywhere<small>laptop · phone · any device</small>
+        </div>
+        <div class="finale-arrow">↓</div>
+        <div class="finale-piece" style="background:rgba(0,180,216,0.15);border-color:var(--cyan);color:var(--cyan)">
+          ⚡ CloudFront CDN<small>400+ edge locations · HTTPS</small>
+        </div>
+        <div class="finale-arrow">↓</div>
+        <div class="finale-piece" style="background:rgba(106,27,154,0.2);border-color:#BA68C8;color:#CE93D8">
+          🔐 IAM Bucket Policy<small>controls who can read your files</small>
+        </div>
+        <div class="finale-arrow">↓</div>
+        <div class="finale-piece" style="background:rgba(46,125,50,0.15);border-color:var(--green-mid);color:#A5D6A7">
+          📦 Amazon S3 Bucket<small>your portfolio files live here</small>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px dashed rgba(255,255,255,0.15)">
+        <div class="finale-flow">
+          <div class="finale-piece" style="background:rgba(230,81,0,0.15);border-color:var(--orange);color:#FFB74D">
+            🛡️ Security Group<small>SSH from My IP · HTTP from anywhere</small>
+          </div>
+          <div class="finale-arrow">↓</div>
+          <div class="finale-piece" style="background:rgba(255,143,101,0.15);border-color:#FF8A65;color:#FFAB91">
+            🖥️ EC2 Instance<small>your Linux server running Nginx</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="finale-message">
+      You just designed the architecture used by Airbnb, Reddit, and millions of production apps. <strong>This is what cert prep should feel like</strong> — not memorising trivia, but knowing the pieces well enough to assemble them yourself.
+    </div>
+
+    <div class="finale-actions">
+      <button class="action-btn btn-primary" onclick="restart()">Try again</button>
+      <button class="action-btn btn-share" onclick="shareScore()">📋 Copy share text</button>
+      <button class="action-btn btn-secondary" onclick="window.location.href='#'">Back to lab</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "What does it mean when we say AWS is 'on-demand'?",
+    options: [
+      "You request resources, they arrive in seconds — no purchase orders or shipping",
+      "Amazon delivers physical servers to your office",
+      "You can only use it during business hours",
+      "AWS engineers manually approve each request"
+    ],
+    correct: 0,
+    explainCorrect: "Right — you click, you get.",
+    explainWrong: "'On-demand' means resources are available instantly when you ask.",
+    why: "<strong>The business impact:</strong> before cloud, companies bought servers months in advance, sized for peak demand. Most of the time those servers ran at 10% utilisation. Cloud flips this: scale up in 90 seconds when traffic spikes, scale down when it ends. <strong>This single property is why AWS exists.</strong> Netflix adds thousands of EC2 instances during prime time and removes them at 3 AM. Not possible with physical servers.",
+    piece: { type: "visitor", label: "🌍 Visitor", sub: "anywhere in the world" }
+  },
+  {
+    q: "Where does your S3 portfolio site's static files actually LIVE?",
+    options: [
+      "Inside an S3 bucket, in the AWS region you chose",
+      "On a CloudFront edge server",
+      "On Amazon's headquarters' main server",
+      "Distributed across all 30+ AWS regions automatically"
+    ],
+    correct: 0,
+    explainCorrect: "Yes — the bucket is regional.",
+    explainWrong: "S3 stores files in ONE region — the one you chose at bucket creation.",
+    why: "<strong>Why region matters:</strong> data sovereignty laws (GDPR in Europe, NDPR in Nigeria) often require user data to STAY in specific regions. If you store EU customer data in <code>us-east-1</code>, you might be violating the law. AWS regions are isolated. Choose your region based on (1) where users are, (2) where laws say data must live, (3) cost, (4) feature availability.",
+    piece: { type: "s3", label: "📦 Amazon S3", sub: "stores index.html, cv.pdf, images" }
+  },
+  {
+    q: "What does CloudFront actually do for your portfolio?",
+    options: [
+      "Caches your site at 400+ edge locations so visitors get fast loads",
+      "Backs up your S3 files automatically",
+      "Translates your site into other languages",
+      "Provides a database for your site"
+    ],
+    correct: 0,
+    explainCorrect: "Exactly — CloudFront is AWS's CDN.",
+    explainWrong: "CloudFront is a CDN — it caches content close to visitors for speed.",
+    why: "<strong>Real-world performance:</strong> a Lagos visitor loading a Virginia-hosted site (no CDN) experiences ~200ms of pure network round-trip. With CloudFront, they hit a Lagos edge — cutting latency to ~10ms. <strong>Your site feels 20× faster.</strong> Google's research shows every 100ms of delay costs ~7% in conversion. CDNs are table stakes for any global site.",
+    piece: { type: "cdn", label: "⚡ CloudFront CDN", sub: "400+ edge locations · HTTPS" }
+  },
+  {
+    q: "You launched an EC2 t2.micro for Lab 2. Which AWS service category does EC2 belong to?",
+    options: ["Compute", "Storage", "Networking", "Database"],
+    correct: 0,
+    explainCorrect: "Yes — EC2 is the flagship compute service.",
+    explainWrong: "EC2 = Elastic Compute Cloud. The word 'compute' is right in the name.",
+    why: "<strong>The 5 categories matter for the exam AND for real architecture:</strong> Compute (EC2, Lambda), Storage (S3, EBS), Networking (VPC, CloudFront), Database (RDS, DynamoDB), Security (IAM, KMS). When designing any system, you mentally pick one service from each category. <strong>This is the cloud architect's mental model.</strong>",
+    piece: { type: "ec2", label: "🖥️ EC2 Instance", sub: "t2.micro · Linux · public IP" }
+  },
+  {
+    q: "Why did the security group in Lab 2 allow port 22 from 'My IP' but port 80 from anywhere?",
+    options: [
+      "SSH gives shell access — only you should have it. HTTP serves visitors — anyone can.",
+      "There's no real reason, AWS just defaults to that",
+      "Port 22 is slower so it needs to be restricted",
+      "The web server only works with restricted SSH"
+    ],
+    correct: 0,
+    explainCorrect: "Yes — SSH = full control, lock it down.",
+    explainWrong: "SSH and HTTP serve different purposes — SSH is for admins, HTTP is for visitors.",
+    why: "<strong>Principle of least privilege.</strong> Every port and protocol you open is an attack surface. If you leave SSH open to 0.0.0.0/0, automated bots WILL try thousands of password and key combinations within hours. Real production systems take this further: SSH is usually behind a VPN or bastion host, never directly exposed.",
+    piece: { type: "sg", label: "🛡️ Security Group", sub: "SSH from My IP · HTTP from 0.0.0.0/0" }
+  },
+  {
+    q: "Your bucket policy says 'Effect: Allow, Principal: *, Action: s3:GetObject'. What does 'Principal: *' mean?",
+    options: [
+      "Anyone in the world (anonymous public)",
+      "Only your AWS account",
+      "All AWS users globally",
+      "Only IAM users in your organization"
+    ],
+    correct: 0,
+    explainCorrect: "Yes — the asterisk means 'anonymous public'.",
+    explainWrong: "In IAM JSON, asterisk Principal = everyone, including anonymous public users.",
+    why: "<strong>This is famously how data leaks happen.</strong> Capital One, Verizon, Booz Allen Hamilton — terabytes of sensitive data leaked through accidentally public S3 buckets. <code>Principal: *</code> on a sensitive bucket = front-page news. Memorise the IAM JSON pattern: <code>Effect, Principal, Action, Resource, Condition</code>. Same shape applies to bucket policies, IAM user policies, role policies.",
+    piece: { type: "iam", label: "🔐 IAM Bucket Policy", sub: "Principal: * · GetObject only" }
+  },
+  {
+    q: "What's the relationship between a Region and an Availability Zone?",
+    options: [
+      "A Region contains multiple AZs (each AZ is a separate data centre)",
+      "An AZ contains multiple Regions",
+      "Regions and AZs are the same thing",
+      "An AZ is a CloudFront edge location"
+    ],
+    correct: 0,
+    explainCorrect: "Right — region = geographic area, AZ = isolated data centre.",
+    explainWrong: "Regions are big. AZs are smaller and isolated within the region.",
+    why: "<strong>Foundation of high availability on AWS.</strong> If you put your database in just one AZ and that data centre has a power outage, your app goes down. Best practice: deploy across <strong>2+ AZs</strong>. Auto Scaling spans AZs automatically. Multi-AZ RDS replicates the database in real time. The exam constantly asks 'how do you make X highly available?' — answer almost always involves multiple AZs.",
+    piece: null
+  },
+  {
+    q: "Your portfolio site is hosted on S3 + CloudFront. A visitor in Tokyo loads it. What happens?",
+    options: [
+      "CloudFront's Tokyo edge serves the cached copy — fast",
+      "The request travels back to your S3 bucket in Virginia every time",
+      "AWS routes the visitor to a random region",
+      "The site can't be accessed from Tokyo"
+    ],
+    correct: 0,
+    explainCorrect: "Yes — that's the whole point of CloudFront.",
+    explainWrong: "CloudFront caches your site globally — visitors get served from the nearest edge.",
+    why: "<strong>Caching is everything.</strong> First Tokyo visitor: CloudFront fetches from your Virginia S3 (slow, ~150ms), stores in Tokyo. Next 1,000 visitors from Tokyo: served instantly (~5ms). Cost is also reduced — fewer requests to your S3. The exam tests this exact concept: 'how do you reduce latency for global users while minimising load on the origin?' — answer: CloudFront.",
+    piece: null
+  }
+];
+
+let current = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+const shown = new Set();
+
+function getRank(score) {
+  if (score === 8) return { name: "Cloud Architect ✨", badge: "🏆", class: "badge-gold" };
+  if (score >= 6) return { name: "Cloud Apprentice", badge: "🥇", class: "badge-gold" };
+  if (score >= 4) return { name: "Cloud Curious", badge: "🥈", class: "badge-silver" };
+  return { name: "Cloud Beginner", badge: "🥉", class: "badge-bronze" };
+}
+
+function render() {
+  const q = QUESTIONS[current];
+  document.getElementById('progressLabel').textContent = `Question ${current + 1} / ${QUESTIONS.length}`;
+  document.getElementById('scorePill').textContent = `${score} / ${QUESTIONS.length}`;
+  document.getElementById('streakPill').textContent = `🔥 ${streak}`;
+  document.getElementById('progressFill').style.width = (current / QUESTIONS.length * 100) + '%';
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('feedbackText').textContent = '';
+  document.getElementById('feedbackText').className = 'feedback';
+  document.getElementById('nextBtn').classList.remove('show');
+  document.getElementById('whyPanel').classList.remove('show', 'expanded');
+  answered = false;
+
+  const opts = document.getElementById('optionsContainer');
+  opts.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => answer(i);
+    opts.appendChild(btn);
+  });
+}
+
+function answer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[current];
+  const buttons = document.querySelectorAll('.option');
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === q.correct) b.classList.add('correct');
+    else if (i === idx) b.classList.add('wrong');
+  });
+  const feedback = document.getElementById('feedbackText');
+  if (idx === q.correct) {
+    score++;
+    streak++;
+    feedback.textContent = '✓ ' + q.explainCorrect;
+    feedback.className = 'feedback';
+    if (q.piece) addPiece(q.piece);
+    if (streak >= 3) {
+      const pill = document.getElementById('streakPill');
+      pill.classList.remove('flash');
+      void pill.offsetWidth;
+      pill.classList.add('flash');
+    }
+  } else {
+    streak = 0;
+    feedback.textContent = '✗ ' + q.explainWrong;
+    feedback.className = 'feedback wrong';
+  }
+  document.getElementById('scorePill').textContent = `${score} / ${QUESTIONS.length}`;
+  document.getElementById('streakPill').textContent = `🔥 ${streak}`;
+  document.getElementById('whyContent').innerHTML = q.why;
+  document.getElementById('whyPanel').classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function toggleWhy() {
+  document.getElementById('whyPanel').classList.toggle('expanded');
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= QUESTIONS.length) {
+    showFinale();
+    return;
+  }
+  render();
+}
+
+function addPiece(piece) {
+  const canvas = document.getElementById('canvas');
+  const empty = document.getElementById('canvasEmpty');
+  if (empty) empty.remove();
+  if (shown.size > 0) {
+    const arrow = document.createElement('div');
+    arrow.className = 'arrow';
+    arrow.textContent = '↓';
+    canvas.appendChild(arrow);
+    setTimeout(() => arrow.classList.add('visible'), 50);
+  }
+  const el = document.createElement('div');
+  el.className = `arch-piece piece-${piece.type}`;
+  el.innerHTML = `${piece.label}<small>${piece.sub}</small>`;
+  canvas.appendChild(el);
+  setTimeout(() => { el.classList.add('visible'); el.classList.add('pulse'); }, 100);
+  shown.add(piece.type);
+}
+
+function showFinale() {
+  document.getElementById('mainLayout').classList.add('hide');
+  const rank = getRank(score);
+  document.getElementById('badgeDisplay').textContent = rank.badge;
+  document.getElementById('badgeDisplay').className = `badge-display ${rank.class}`;
+  document.getElementById('finaleRank').textContent = rank.name;
+  document.getElementById('finaleScore').textContent = `You scored ${score}/${QUESTIONS.length}`;
+  document.getElementById('finale').classList.add('show');
+  if (score >= 6) launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#00B4D8', '#FFC107', '#2E7D32', '#E65100', '#FFFFFF'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animation = `confettiFall ${2 + Math.random() * 2}s linear forwards`;
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 4500);
+    }, i * 30);
+  }
+}
+
+function shareScore() {
+  const rank = getRank(score);
+  const text = `I scored ${score}/8 on Week 1 of the cloudwithshad AWS Cloud Practitioner Bootcamp — earned the "${rank.name}" badge ${rank.badge}\n\nJoin the next cohort: cloudwithshad.com`;
+  navigator.clipboard.writeText(text).then(() => {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  });
+}
+
+function restart() {
+  current = 0;
+  score = 0;
+  streak = 0;
+  shown.clear();
+  document.getElementById('canvas').innerHTML = '<div class="canvas-empty" id="canvasEmpty">Answer correctly to assemble the architecture →</div>';
+  document.getElementById('finale').classList.remove('show');
+  document.getElementById('mainLayout').classList.remove('hide');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

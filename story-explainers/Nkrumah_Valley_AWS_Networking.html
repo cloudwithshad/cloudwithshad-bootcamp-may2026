@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Farmlands of Nkrumah Valley — AWS Networking, the Ghana Way</title>
+<style>
+  :root {
+    --soil: #6B3410;
+    --soil-light: #8B5A2B;
+    --soil-dark: #3E1F08;
+    --earth: #B97A3F;
+    --terracotta: #C8512A;
+    --sunset: #E8743C;
+    --sunset-deep: #D9531E;
+    --gold: #F4B942;
+    --gold-deep: #DC9A2A;
+    --grass: #4F8B3E;
+    --grass-light: #6BAA52;
+    --grass-deep: #356228;
+    --sky: #FCE7BD;
+    --sky-deep: #F5C97D;
+    --cream: #FFF8EA;
+    --ink: #2A1A0E;
+    --ink-soft: #5A4636;
+    --warning: #C0392B;
+    --safe: #27AE60;
+    --shadow: rgba(62, 31, 8, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Georgia', 'Lora', serif;
+    background:
+      radial-gradient(ellipse at top, var(--sky) 0%, var(--sky-deep) 35%, #E89F4C 75%, var(--sunset-deep) 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ═══════════════════════════════════════
+     PROGRESS BAR
+     ═══════════════════════════════════════ */
+  .progress-rail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(62, 31, 8, 0.1);
+    z-index: 200;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--terracotta), var(--gold));
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* ═══════════════════════════════════════
+     CHAPTER NAV
+     ═══════════════════════════════════════ */
+  .chapter-nav {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .chapter-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(62, 31, 8, 0.25);
+    border: 2px solid var(--cream);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .chapter-dot:hover { transform: scale(1.4); background: var(--gold); }
+  .chapter-dot.active {
+    background: var(--terracotta);
+    transform: scale(1.4);
+    box-shadow: 0 0 0 4px rgba(200, 81, 42, 0.25);
+  }
+  .chapter-dot::after {
+    content: attr(data-label);
+    position: absolute;
+    right: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--ink);
+    color: var(--cream);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: 'Inter', system-ui, sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .chapter-dot:hover::after { opacity: 1; }
+
+  @media (max-width: 700px) {
+    .chapter-nav { display: none; }
+  }
+
+  /* ═══════════════════════════════════════
+     SCENE STRUCTURE
+     ═══════════════════════════════════════ */
+  .scene {
+    min-height: 100vh;
+    width: 100%;
+    padding: 80px 20px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .scene-inner {
+    max-width: 1100px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  @media (max-width: 900px) {
+    .scene-inner { grid-template-columns: 1fr; gap: 28px; }
+  }
+
+  .scene-text {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .scene.in-view .scene-text {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .scene-visual {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+    transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s, transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
+  }
+  .scene.in-view .scene-visual {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .chapter-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(200, 81, 42, 0.15);
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 30px;
+    margin-bottom: 18px;
+  }
+
+  .scene h2 {
+    font-family: 'Georgia', serif;
+    font-size: clamp(28px, 4vw, 44px);
+    color: var(--soil-dark);
+    line-height: 1.15;
+    margin-bottom: 18px;
+    font-weight: 700;
+  }
+  .scene h2 em {
+    color: var(--terracotta);
+    font-style: italic;
+  }
+
+  .scene-text p {
+    font-size: 17px;
+    color: var(--ink-soft);
+    line-height: 1.75;
+    margin-bottom: 14px;
+  }
+  .scene-text p strong {
+    color: var(--soil-dark);
+    background: rgba(244, 185, 66, 0.3);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* AWS mapping callout */
+  .aws-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 10px 18px;
+    background: var(--ink);
+    color: var(--gold);
+    border-radius: 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+  .aws-pill::before {
+    content: '☁';
+    font-size: 16px;
+    color: var(--sunset);
+  }
+
+  /* tooltip */
+  .term {
+    background: rgba(244, 185, 66, 0.4);
+    color: var(--soil-dark);
+    border-bottom: 2px dotted var(--gold-deep);
+    cursor: help;
+    position: relative;
+    padding: 0 3px;
+    font-weight: 600;
+  }
+  .term:hover .tooltip {
+    opacity: 1;
+    transform: translateY(-2px);
+    pointer-events: auto;
+  }
+  .tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%, 6px);
+    background: var(--ink);
+    color: var(--cream);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    width: max-content;
+    max-width: 240px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    z-index: 50;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+  .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--ink);
+  }
+
+  /* ═══════════════════════════════════════
+     SVG STAGE
+     ═══════════════════════════════════════ */
+  .stage {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 540px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, #FBE0A6 0%, #F0BD7C 60%, #C28447 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px var(--shadow), inset 0 0 0 3px rgba(255,255,255,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stage svg { width: 100%; height: 100%; display: block; }
+
+  /* Animation reusable classes */
+  @keyframes sway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 1; }
+  }
+  @keyframes walkRight {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(180px); }
+  }
+  @keyframes walkInToFarm {
+    0% { transform: translate(0, 0); opacity: 1; }
+    100% { transform: translate(80px, -30px); opacity: 0; }
+  }
+  @keyframes walkOutOfFarm {
+    0% { transform: translate(80px, -30px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translate(180px, 0); opacity: 1; }
+  }
+  @keyframes gateOpen {
+    0%, 30%, 100% { transform: rotate(0deg); }
+    50%, 80% { transform: rotate(-65deg); }
+  }
+  @keyframes denyShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+
+  .sway-tree { transform-origin: bottom center; animation: sway 4s ease-in-out infinite; }
+  .float { animation: float 3s ease-in-out infinite; }
+  .shimmer { animation: shimmer 2s ease-in-out infinite; }
+
+  /* ═══════════════════════════════════════
+     INTRO SCENE
+     ═══════════════════════════════════════ */
+  .intro {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .intro-content {
+    max-width: 800px;
+    z-index: 2;
+  }
+  .intro .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(200, 81, 42, 0.15);
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 30px;
+    margin-bottom: 24px;
+    animation: float 4s ease-in-out infinite;
+  }
+  .intro h1 {
+    font-family: 'Georgia', serif;
+    font-size: clamp(40px, 7vw, 76px);
+    color: var(--soil-dark);
+    line-height: 1.05;
+    margin-bottom: 18px;
+    font-weight: 700;
+  }
+  .intro h1 em {
+    color: var(--terracotta);
+    font-style: italic;
+    display: block;
+  }
+  .intro p {
+    font-size: 19px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    margin-bottom: 32px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .start-btn, .next-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    background: linear-gradient(180deg, var(--terracotta), var(--sunset-deep));
+    color: var(--cream);
+    border: none;
+    border-radius: 50px;
+    font-family: 'Georgia', serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(200, 81, 42, 0.4);
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  .start-btn:hover, .next-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(200, 81, 42, 0.5);
+  }
+  .start-btn::after, .next-btn::after {
+    content: '→';
+    font-size: 18px;
+    transition: transform 0.3s;
+  }
+  .start-btn:hover::after, .next-btn:hover::after {
+    transform: translateX(4px);
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--ink-soft);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    animation: float 2s ease-in-out infinite;
+  }
+  .scroll-hint::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 30px;
+    background: var(--ink-soft);
+    margin: 8px auto 0;
+  }
+
+  /* Floating elements in intro background */
+  .float-element {
+    position: absolute;
+    font-size: 60px;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  /* Scene action area */
+  .scene-action {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .replay-btn {
+    padding: 10px 18px;
+    background: transparent;
+    border: 1.5px solid var(--soil);
+    color: var(--soil);
+    border-radius: 30px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .replay-btn:hover {
+    background: var(--soil);
+    color: var(--cream);
+  }
+  .replay-btn::before {
+    content: '↻ ';
+  }
+
+  /* Stateful indicator labels */
+  .scene-label {
+    position: absolute;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .scene-label.visible { opacity: 1; }
+  .scene-label.allow { background: var(--safe); }
+  .scene-label.deny { background: var(--warning); }
+
+  /* ═══════════════════════════════════════
+     FINAL SUMMARY
+     ═══════════════════════════════════════ */
+  .summary {
+    background: linear-gradient(180deg, rgba(255,248,234,0.4) 0%, rgba(244,185,66,0.5) 100%);
+    backdrop-filter: blur(8px);
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 30px;
+  }
+  @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  .summary-card {
+    background: var(--cream);
+    border-radius: 14px;
+    padding: 18px 20px;
+    border-left: 5px solid var(--terracotta);
+    box-shadow: 0 6px 18px var(--shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 26px var(--shadow);
+  }
+  .summary-card .icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+  }
+  .summary-card .farm-side {
+    font-family: 'Georgia', serif;
+    font-size: 16px;
+    color: var(--soil-dark);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .summary-card .arrow {
+    color: var(--terracotta);
+    font-size: 18px;
+    margin: 4px 0;
+  }
+  .summary-card .aws-side {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    font-weight: 700;
+    background: var(--gold);
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .summary-card p {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .summary-card.c1 { border-left-color: var(--grass-deep); }
+  .summary-card.c2 { border-left-color: var(--terracotta); }
+  .summary-card.c3 { border-left-color: var(--soil); }
+  .summary-card.c4 { border-left-color: var(--gold-deep); }
+
+  /* CTA at end */
+  .end-cta {
+    text-align: center;
+    margin-top: 40px;
+  }
+
+  /* footer */
+  .footer {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: rgba(62, 31, 8, 0.06);
+  }
+  .footer strong { color: var(--terracotta); }
+</style>
+</head>
+<body>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="chapter-nav" id="chapterNav">
+  <div class="chapter-dot" data-target="intro" data-label="Welcome"></div>
+  <div class="chapter-dot" data-target="scene-vpc" data-label="The Boundary"></div>
+  <div class="chapter-dot" data-target="scene-subnets" data-label="Sections"></div>
+  <div class="chapter-dot" data-target="scene-nacls" data-label="Gates"></div>
+  <div class="chapter-dot" data-target="scene-sg" data-label="Guards"></div>
+  <div class="chapter-dot" data-target="scene-sg-ref" data-label="SG-to-SG"></div>
+  <div class="chapter-dot" data-target="scene-stateful" data-label="Stateful"></div>
+  <div class="chapter-dot" data-target="scene-access" data-label="Public/Private"></div>
+  <div class="chapter-dot" data-target="scene-summary" data-label="Summary"></div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     INTRO
+     ═══════════════════════════════════════ -->
+<section class="intro" id="intro">
+  <div class="float-element" style="top: 12%; left: 8%; animation: float 5s ease-in-out infinite;">🌳</div>
+  <div class="float-element" style="top: 22%; right: 12%; animation: float 6s ease-in-out infinite 1s;">🌾</div>
+  <div class="float-element" style="bottom: 18%; left: 15%; animation: float 4s ease-in-out infinite 0.5s;">🐓</div>
+  <div class="float-element" style="bottom: 28%; right: 20%; animation: float 5s ease-in-out infinite 1.5s;">☁️</div>
+
+  <div class="intro-content">
+    <span class="badge">An AWS Networking Story</span>
+    <h1>The Farmlands of<br><em>Nkrumah Valley</em></h1>
+    <p>Meet Kojo Mensah, a farmer with a vast piece of land. To understand his farm is to understand AWS — the gates, the guards, the public road, and the private path. No textbooks. No jargon. Just a story.</p>
+    <a href="#scene-vpc" class="start-btn">Begin the story</a>
+  </div>
+
+  <div class="scroll-hint">SCROLL TO EXPLORE</div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 1: VPC
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-vpc">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 1 · The Boundary</span>
+      <h2>Kojo's <em>great farmland</em></h2>
+      <p>Kojo Mensah inherited a vast stretch of land in Nkrumah Valley. The very first thing he did was mark its <strong>boundary</strong> with sturdy wooden fencing — every grain of soil inside belongs to him.</p>
+      <p>Outside the boundary is the village; inside is Kojo's world. Nothing on his farm touches anything outside it unless Kojo personally allows it.</p>
+      <div class="aws-pill">VPC — Virtual Private Cloud</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <!-- sky/clouds -->
+          <circle cx="80" cy="60" r="22" fill="#fff" opacity="0.7"/>
+          <circle cx="105" cy="55" r="18" fill="#fff" opacity="0.7"/>
+          <circle cx="420" cy="80" r="20" fill="#fff" opacity="0.6"/>
+          <circle cx="440" cy="75" r="16" fill="#fff" opacity="0.6"/>
+          <!-- sun -->
+          <circle cx="430" cy="100" r="35" fill="#F4B942" opacity="0.55"/>
+          <!-- ground -->
+          <rect x="0" y="300" width="500" height="200" fill="#A0682E"/>
+          <rect x="0" y="290" width="500" height="20" fill="#8B5A2B"/>
+
+          <!-- farm boundary fence (drawn around large area) -->
+          <g id="vpc-boundary">
+            <rect x="50" y="180" width="400" height="280" rx="8"
+                  fill="rgba(180, 120, 70, 0.15)"
+                  stroke="#6B3410" stroke-width="4" stroke-dasharray="0"/>
+            <!-- fence posts -->
+            <g fill="#6B3410">
+              <rect x="48" y="176" width="6" height="20"/>
+              <rect x="148" y="176" width="6" height="20"/>
+              <rect x="248" y="176" width="6" height="20"/>
+              <rect x="348" y="176" width="6" height="20"/>
+              <rect x="446" y="176" width="6" height="20"/>
+              <rect x="48" y="456" width="6" height="20"/>
+              <rect x="148" y="456" width="6" height="20"/>
+              <rect x="248" y="456" width="6" height="20"/>
+              <rect x="348" y="456" width="6" height="20"/>
+              <rect x="446" y="456" width="6" height="20"/>
+              <rect x="46" y="200" width="10" height="240"/>
+              <rect x="444" y="200" width="10" height="240"/>
+            </g>
+            <!-- horizontal rails -->
+            <g stroke="#6B3410" stroke-width="3">
+              <line x1="50" y1="200" x2="450" y2="200"/>
+              <line x1="50" y1="220" x2="450" y2="220"/>
+              <line x1="50" y1="440" x2="450" y2="440"/>
+              <line x1="50" y1="460" x2="450" y2="460"/>
+            </g>
+          </g>
+
+          <!-- farm interior -->
+          <g class="float">
+            <!-- farmhouse -->
+            <rect x="220" y="260" width="60" height="50" fill="#8B5A2B"/>
+            <polygon points="215,260 285,260 250,225" fill="#5C2C0E"/>
+            <rect x="240" y="280" width="20" height="30" fill="#3E1F08"/>
+            <!-- door knob -->
+            <circle cx="256" cy="295" r="1.5" fill="#F4B942"/>
+          </g>
+
+          <!-- crops -->
+          <g fill="#4F8B3E">
+            <circle cx="100" cy="380" r="12"/>
+            <circle cx="120" cy="395" r="10"/>
+            <circle cx="140" cy="380" r="11"/>
+            <circle cx="370" cy="385" r="11"/>
+            <circle cx="390" cy="395" r="13"/>
+            <circle cx="410" cy="380" r="10"/>
+          </g>
+
+          <!-- trees -->
+          <g class="sway-tree" style="transform-origin: 110px 280px;">
+            <rect x="106" y="240" width="8" height="50" fill="#6B3410"/>
+            <circle cx="110" cy="235" r="22" fill="#356228"/>
+            <circle cx="100" cy="240" r="18" fill="#4F8B3E"/>
+            <circle cx="120" cy="240" r="18" fill="#4F8B3E"/>
+          </g>
+          <g class="sway-tree" style="transform-origin: 390px 280px; animation-delay: 1s;">
+            <rect x="386" y="240" width="8" height="50" fill="#6B3410"/>
+            <circle cx="390" cy="235" r="22" fill="#356228"/>
+            <circle cx="380" cy="240" r="18" fill="#4F8B3E"/>
+            <circle cx="400" cy="240" r="18" fill="#4F8B3E"/>
+          </g>
+
+          <!-- Kojo standing in farm -->
+          <g transform="translate(245,330)">
+            <!-- body -->
+            <ellipse cx="0" cy="14" rx="9" ry="14" fill="#C8512A"/>
+            <!-- head -->
+            <circle cx="0" cy="-6" r="8" fill="#6B3410"/>
+            <!-- hat -->
+            <ellipse cx="0" cy="-12" rx="14" ry="3" fill="#3E1F08"/>
+            <ellipse cx="0" cy="-15" rx="7" ry="5" fill="#3E1F08"/>
+            <!-- legs -->
+            <rect x="-4" y="26" width="3" height="10" fill="#3E1F08"/>
+            <rect x="1" y="26" width="3" height="10" fill="#3E1F08"/>
+          </g>
+          <text x="250" y="370" text-anchor="middle" font-family="Georgia" font-size="11" fill="#3E1F08" font-weight="bold">Kojo</text>
+
+          <!-- "MY LAND" sign -->
+          <g transform="translate(80, 160)">
+            <rect x="-4" y="0" width="3" height="20" fill="#3E1F08"/>
+            <rect x="-30" y="-15" width="55" height="18" rx="2" fill="#F4B942" stroke="#6B3410" stroke-width="2"/>
+            <text x="-2" y="-2" text-anchor="middle" font-family="Georgia" font-size="9" font-weight="bold" fill="#3E1F08">MY LAND</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 2: SUBNETS
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-subnets">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 2 · The Sections</span>
+      <h2>One farm, <em>two sections</em></h2>
+      <p>Kojo divides his land. The section near the road becomes the <strong>public farm</strong> — that's where he sells maize and yam to passers-by. The section deep inside, hidden behind the trees, is the <strong>private farm</strong> — that's where his most valuable cassava and family granary live.</p>
+      <p>Same farm, different purposes, different rules. The road can see one. The road cannot see the other.</p>
+      <div class="aws-pill">Subnets — Public &amp; Private</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <!-- sky -->
+          <rect x="0" y="0" width="500" height="180" fill="url(#skyGrad2)"/>
+          <defs>
+            <linearGradient id="skyGrad2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#FCE7BD"/>
+              <stop offset="1" stop-color="#F5C97D"/>
+            </linearGradient>
+          </defs>
+
+          <!-- The road on left -->
+          <rect x="0" y="180" width="60" height="320" fill="#5A4636"/>
+          <g stroke="#F4B942" stroke-width="3" stroke-dasharray="10,12">
+            <line x1="30" y1="180" x2="30" y2="500"/>
+          </g>
+          <text x="30" y="170" text-anchor="middle" font-family="Inter" font-size="10" fill="#3E1F08" font-weight="bold">THE ROAD</text>
+
+          <!-- VPC outer -->
+          <rect x="80" y="180" width="400" height="280" rx="8"
+                fill="rgba(180, 120, 70, 0.1)"
+                stroke="#6B3410" stroke-width="4"/>
+
+          <!-- Public Farm (near road) -->
+          <rect x="90" y="200" width="170" height="240" rx="6"
+                fill="rgba(244, 185, 66, 0.4)"
+                stroke="#DC9A2A" stroke-width="3"/>
+          <text x="175" y="225" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#3E1F08">PUBLIC FARM</text>
+          <text x="175" y="240" text-anchor="middle" font-family="Inter" font-size="10" fill="#5A4636">(near the road)</text>
+
+          <!-- Public farm crops/market stall -->
+          <g class="float">
+            <rect x="125" y="280" width="80" height="40" fill="#C8512A"/>
+            <polygon points="120,280 210,280 165,260" fill="#8B2E0F"/>
+            <rect x="135" y="295" width="12" height="12" fill="#F4B942"/>
+            <rect x="150" y="295" width="12" height="12" fill="#4F8B3E"/>
+            <rect x="165" y="295" width="12" height="12" fill="#C8512A"/>
+            <rect x="180" y="295" width="12" height="12" fill="#F4B942"/>
+            <text x="165" y="338" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-weight="bold">market stall</text>
+          </g>
+          <g fill="#4F8B3E">
+            <circle cx="120" cy="380" r="9"/>
+            <circle cx="140" cy="395" r="10"/>
+            <circle cx="160" cy="380" r="9"/>
+            <circle cx="200" cy="395" r="9"/>
+            <circle cx="225" cy="380" r="10"/>
+          </g>
+
+          <!-- divider line of trees between the two -->
+          <g class="sway-tree" style="transform-origin: 280px 350px;">
+            <rect x="276" y="320" width="6" height="40" fill="#6B3410"/>
+            <circle cx="279" cy="320" r="16" fill="#356228"/>
+          </g>
+          <g class="sway-tree" style="transform-origin: 280px 410px; animation-delay: 0.7s;">
+            <rect x="276" y="380" width="6" height="40" fill="#6B3410"/>
+            <circle cx="279" cy="380" r="16" fill="#356228"/>
+          </g>
+          <g class="sway-tree" style="transform-origin: 280px 270px; animation-delay: 0.3s;">
+            <rect x="276" y="240" width="6" height="40" fill="#6B3410"/>
+            <circle cx="279" cy="240" r="14" fill="#356228"/>
+          </g>
+
+          <!-- Private Farm (deep inside) -->
+          <rect x="300" y="200" width="170" height="240" rx="6"
+                fill="rgba(79, 139, 62, 0.3)"
+                stroke="#356228" stroke-width="3"/>
+          <text x="385" y="225" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#3E1F08">PRIVATE FARM</text>
+          <text x="385" y="240" text-anchor="middle" font-family="Inter" font-size="10" fill="#5A4636">(deep inside)</text>
+
+          <!-- granary -->
+          <g class="float" style="animation-delay: 1s;">
+            <rect x="350" y="280" width="60" height="50" fill="#8B5A2B"/>
+            <polygon points="345,280 415,280 380,255" fill="#5C2C0E"/>
+            <rect x="370" y="300" width="20" height="30" fill="#3E1F08"/>
+            <text x="380" y="345" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-weight="bold">granary</text>
+          </g>
+          <!-- private crops -->
+          <g fill="#356228">
+            <circle cx="335" cy="395" r="9"/>
+            <circle cx="355" cy="410" r="10"/>
+            <circle cx="375" cy="395" r="9"/>
+            <circle cx="415" cy="410" r="9"/>
+            <circle cx="435" cy="395" r="10"/>
+          </g>
+
+          <!-- subnet label arrows -->
+          <g font-family="Inter" font-size="10" fill="#3E1F08" font-weight="bold">
+            <text x="105" y="465" font-size="9" fill="#5A4636">subnet-public</text>
+            <text x="315" y="465" font-size="9" fill="#5A4636">subnet-private</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 3: NACLS
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-nacls">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 3 · The Checkpoints</span>
+      <h2>Strict gates at <em>every entrance</em></h2>
+      <p>Kojo builds a wooden gate at the entrance of <em>each section</em>. Every gate has the <strong>same printed list of rules</strong>: men in blue uniforms get in, anyone in red gets turned away. No exceptions. No questions. No favoritism.</p>
+      <p>The gate doesn't know your name. It only knows the rules. If you don't fit them, you don't pass.</p>
+      <p style="margin-top:10px"><span class="term">Stateless<span class="tooltip">A NACL checks every single packet against its rules — both incoming AND outgoing — independently.</span></span> · Rule-based · Subnet-level</p>
+      <div class="aws-pill">NACL — Network Access Control List</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayNACL()">Replay animation</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="naclSvg">
+          <!-- sky -->
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <!-- ground -->
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- farm boundary -->
+          <rect x="180" y="220" width="280" height="240" rx="6"
+                fill="rgba(244, 185, 66, 0.2)"
+                stroke="#6B3410" stroke-width="3"/>
+          <text x="320" y="445" text-anchor="middle" font-family="Inter" font-size="9" fill="#5A4636">subnet</text>
+
+          <!-- Approach road -->
+          <rect x="20" y="320" width="160" height="50" fill="#5A4636"/>
+          <g stroke="#F4B942" stroke-width="2" stroke-dasharray="8,8">
+            <line x1="20" y1="345" x2="180" y2="345"/>
+          </g>
+
+          <!-- GATE -->
+          <g id="gateGroup">
+            <!-- gate posts -->
+            <rect x="170" y="290" width="10" height="100" fill="#3E1F08"/>
+            <rect x="180" y="285" width="10" height="10" fill="#6B3410"/>
+            <!-- gate door (animatable) -->
+            <g id="gateDoor" style="transform-origin: 180px 295px;">
+              <rect x="180" y="295" width="80" height="80" fill="#8B5A2B" stroke="#3E1F08" stroke-width="2"/>
+              <line x1="180" y1="320" x2="260" y2="320" stroke="#3E1F08" stroke-width="2"/>
+              <line x1="180" y1="345" x2="260" y2="345" stroke="#3E1F08" stroke-width="2"/>
+              <line x1="220" y1="295" x2="220" y2="375" stroke="#3E1F08" stroke-width="2"/>
+            </g>
+          </g>
+
+          <!-- Rule sign -->
+          <g transform="translate(285, 255)">
+            <rect x="-1" y="0" width="2" height="20" fill="#3E1F08"/>
+            <rect x="-50" y="-50" width="100" height="50" rx="3" fill="#FFF8EA" stroke="#6B3410" stroke-width="2"/>
+            <text x="0" y="-37" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#3E1F08">GATE RULES</text>
+            <line x1="-45" y1="-32" x2="45" y2="-32" stroke="#6B3410" stroke-width="0.5"/>
+            <text x="-45" y="-22" font-family="Inter" font-size="7" fill="#27AE60">✓ ALLOW: blue</text>
+            <text x="-45" y="-13" font-family="Inter" font-size="7" fill="#C0392B">✗ DENY: red</text>
+            <text x="-45" y="-4" font-family="Inter" font-size="7" fill="#5A4636">otherwise: deny</text>
+          </g>
+
+          <!-- crops inside subnet -->
+          <g fill="#4F8B3E">
+            <circle cx="320" cy="400" r="9"/>
+            <circle cx="360" cy="415" r="10"/>
+            <circle cx="400" cy="400" r="9"/>
+            <circle cx="430" cy="420" r="9"/>
+          </g>
+
+          <!-- Visitors -->
+          <g id="visitorBlue" transform="translate(50, 320)">
+            <ellipse cx="0" cy="14" rx="8" ry="13" fill="#1565C0"/>
+            <circle cx="0" cy="-4" r="7" fill="#6B3410"/>
+            <rect x="-3" y="25" width="2" height="9" fill="#3E1F08"/>
+            <rect x="1" y="25" width="2" height="9" fill="#3E1F08"/>
+            <text x="0" y="-15" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">Blue</text>
+          </g>
+
+          <g id="visitorRed" transform="translate(50, 320)" style="opacity:0">
+            <ellipse cx="0" cy="14" rx="8" ry="13" fill="#C0392B"/>
+            <circle cx="0" cy="-4" r="7" fill="#6B3410"/>
+            <rect x="-3" y="25" width="2" height="9" fill="#3E1F08"/>
+            <rect x="1" y="25" width="2" height="9" fill="#3E1F08"/>
+            <text x="0" y="-15" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">Red</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="naclLabel" style="top: 10%; right: 10%;">Watching the gate...</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 4: SECURITY GROUPS
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-sg">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 4 · The Guards</span>
+      <h2>Smart guards at <em>each building</em></h2>
+      <p>Inside the subnet, each important building has its own personal guard. The granary has one. The farmhouse has one. They aren't standing at the section gate — they're standing right at the door.</p>
+      <p>These guards are <strong>smarter</strong> than the gatekeeper. They don't follow a generic list — each one knows exactly which visitors their specific building expects.</p>
+      <p>If a visitor passed the section gate, they STILL have to convince the guard at the building. Two layers of safety.</p>
+      <div class="aws-pill">Security Groups — Per Resource</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- subnet boundary -->
+          <rect x="40" y="220" width="430" height="250" rx="6"
+                fill="rgba(244, 185, 66, 0.2)"
+                stroke="#6B3410" stroke-width="3" stroke-dasharray="8,4"/>
+          <text x="50" y="240" font-family="Inter" font-size="10" fill="#5A4636" font-weight="bold">subnet (already past the gate)</text>
+
+          <!-- Granary with guard -->
+          <g>
+            <rect x="100" y="300" width="80" height="70" fill="#8B5A2B"/>
+            <polygon points="95,300 185,300 140,270" fill="#5C2C0E"/>
+            <rect x="125" y="325" width="30" height="45" fill="#3E1F08"/>
+            <text x="140" y="395" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#3E1F08">GRANARY</text>
+
+            <!-- Guard with spear -->
+            <g transform="translate(195, 340)" class="float">
+              <ellipse cx="0" cy="10" rx="9" ry="14" fill="#356228"/>
+              <circle cx="0" cy="-5" r="8" fill="#6B3410"/>
+              <ellipse cx="0" cy="-12" rx="14" ry="3" fill="#3E1F08"/>
+              <rect x="-4" y="22" width="3" height="10" fill="#3E1F08"/>
+              <rect x="1" y="22" width="3" height="10" fill="#3E1F08"/>
+              <!-- spear -->
+              <line x1="12" y1="-15" x2="14" y2="25" stroke="#6B3410" stroke-width="2"/>
+              <polygon points="12,-15 8,-22 16,-22" fill="#5A4636"/>
+            </g>
+            <text x="195" y="385" text-anchor="middle" font-family="Inter" font-size="9" fill="#356228" font-weight="bold">SG-granary</text>
+          </g>
+
+          <!-- Farmhouse with guard -->
+          <g>
+            <rect x="320" y="300" width="80" height="70" fill="#C8512A"/>
+            <polygon points="315,300 405,300 360,270" fill="#8B2E0F"/>
+            <rect x="345" y="325" width="30" height="45" fill="#3E1F08"/>
+            <text x="360" y="395" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#3E1F08">FARMHOUSE</text>
+
+            <!-- Guard -->
+            <g transform="translate(290, 340)" class="float" style="animation-delay: 0.5s;">
+              <ellipse cx="0" cy="10" rx="9" ry="14" fill="#1565C0"/>
+              <circle cx="0" cy="-5" r="8" fill="#6B3410"/>
+              <ellipse cx="0" cy="-12" rx="14" ry="3" fill="#3E1F08"/>
+              <rect x="-4" y="22" width="3" height="10" fill="#3E1F08"/>
+              <rect x="1" y="22" width="3" height="10" fill="#3E1F08"/>
+              <line x1="-12" y1="-15" x2="-14" y2="25" stroke="#6B3410" stroke-width="2"/>
+              <polygon points="-12,-15 -8,-22 -16,-22" fill="#5A4636"/>
+            </g>
+            <text x="290" y="385" text-anchor="middle" font-family="Inter" font-size="9" fill="#1565C0" font-weight="bold">SG-house</text>
+          </g>
+
+          <!-- Speech bubble for granary guard -->
+          <g transform="translate(220, 300)">
+            <rect x="0" y="0" width="90" height="28" rx="14" fill="#FFF8EA" stroke="#356228" stroke-width="1.5"/>
+            <polygon points="14,28 18,36 22,28" fill="#FFF8EA" stroke="#356228" stroke-width="1.5"/>
+            <text x="45" y="13" text-anchor="middle" font-family="Inter" font-size="8" fill="#356228" font-weight="bold">"Only Kojo's family</text>
+            <text x="45" y="22" text-anchor="middle" font-family="Inter" font-size="8" fill="#356228" font-weight="bold">touches the grain"</text>
+          </g>
+
+          <!-- Speech bubble for house guard -->
+          <g transform="translate(180, 460)">
+            <rect x="0" y="-22" width="120" height="22" rx="11" fill="#FFF8EA" stroke="#1565C0" stroke-width="1.5"/>
+            <polygon points="100,0 96,8 92,0" fill="#FFF8EA" stroke="#1565C0" stroke-width="1.5"/>
+            <text x="60" y="-7" text-anchor="middle" font-family="Inter" font-size="9" fill="#1565C0" font-weight="bold">"I know who's invited"</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 5: SG REFERENCING SG (CRITICAL)
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-sg-ref">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 5 · Trust Between Guards</span>
+      <h2>"Only escorted by <em>Ama's guards</em>"</h2>
+      <p>Across the valley, Kojo's friend Ama also has guards on her farm. One day, Kojo tells his guard at the granary something powerful:</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--terracotta); padding: 12px 16px; border-radius: 6px; font-style: italic; color: var(--soil-dark);">"You don't need to recognize every face. If a visitor walks in <strong>escorted by an Ama-guard</strong>, that's enough. Let them in."</p>
+      <p>Now Kojo's guard doesn't check IPs or addresses. He just looks at the badge of the escort. <strong>One Security Group references another</strong> — pure trust based on identity, not geography.</p>
+      <p>This is the <strong>most powerful pattern</strong> in AWS networking. It's how web servers talk to databases without ever exposing the database to the world.</p>
+      <div class="aws-pill">SG → Source: another SG</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replaySGRef()">Replay escort</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="sgRefSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- Ama's farm (left) -->
+          <rect x="20" y="240" width="160" height="220" rx="6"
+                fill="rgba(216, 122, 80, 0.2)"
+                stroke="#C8512A" stroke-width="3"/>
+          <text x="100" y="260" text-anchor="middle" font-family="Georgia" font-size="12" font-weight="bold" fill="#3E1F08">AMA'S FARM</text>
+          <text x="100" y="455" text-anchor="middle" font-family="Inter" font-size="9" fill="#C8512A" font-weight="bold">SG-Ama</text>
+
+          <!-- Kojo's granary (right) -->
+          <rect x="290" y="240" width="190" height="220" rx="6"
+                fill="rgba(244, 185, 66, 0.2)"
+                stroke="#6B3410" stroke-width="3"/>
+          <text x="385" y="260" text-anchor="middle" font-family="Georgia" font-size="12" font-weight="bold" fill="#3E1F08">KOJO'S GRANARY</text>
+          <text x="385" y="455" text-anchor="middle" font-family="Inter" font-size="9" fill="#356228" font-weight="bold">SG-granary</text>
+
+          <!-- Granary building -->
+          <g>
+            <rect x="380" y="320" width="60" height="55" fill="#8B5A2B"/>
+            <polygon points="375,320 445,320 410,295" fill="#5C2C0E"/>
+            <rect x="402" y="345" width="16" height="30" fill="#3E1F08"/>
+          </g>
+
+          <!-- Kojo's guard at the granary entrance -->
+          <g transform="translate(330, 360)">
+            <ellipse cx="0" cy="10" rx="8" ry="12" fill="#356228"/>
+            <circle cx="0" cy="-3" r="7" fill="#6B3410"/>
+            <ellipse cx="0" cy="-9" rx="12" ry="3" fill="#3E1F08"/>
+            <rect x="-3" y="20" width="2" height="9" fill="#3E1F08"/>
+            <rect x="1" y="20" width="2" height="9" fill="#3E1F08"/>
+            <line x1="11" y1="-12" x2="13" y2="22" stroke="#6B3410" stroke-width="2"/>
+            <polygon points="11,-12 7,-19 15,-19" fill="#5A4636"/>
+          </g>
+
+          <!-- Path between farms -->
+          <g stroke="#5A4636" stroke-width="2" stroke-dasharray="4,4" opacity="0.5">
+            <line x1="180" y1="350" x2="290" y2="350"/>
+          </g>
+
+          <!-- The escort scenario - Ama guard walking with visitor -->
+          <g id="escortGroup" transform="translate(60, 370)">
+            <!-- Ama's guard -->
+            <g>
+              <ellipse cx="0" cy="10" rx="8" ry="12" fill="#C8512A"/>
+              <circle cx="0" cy="-3" r="7" fill="#6B3410"/>
+              <ellipse cx="0" cy="-9" rx="12" ry="3" fill="#3E1F08"/>
+              <rect x="-3" y="20" width="2" height="9" fill="#3E1F08"/>
+              <rect x="1" y="20" width="2" height="9" fill="#3E1F08"/>
+              <!-- Ama badge -->
+              <circle cx="-3" cy="6" r="3" fill="#F4B942" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="-3" y="8" text-anchor="middle" font-family="Inter" font-size="4" fill="#3E1F08" font-weight="bold">A</text>
+            </g>
+            <!-- visitor walking with -->
+            <g transform="translate(22, 0)">
+              <ellipse cx="0" cy="10" rx="8" ry="12" fill="#1565C0"/>
+              <circle cx="0" cy="-3" r="7" fill="#6B3410"/>
+              <rect x="-3" y="20" width="2" height="9" fill="#3E1F08"/>
+              <rect x="1" y="20" width="2" height="9" fill="#3E1F08"/>
+            </g>
+          </g>
+
+          <!-- Solo visitor (will be denied) -->
+          <g id="soloGroup" transform="translate(60, 280)" style="opacity:0">
+            <ellipse cx="0" cy="10" rx="8" ry="12" fill="#1565C0"/>
+            <circle cx="0" cy="-3" r="7" fill="#6B3410"/>
+            <rect x="-3" y="20" width="2" height="9" fill="#3E1F08"/>
+            <rect x="1" y="20" width="2" height="9" fill="#3E1F08"/>
+            <text x="0" y="-15" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">solo</text>
+          </g>
+
+          <!-- Speech bubble -->
+          <g id="guardSpeech" transform="translate(220, 310)" style="opacity: 0; transition: opacity 0.5s;">
+            <rect x="0" y="0" width="100" height="28" rx="14" fill="#FFF8EA" stroke="#356228" stroke-width="1.5"/>
+            <polygon points="80,28 86,36 92,28" fill="#FFF8EA" stroke="#356228" stroke-width="1.5"/>
+            <text x="50" y="13" text-anchor="middle" font-family="Inter" font-size="8" fill="#356228" font-weight="bold">"With Ama's escort?</text>
+            <text x="50" y="22" text-anchor="middle" font-family="Inter" font-size="8" fill="#356228" font-weight="bold">come right in!"</text>
+          </g>
+
+          <!-- Rule list -->
+          <g transform="translate(250, 215)" opacity="0.95">
+            <rect x="-90" y="-25" width="180" height="22" rx="11" fill="#3E1F08"/>
+            <text x="0" y="-10" text-anchor="middle" font-family="Courier New" font-size="10" fill="#F4B942" font-weight="bold">SG-granary allow: source = SG-Ama</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="sgRefLabel" style="top: 10%; left: 10%;">Watch the escort</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 6: STATEFUL
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-stateful">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 6 · The Memory</span>
+      <h2>The guard <em>remembers you</em></h2>
+      <p>Here's where it gets clever. When Ama walks into Kojo's granary, the guard checks her in carefully. He writes her name down.</p>
+      <p>When Ama walks BACK OUT? The guard doesn't ask any questions. He saw her come in. He remembers. <strong>The exit is automatic.</strong></p>
+      <p>This is what makes Security Groups <span class="term">stateful<span class="tooltip">Stateful means the system tracks active connections — incoming requests are checked, but matching return traffic is automatically allowed without re-checking the rules.</span></span> — they remember every connection they've allowed and let the response back through automatically.</p>
+      <p>NACLs don't do this. They check every direction, every time. Like a guard who has dementia.</p>
+      <div class="aws-pill">Stateful — Connection-Aware</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayStateful()">Replay her visit</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="statefulSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- granary -->
+          <g>
+            <rect x="280" y="260" width="100" height="90" fill="#8B5A2B"/>
+            <polygon points="275,260 385,260 330,225" fill="#5C2C0E"/>
+            <rect x="318" y="290" width="24" height="60" fill="#3E1F08"/>
+            <text x="330" y="375" text-anchor="middle" font-family="Inter" font-size="11" font-weight="bold" fill="#3E1F08">GRANARY</text>
+          </g>
+
+          <!-- Guard at entrance -->
+          <g transform="translate(255, 320)">
+            <ellipse cx="0" cy="10" rx="9" ry="14" fill="#356228"/>
+            <circle cx="0" cy="-5" r="8" fill="#6B3410"/>
+            <ellipse cx="0" cy="-12" rx="14" ry="3" fill="#3E1F08"/>
+            <rect x="-4" y="22" width="3" height="10" fill="#3E1F08"/>
+            <rect x="1" y="22" width="3" height="10" fill="#3E1F08"/>
+            <line x1="12" y1="-15" x2="14" y2="25" stroke="#6B3410" stroke-width="2"/>
+            <polygon points="12,-15 8,-22 16,-22" fill="#5A4636"/>
+            <!-- notepad -->
+            <rect x="-15" y="6" width="10" height="12" fill="#FFF8EA" stroke="#3E1F08" stroke-width="0.8"/>
+            <line x1="-13" y1="9" x2="-7" y2="9" stroke="#3E1F08" stroke-width="0.5"/>
+            <line x1="-13" y1="12" x2="-7" y2="12" stroke="#3E1F08" stroke-width="0.5"/>
+            <line x1="-13" y1="15" x2="-7" y2="15" stroke="#3E1F08" stroke-width="0.5"/>
+          </g>
+
+          <!-- Memory book -->
+          <g transform="translate(50, 80)">
+            <rect x="0" y="0" width="120" height="80" rx="3" fill="#FFF8EA" stroke="#3E1F08" stroke-width="2"/>
+            <text x="60" y="16" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#3E1F08">VISITOR LOG</text>
+            <line x1="10" y1="22" x2="110" y2="22" stroke="#3E1F08" stroke-width="0.6"/>
+            <text id="logEntry1" x="10" y="36" font-family="Courier New" font-size="9" fill="#356228" opacity="0">✓ Ama → entered (in)</text>
+            <text id="logEntry2" x="10" y="52" font-family="Courier New" font-size="9" fill="#356228" opacity="0">✓ Ama → already in book</text>
+            <text id="logEntry3" x="10" y="68" font-family="Courier New" font-size="9" fill="#1565C0" opacity="0">⟲ Ama → exit auto-allowed</text>
+          </g>
+
+          <!-- Ama -->
+          <g id="amaWalker" transform="translate(50, 380)">
+            <ellipse cx="0" cy="10" rx="9" ry="14" fill="#C8512A"/>
+            <circle cx="0" cy="-5" r="8" fill="#6B3410"/>
+            <ellipse cx="0" cy="-12" rx="14" ry="3" fill="#3E1F08"/>
+            <rect x="-4" y="22" width="3" height="10" fill="#3E1F08"/>
+            <rect x="1" y="22" width="3" height="10" fill="#3E1F08"/>
+            <text x="0" y="-20" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-weight="bold">Ama</text>
+          </g>
+
+          <!-- Direction arrow -->
+          <g id="directionArrow" transform="translate(150, 380)" opacity="0">
+            <line x1="0" y1="0" x2="50" y2="0" stroke="#27AE60" stroke-width="2"/>
+            <polygon points="50,0 44,-4 44,4" fill="#27AE60"/>
+            <text x="25" y="-8" text-anchor="middle" font-family="Inter" font-size="9" fill="#27AE60" font-weight="bold">ENTERS</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="statefulLabel" style="top: 10%; right: 10%;">Watching the log</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 7: PUBLIC VS PRIVATE
+     ═══════════════════════════════════════ -->
+<section class="scene" id="scene-access">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 7 · The Two Roads</span>
+      <h2>Two paths, <em>two purposes</em></h2>
+      <p>The public farm has a gate that opens directly to the road. Strangers can walk in and buy maize. The whole point is to be reached.</p>
+      <p>The private farm has no road access. To get there, you must first enter via the public farm's path, walk THROUGH it, and then take a small inner trail to the granary. There's no shortcut from the outside world.</p>
+      <p>That's exactly how AWS works. <strong>Public subnets</strong> have a route to the internet (an <em>Internet Gateway</em>). <strong>Private subnets</strong> don't — they reach the world only through a public subnet's NAT.</p>
+      <div class="aws-pill">Internet Gateway · NAT · Route Tables</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- The public road on left -->
+          <rect x="0" y="180" width="50" height="320" fill="#5A4636"/>
+          <g stroke="#F4B942" stroke-width="3" stroke-dasharray="10,12">
+            <line x1="25" y1="180" x2="25" y2="500"/>
+          </g>
+          <text x="25" y="170" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-weight="bold">VILLAGE</text>
+          <text x="25" y="160" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-weight="bold">ROAD</text>
+
+          <!-- VPC outer -->
+          <rect x="70" y="220" width="410" height="240" rx="6"
+                fill="rgba(180, 120, 70, 0.1)"
+                stroke="#6B3410" stroke-width="3"/>
+
+          <!-- Public farm -->
+          <rect x="80" y="240" width="170" height="200" rx="5"
+                fill="rgba(244, 185, 66, 0.4)"
+                stroke="#DC9A2A" stroke-width="2"/>
+          <text x="165" y="260" text-anchor="middle" font-family="Georgia" font-size="11" font-weight="bold" fill="#3E1F08">PUBLIC</text>
+
+          <!-- Public farm gate (open to road) -->
+          <rect x="65" y="320" width="20" height="40" fill="#8B5A2B" stroke="#3E1F08" stroke-width="1.5"/>
+          <text x="56" y="312" text-anchor="middle" font-family="Inter" font-size="7" fill="#3E1F08" font-weight="bold">↑ road gate ↑</text>
+
+          <!-- Private farm -->
+          <rect x="280" y="240" width="180" height="200" rx="5"
+                fill="rgba(79, 139, 62, 0.3)"
+                stroke="#356228" stroke-width="2"/>
+          <text x="370" y="260" text-anchor="middle" font-family="Georgia" font-size="11" font-weight="bold" fill="#3E1F08">PRIVATE</text>
+
+          <!-- Wall between -->
+          <line x1="265" y1="240" x2="265" y2="440" stroke="#6B3410" stroke-width="2"/>
+
+          <!-- Inner path between public &amp; private -->
+          <g>
+            <rect x="245" y="335" width="40" height="20" fill="#5A4636"/>
+            <text x="265" y="370" text-anchor="middle" font-family="Inter" font-size="7" fill="#3E1F08" font-weight="bold">inner path</text>
+          </g>
+
+          <!-- Public farm has stall -->
+          <g class="float">
+            <rect x="125" y="290" width="60" height="30" fill="#C8512A"/>
+            <polygon points="120,290 190,290 155,275" fill="#8B2E0F"/>
+            <rect x="140" y="298" width="8" height="8" fill="#F4B942"/>
+            <rect x="155" y="298" width="8" height="8" fill="#4F8B3E"/>
+          </g>
+          <g fill="#4F8B3E">
+            <circle cx="115" cy="380" r="9"/>
+            <circle cx="140" cy="395" r="10"/>
+            <circle cx="170" cy="380" r="9"/>
+            <circle cx="200" cy="395" r="9"/>
+            <circle cx="225" cy="380" r="10"/>
+          </g>
+
+          <!-- Private has granary -->
+          <g class="float" style="animation-delay: 0.8s;">
+            <rect x="335" y="295" width="70" height="55" fill="#8B5A2B"/>
+            <polygon points="330,295 410,295 370,270" fill="#5C2C0E"/>
+            <rect x="362" y="320" width="16" height="30" fill="#3E1F08"/>
+          </g>
+          <g fill="#356228">
+            <circle cx="320" cy="395" r="9"/>
+            <circle cx="345" cy="410" r="10"/>
+            <circle cx="375" cy="395" r="9"/>
+            <circle cx="405" cy="410" r="9"/>
+            <circle cx="430" cy="395" r="10"/>
+          </g>
+
+          <!-- Visitor walking IN from road into public -->
+          <g class="float">
+            <g transform="translate(45, 340)">
+              <ellipse cx="0" cy="10" rx="8" ry="13" fill="#1565C0"/>
+              <circle cx="0" cy="-4" r="7" fill="#6B3410"/>
+            </g>
+          </g>
+          <text x="55" y="370" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">visitor</text>
+
+          <!-- arrow showing path -->
+          <g stroke="#27AE60" stroke-width="2" fill="none">
+            <path d="M 70 345 Q 130 345 130 345" marker-end="url(#arrG)"/>
+          </g>
+          <defs>
+            <marker id="arrG" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <polygon points="0,0 8,4 0,8" fill="#27AE60"/>
+            </marker>
+          </defs>
+
+          <!-- ✗ on top of trying to cross from outside to private -->
+          <g transform="translate(490, 340)">
+            <circle r="14" fill="#C0392B" opacity="0.85"/>
+            <text y="5" text-anchor="middle" font-family="Inter" font-size="16" fill="#fff" font-weight="bold">✗</text>
+          </g>
+          <text x="465" y="370" text-anchor="middle" font-family="Inter" font-size="8" fill="#C0392B" font-weight="bold">no road access</text>
+
+          <!-- IGW label on top of public -->
+          <g transform="translate(165, 220)">
+            <rect x="-30" y="-15" width="60" height="14" rx="7" fill="#1565C0"/>
+            <text y="-5" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#FFF8EA">IGW</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SCENE 8: SUMMARY
+     ═══════════════════════════════════════ -->
+<section class="scene summary" id="scene-summary">
+  <div class="scene-inner" style="grid-template-columns: 1fr;">
+    <div class="scene-text" style="text-align:center;">
+      <span class="chapter-tag">The Map</span>
+      <h2>The whole farm, in <em>AWS terms</em></h2>
+      <p style="max-width: 640px; margin: 0 auto 0;">Now hold the picture in your head. Every AWS networking concept you'll ever read about — VPCs, subnets, NACLs, security groups — they all map cleanly to one farm in Nkrumah Valley.</p>
+
+      <div class="summary-grid">
+        <div class="summary-card c1">
+          <div class="icon">🏞️</div>
+          <div class="farm-side">The Whole Farm</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">VPC</div>
+          <p>The boundary of everything Kojo owns.</p>
+        </div>
+        <div class="summary-card c2">
+          <div class="icon">🌾</div>
+          <div class="farm-side">Farm Sections</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Subnets</div>
+          <p>Public near the road, private deep inside.</p>
+        </div>
+        <div class="summary-card c3">
+          <div class="icon">🚪</div>
+          <div class="farm-side">Section Gate</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">NACL</div>
+          <p>Strict, stateless, rule-based — no exceptions.</p>
+        </div>
+        <div class="summary-card c4">
+          <div class="icon">💂</div>
+          <div class="farm-side">The Guards</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Security Group</div>
+          <p>Smart, stateful, per-resource. They remember.</p>
+        </div>
+      </div>
+
+      <div class="end-cta">
+        <p style="margin-bottom: 20px; font-style: italic; color: var(--soil-dark);">"The cloud isn't magic. It's a farm with very good fences."</p>
+        <a href="#intro" class="next-btn">Read the story again</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <strong>The Farmlands of Nkrumah Valley</strong> · A Ghanaian story for understanding AWS networking · cloudwithshad
+</div>
+
+<script>
+  // ═══════════════════════════════════════
+  // PROGRESS BAR + CHAPTER NAV
+  // ═══════════════════════════════════════
+  const progressFill = document.getElementById('progressFill');
+  const dots = document.querySelectorAll('.chapter-dot');
+  const sections = ['intro', 'scene-vpc', 'scene-subnets', 'scene-nacls', 'scene-sg', 'scene-sg-ref', 'scene-stateful', 'scene-access', 'scene-summary'];
+
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (scrollPos / docHeight) * 100;
+    progressFill.style.width = pct + '%';
+
+    let activeIdx = 0;
+    sections.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && scrollPos + window.innerHeight * 0.5 >= el.offsetTop) {
+        activeIdx = i;
+      }
+    });
+    dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+  });
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(dot.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // ═══════════════════════════════════════
+  // INTERSECTION OBSERVER FOR SCENE FADE-IN
+  // ═══════════════════════════════════════
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        triggerSceneAnimations(entry.target.id);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.scene').forEach(s => observer.observe(s));
+
+  // ═══════════════════════════════════════
+  // SCENE-SPECIFIC ANIMATIONS
+  // ═══════════════════════════════════════
+  const triggered = new Set();
+  function triggerSceneAnimations(id) {
+    if (triggered.has(id)) return;
+    triggered.add(id);
+    if (id === 'scene-nacls') setTimeout(replayNACL, 400);
+    if (id === 'scene-sg-ref') setTimeout(replaySGRef, 400);
+    if (id === 'scene-stateful') setTimeout(replayStateful, 400);
+  }
+
+  // ═══ NACL animation: blue passes, red gets denied ═══
+  function replayNACL() {
+    const blue = document.getElementById('visitorBlue');
+    const red = document.getElementById('visitorRed');
+    const gate = document.getElementById('gateDoor');
+    const label = document.getElementById('naclLabel');
+
+    if (!blue || !red) return;
+
+    // reset
+    blue.style.transition = 'none';
+    blue.setAttribute('transform', 'translate(50, 320)');
+    blue.style.opacity = '1';
+    red.style.transition = 'none';
+    red.setAttribute('transform', 'translate(50, 320)');
+    red.style.opacity = '0';
+    gate.style.transition = 'none';
+    gate.style.transform = 'rotate(0deg)';
+    label.classList.remove('visible', 'allow', 'deny');
+    label.textContent = '';
+
+    setTimeout(() => {
+      // Blue approaches
+      label.textContent = 'Blue visitor approaching...';
+      label.classList.add('visible');
+      blue.style.transition = 'transform 1.6s ease-in-out';
+      blue.setAttribute('transform', 'translate(155, 335)');
+
+      setTimeout(() => {
+        // Gate opens
+        label.textContent = '✓ ALLOW';
+        label.classList.add('allow');
+        gate.style.transition = 'transform 0.6s ease-out';
+        gate.style.transformOrigin = '180px 295px';
+        gate.style.transform = 'rotate(-65deg)';
+
+        setTimeout(() => {
+          // Blue walks through
+          blue.style.transition = 'transform 1.5s ease-in-out, opacity 1s';
+          blue.setAttribute('transform', 'translate(380, 360)');
+          blue.style.opacity = '0';
+
+          setTimeout(() => {
+            // Gate closes
+            gate.style.transform = 'rotate(0deg)';
+            label.classList.remove('allow', 'visible');
+
+            // Red approaches
+            setTimeout(() => {
+              red.style.transition = 'none';
+              red.setAttribute('transform', 'translate(50, 320)');
+              red.style.opacity = '1';
+              label.classList.remove('allow', 'deny');
+              label.textContent = 'Red visitor approaching...';
+              label.classList.add('visible');
+
+              setTimeout(() => {
+                red.style.transition = 'transform 1.6s ease-in-out';
+                red.setAttribute('transform', 'translate(155, 335)');
+
+                setTimeout(() => {
+                  // Denied!
+                  label.textContent = '✗ DENY';
+                  label.classList.add('deny');
+                  red.style.transition = 'transform 0.4s ease-out';
+                  red.style.transform = `translate(150px, 335px)`;
+                  red.setAttribute('transform', 'translate(140, 335)');
+                  // shake
+                  let shakes = 0;
+                  const shakeInterval = setInterval(() => {
+                    red.setAttribute('transform', shakes % 2 === 0 ? 'translate(135, 335)' : 'translate(145, 335)');
+                    shakes++;
+                    if (shakes > 5) {
+                      clearInterval(shakeInterval);
+                      // walks away
+                      red.style.transition = 'transform 1.5s ease-in-out, opacity 1s';
+                      red.setAttribute('transform', 'translate(20, 335)');
+                      red.style.opacity = '0';
+                      setTimeout(() => label.classList.remove('visible'), 1200);
+                    }
+                  }, 80);
+                }, 1700);
+              }, 50);
+            }, 800);
+          }, 1500);
+        }, 700);
+      }, 1700);
+    }, 100);
+  }
+
+  // ═══ SG REF animation: escort allowed, solo denied ═══
+  function replaySGRef() {
+    const escort = document.getElementById('escortGroup');
+    const solo = document.getElementById('soloGroup');
+    const speech = document.getElementById('guardSpeech');
+    const label = document.getElementById('sgRefLabel');
+
+    if (!escort || !solo) return;
+
+    // reset
+    escort.style.transition = 'none';
+    escort.setAttribute('transform', 'translate(60, 370)');
+    escort.style.opacity = '1';
+    solo.style.transition = 'none';
+    solo.setAttribute('transform', 'translate(60, 280)');
+    solo.style.opacity = '0';
+    speech.style.opacity = '0';
+    label.classList.remove('visible', 'allow', 'deny');
+
+    setTimeout(() => {
+      label.textContent = 'Visitor with Ama escort →';
+      label.classList.add('visible');
+      // escort approaches granary
+      escort.style.transition = 'transform 2.5s ease-in-out';
+      escort.setAttribute('transform', 'translate(310, 370)');
+
+      setTimeout(() => {
+        speech.style.opacity = '1';
+        label.textContent = '✓ ESCORTED — ALLOW';
+        label.classList.add('allow');
+
+        setTimeout(() => {
+          // they enter granary, fade out
+          escort.style.transition = 'transform 1.2s ease-in, opacity 1s';
+          escort.setAttribute('transform', 'translate(400, 350)');
+          escort.style.opacity = '0';
+          speech.style.opacity = '0';
+
+          setTimeout(() => {
+            label.classList.remove('allow');
+            label.textContent = 'Solo visitor — no escort →';
+            // Solo visitor try
+            solo.style.transition = 'none';
+            solo.setAttribute('transform', 'translate(60, 280)');
+            solo.style.opacity = '1';
+
+            setTimeout(() => {
+              solo.style.transition = 'transform 2s ease-in-out';
+              solo.setAttribute('transform', 'translate(280, 280)');
+
+              setTimeout(() => {
+                label.textContent = '✗ NOT ESCORTED — DENY';
+                label.classList.add('deny');
+                // shake
+                let shakes = 0;
+                const inter = setInterval(() => {
+                  solo.setAttribute('transform', shakes % 2 === 0 ? 'translate(275, 280)' : 'translate(285, 280)');
+                  shakes++;
+                  if (shakes > 5) {
+                    clearInterval(inter);
+                    solo.style.transition = 'transform 1.5s ease-in, opacity 1s';
+                    solo.setAttribute('transform', 'translate(40, 280)');
+                    solo.style.opacity = '0';
+                    setTimeout(() => label.classList.remove('visible'), 1200);
+                  }
+                }, 100);
+              }, 2100);
+            }, 50);
+          }, 1300);
+        }, 1500);
+      }, 2600);
+    }, 100);
+  }
+
+  // ═══ STATEFUL animation: enter logged, exit auto-allowed ═══
+  function replayStateful() {
+    const ama = document.getElementById('amaWalker');
+    const log1 = document.getElementById('logEntry1');
+    const log2 = document.getElementById('logEntry2');
+    const log3 = document.getElementById('logEntry3');
+    const arrow = document.getElementById('directionArrow');
+    const label = document.getElementById('statefulLabel');
+
+    if (!ama) return;
+
+    // reset
+    ama.style.transition = 'none';
+    ama.setAttribute('transform', 'translate(50, 380)');
+    log1.style.opacity = '0';
+    log2.style.opacity = '0';
+    log3.style.opacity = '0';
+    arrow.style.opacity = '0';
+    label.classList.remove('visible', 'allow', 'deny');
+
+    setTimeout(() => {
+      label.textContent = 'Ama walks toward granary';
+      label.classList.add('visible');
+      arrow.style.transition = 'opacity 0.4s';
+      arrow.style.opacity = '1';
+
+      // walk in
+      ama.style.transition = 'transform 2.8s ease-in-out';
+      ama.setAttribute('transform', 'translate(245, 360)');
+
+      setTimeout(() => {
+        // log entry 1
+        label.textContent = '✓ Logged + entered';
+        label.classList.add('allow');
+        log1.style.transition = 'opacity 0.5s';
+        log1.style.opacity = '1';
+        arrow.style.opacity = '0';
+
+        setTimeout(() => {
+          // ama disappears into granary
+          ama.style.transition = 'transform 1s ease-in, opacity 1s';
+          ama.setAttribute('transform', 'translate(330, 320)');
+          ama.style.opacity = '0';
+
+          setTimeout(() => {
+            log2.style.transition = 'opacity 0.5s';
+            log2.style.opacity = '1';
+            label.textContent = 'Ama heading back out...';
+            label.classList.remove('allow');
+
+            setTimeout(() => {
+              // ama reappears coming OUT
+              ama.style.transition = 'none';
+              ama.setAttribute('transform', 'translate(330, 320)');
+              ama.style.opacity = '1';
+              ama.style.transition = 'transform 2.5s ease-in-out';
+              ama.setAttribute('transform', 'translate(50, 380)');
+
+              setTimeout(() => {
+                log3.style.transition = 'opacity 0.5s';
+                log3.style.opacity = '1';
+                label.textContent = '⟲ Auto-allowed (stateful!)';
+                label.classList.add('allow');
+                setTimeout(() => label.classList.remove('visible'), 2500);
+              }, 1500);
+            }, 1500);
+          }, 1100);
+        }, 1500);
+      }, 2900);
+    }, 100);
+  }
+
+  // Replay buttons (already wired via onclick attributes)
+  window.replayNACL = replayNACL;
+  window.replaySGRef = replaySGRef;
+  window.replayStateful = replayStateful;
+</script>
+</body>
+</html>

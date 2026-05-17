@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Makola Market — AWS IAM, the Ghana Way</title>
+<style>
+  :root {
+    --plum: #5B2C5F;
+    --plum-deep: #3D1A40;
+    --magenta: #B8336A;
+    --magenta-deep: #8E2453;
+    --gold: #E8B647;
+    --gold-deep: #C99320;
+    --teal: #2A9D8F;
+    --teal-deep: #1F756B;
+    --coral: #E76F51;
+    --coral-deep: #C8553A;
+    --cream: #FFF6E5;
+    --warm-bg: #F4D9A0;
+    --warm-deep: #E0AE5E;
+    --ink: #2D1810;
+    --ink-soft: #5A3E2B;
+    --shadow: rgba(45, 24, 16, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Georgia', 'Lora', serif;
+    background: radial-gradient(ellipse at top, #FCE7BD 0%, var(--warm-bg) 30%, var(--warm-deep) 65%, #C99362 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .progress-rail { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: rgba(45, 24, 16, 0.1); z-index: 200; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--magenta), var(--gold)); width: 0%; transition: width 0.4s ease; }
+
+  .chapter-nav { position: fixed; right: 24px; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+  .chapter-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(45, 24, 16, 0.25); border: 2px solid var(--cream); cursor: pointer; transition: all 0.3s ease; position: relative; }
+  .chapter-dot:hover { transform: scale(1.4); background: var(--gold); }
+  .chapter-dot.active { background: var(--magenta); transform: scale(1.4); box-shadow: 0 0 0 4px rgba(184, 51, 106, 0.25); }
+  .chapter-dot::after { content: attr(data-label); position: absolute; right: 22px; top: 50%; transform: translateY(-50%); background: var(--ink); color: var(--cream); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: 'Inter', system-ui, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .chapter-dot:hover::after { opacity: 1; }
+  @media (max-width: 700px) { .chapter-nav { display: none; } }
+
+  .scene { min-height: 100vh; width: 100%; padding: 80px 20px 60px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .scene-inner { max-width: 1100px; width: 100%; display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+  @media (max-width: 900px) { .scene-inner { grid-template-columns: 1fr; gap: 28px; } }
+
+  .scene-text { opacity: 0; transform: translateY(40px); transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  .scene.in-view .scene-text { opacity: 1; transform: translateY(0); }
+  .scene-visual { opacity: 0; transform: translateY(40px) scale(0.96); transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s, transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s; }
+  .scene.in-view .scene-visual { opacity: 1; transform: translateY(0) scale(1); }
+
+  .chapter-tag { display: inline-block; padding: 6px 14px; background: rgba(184, 51, 106, 0.15); border: 1.5px solid var(--magenta); color: var(--magenta-deep); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 30px; margin-bottom: 18px; }
+  .scene h2 { font-family: 'Georgia', serif; font-size: clamp(28px, 4vw, 44px); color: var(--ink); line-height: 1.15; margin-bottom: 18px; font-weight: 700; }
+  .scene h2 em { color: var(--magenta-deep); font-style: italic; }
+  .scene-text p { font-size: 17px; color: var(--ink-soft); line-height: 1.75; margin-bottom: 14px; }
+  .scene-text p strong { color: var(--ink); background: rgba(232, 182, 71, 0.4); padding: 1px 6px; border-radius: 3px; }
+
+  .aws-pill { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; padding: 10px 18px; background: var(--ink); color: var(--gold); border-radius: 30px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 6px 18px var(--shadow); }
+  .aws-pill::before { content: '☁'; font-size: 16px; color: var(--magenta); }
+
+  .term { background: rgba(232, 182, 71, 0.4); color: var(--ink); border-bottom: 2px dotted var(--gold-deep); cursor: help; position: relative; padding: 0 3px; font-weight: 600; }
+  .term:hover .tooltip { opacity: 1; transform: translate(-50%, -2px); pointer-events: auto; }
+  .tooltip { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, 6px); background: var(--ink); color: var(--cream); padding: 10px 14px; border-radius: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 400; line-height: 1.5; width: max-content; max-width: 240px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 50; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+  .tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--ink); }
+
+  .stage { width: 100%; aspect-ratio: 1 / 1; max-width: 540px; margin: 0 auto; background: linear-gradient(180deg, #FCE7BD 0%, #F0BD7C 60%, #C28447 100%); border-radius: 20px; box-shadow: 0 20px 50px var(--shadow), inset 0 0 0 3px rgba(255,255,255,0.4); position: relative; overflow: hidden; }
+  .stage svg { width: 100%; height: 100%; display: block; }
+
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes bobble { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-2px); } 75% { transform: translateY(1px); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  .float { animation: float 3s ease-in-out infinite; }
+  .bobble { animation: bobble 0.4s ease-in-out infinite; }
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+
+  .intro { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; position: relative; overflow: hidden; }
+  .intro-content { max-width: 800px; z-index: 2; }
+  .intro .badge { display: inline-block; padding: 6px 16px; background: rgba(184, 51, 106, 0.15); border: 1.5px solid var(--magenta); color: var(--magenta-deep); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border-radius: 30px; margin-bottom: 24px; animation: float 4s ease-in-out infinite; }
+  .intro h1 { font-family: 'Georgia', serif; font-size: clamp(40px, 7vw, 76px); color: var(--ink); line-height: 1.05; margin-bottom: 18px; font-weight: 700; }
+  .intro h1 em { color: var(--magenta-deep); font-style: italic; display: block; }
+  .intro p { font-size: 19px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  .start-btn, .next-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: linear-gradient(180deg, var(--magenta), var(--magenta-deep)); color: var(--cream); border: none; border-radius: 50px; font-family: 'Georgia', serif; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(184, 51, 106, 0.4); transition: all 0.3s ease; text-decoration: none; }
+  .start-btn:hover, .next-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(184, 51, 106, 0.5); }
+  .start-btn::after, .next-btn::after { content: '→'; font-size: 18px; transition: transform 0.3s; }
+  .start-btn:hover::after, .next-btn:hover::after { transform: translateX(4px); }
+
+  .scroll-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: var(--ink-soft); font-family: 'Inter', system-ui, sans-serif; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7; animation: float 2s ease-in-out infinite; }
+  .scroll-hint::after { content: ''; display: block; width: 1px; height: 30px; background: var(--ink-soft); margin: 8px auto 0; }
+
+  .float-element { position: absolute; font-size: 60px; opacity: 0.18; pointer-events: none; }
+
+  .scene-action { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .replay-btn { padding: 10px 18px; background: transparent; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 30px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .replay-btn:hover { background: var(--ink); color: var(--cream); }
+  .replay-btn::before { content: '↻ '; }
+
+  .scene-label { position: absolute; background: var(--ink); color: var(--cream); padding: 4px 12px; border-radius: 14px; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 5; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+  .scene-label.visible { opacity: 1; }
+  .scene-label.allow { background: var(--teal); }
+  .scene-label.deny { background: var(--coral-deep); }
+
+  .summary { background: linear-gradient(180deg, rgba(255,246,229,0.4) 0%, rgba(232,182,71,0.4) 100%); }
+  .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 30px; }
+  @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  .summary-card { background: var(--cream); border-radius: 14px; padding: 18px 20px; border-left: 5px solid var(--magenta); box-shadow: 0 6px 18px var(--shadow); transition: transform 0.3s, box-shadow 0.3s; }
+  .summary-card:hover { transform: translateY(-4px); box-shadow: 0 12px 26px var(--shadow); }
+  .summary-card .icon { font-size: 28px; margin-bottom: 6px; }
+  .summary-card .farm-side { font-family: 'Georgia', serif; font-size: 16px; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+  .summary-card .arrow { color: var(--magenta-deep); font-size: 18px; margin: 4px 0; }
+  .summary-card .aws-side { font-family: 'Courier New', monospace; font-size: 14px; color: var(--ink); font-weight: 700; background: var(--gold); padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .summary-card p { font-size: 13px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
+  .summary-card.c1 { border-left-color: var(--teal); }
+  .summary-card.c2 { border-left-color: var(--magenta); }
+  .summary-card.c3 { border-left-color: var(--coral); }
+  .summary-card.c4 { border-left-color: var(--gold-deep); }
+  .summary-card.c5 { border-left-color: var(--plum); }
+
+  .end-cta { text-align: center; margin-top: 40px; }
+  .end-cta p { margin-bottom: 20px; font-style: italic; color: var(--ink); }
+
+  .footer { text-align: center; padding: 30px 20px; color: var(--ink-soft); font-size: 13px; font-family: 'Inter', system-ui, sans-serif; background: rgba(45, 24, 16, 0.06); }
+  .footer strong { color: var(--magenta-deep); }
+</style>
+</head>
+<body>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="chapter-nav" id="chapterNav">
+  <div class="chapter-dot" data-target="intro" data-label="Welcome"></div>
+  <div class="chapter-dot" data-target="scene-shop" data-label="The Shop"></div>
+  <div class="chapter-dot" data-target="scene-users" data-label="Workers (Users)"></div>
+  <div class="chapter-dot" data-target="scene-policies" data-label="Rule Cards"></div>
+  <div class="chapter-dot" data-target="scene-groups" data-label="Worker Groups"></div>
+  <div class="chapter-dot" data-target="scene-roles" data-label="Borrowed Apron"></div>
+  <div class="chapter-dot" data-target="scene-root" data-label="Owner's Key"></div>
+  <div class="chapter-dot" data-target="scene-summary" data-label="Summary"></div>
+</nav>
+
+<section class="intro" id="intro">
+  <div class="float-element" style="top: 12%; left: 8%; animation: float 5s ease-in-out infinite;">🛍️</div>
+  <div class="float-element" style="top: 22%; right: 12%; animation: float 6s ease-in-out infinite 1s;">🔑</div>
+  <div class="float-element" style="bottom: 18%; left: 15%; animation: float 4s ease-in-out infinite 0.5s;">📋</div>
+  <div class="float-element" style="bottom: 28%; right: 20%; animation: float 5s ease-in-out infinite 1.5s;">👥</div>
+  <div class="intro-content">
+    <span class="badge">An AWS IAM Story</span>
+    <h1>The Stalls of<br><em>Makola Market</em></h1>
+    <p>Auntie Ama owns a busy fabric shop in Makola Market. Her workers, helpers, and visiting traders all need different levels of access. Some can sell. Some can't touch the cash box. Some only borrow her apron for one task. That's not chaos — that's <strong>identity and access management</strong>.</p>
+    <a href="#scene-shop" class="start-btn">Visit the shop</a>
+  </div>
+  <div class="scroll-hint">SCROLL TO ENTER</div>
+</section>
+
+<section class="scene" id="scene-shop">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 1 · The Shop</span>
+      <h2>One shop, <em>one owner</em></h2>
+      <p>Auntie Ama runs a busy fabric stall. She owns it. She has the master key. She decides who walks in, who can touch the cash box, who can restock the shelves, and who is allowed nowhere near the inventory ledger.</p>
+      <p>Without rules, the shop would be chaos — anyone could grab anything. With rules, every person has a clear role: cashier, restocker, cleaner, supplier.</p>
+      <p>That's exactly what AWS IAM does for your account. <strong>One owner. Many people. Different permissions for each.</strong></p>
+      <div class="aws-pill">IAM — Identity &amp; Access Management</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <circle cx="430" cy="80" r="35" fill="#E8B647" opacity="0.6"/>
+          <ellipse cx="100" cy="60" rx="35" ry="14" fill="#fff" opacity="0.7"/>
+          <ellipse cx="130" cy="55" rx="22" ry="12" fill="#fff" opacity="0.7"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- Shop awning -->
+          <polygon points="80,180 420,180 410,140 90,140" fill="#B8336A"/>
+          <g stroke="#fff" stroke-width="3">
+            <line x1="100" y1="180" x2="100" y2="160"/>
+            <line x1="130" y1="180" x2="130" y2="160"/>
+            <line x1="160" y1="180" x2="160" y2="160"/>
+            <line x1="190" y1="180" x2="190" y2="160"/>
+            <line x1="220" y1="180" x2="220" y2="160"/>
+            <line x1="250" y1="180" x2="250" y2="160"/>
+            <line x1="280" y1="180" x2="280" y2="160"/>
+            <line x1="310" y1="180" x2="310" y2="160"/>
+            <line x1="340" y1="180" x2="340" y2="160"/>
+            <line x1="370" y1="180" x2="370" y2="160"/>
+            <line x1="400" y1="180" x2="400" y2="160"/>
+          </g>
+          <text x="250" y="125" text-anchor="middle" font-family="Georgia" font-size="18" font-weight="bold" fill="#FFF6E5">AMA'S FABRIC STALL</text>
+
+          <!-- Shop building -->
+          <rect x="80" y="180" width="340" height="200" fill="#5B2C5F"/>
+          <!-- Shelves with fabrics -->
+          <g>
+            <rect x="100" y="210" width="80" height="40" fill="#3D1A40"/>
+            <rect x="105" y="215" width="20" height="30" fill="#E8B647"/>
+            <rect x="128" y="215" width="20" height="30" fill="#2A9D8F"/>
+            <rect x="151" y="215" width="20" height="30" fill="#E76F51"/>
+
+            <rect x="200" y="210" width="80" height="40" fill="#3D1A40"/>
+            <rect x="205" y="215" width="20" height="30" fill="#B8336A"/>
+            <rect x="228" y="215" width="20" height="30" fill="#E8B647"/>
+            <rect x="251" y="215" width="20" height="30" fill="#2A9D8F"/>
+
+            <rect x="300" y="210" width="80" height="40" fill="#3D1A40"/>
+            <rect x="305" y="215" width="20" height="30" fill="#E76F51"/>
+            <rect x="328" y="215" width="20" height="30" fill="#B8336A"/>
+            <rect x="351" y="215" width="20" height="30" fill="#E8B647"/>
+
+            <rect x="100" y="270" width="80" height="40" fill="#3D1A40"/>
+            <rect x="105" y="275" width="20" height="30" fill="#2A9D8F"/>
+            <rect x="128" y="275" width="20" height="30" fill="#E76F51"/>
+            <rect x="151" y="275" width="20" height="30" fill="#B8336A"/>
+
+            <rect x="200" y="270" width="80" height="40" fill="#3D1A40"/>
+            <rect x="205" y="275" width="20" height="30" fill="#E8B647"/>
+            <rect x="228" y="275" width="20" height="30" fill="#2A9D8F"/>
+            <rect x="251" y="275" width="20" height="30" fill="#E76F51"/>
+
+            <rect x="300" y="270" width="80" height="40" fill="#3D1A40"/>
+            <rect x="305" y="275" width="20" height="30" fill="#B8336A"/>
+            <rect x="328" y="275" width="20" height="30" fill="#E8B647"/>
+            <rect x="351" y="275" width="20" height="30" fill="#2A9D8F"/>
+          </g>
+
+          <!-- Cash box -->
+          <g class="float">
+            <rect x="220" y="335" width="60" height="35" fill="#E8B647" stroke="#3D1A40" stroke-width="2"/>
+            <rect x="240" y="345" width="20" height="6" fill="#3D1A40"/>
+            <text x="250" y="383" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF6E5" font-weight="bold">CASH BOX</text>
+          </g>
+
+          <!-- Auntie Ama (owner) -->
+          <g transform="translate(420, 350)" class="float">
+            <ellipse cx="0" cy="14" rx="14" ry="22" fill="#B8336A"/>
+            <circle cx="0" cy="-8" r="11" fill="#6B3410"/>
+            <!-- headwrap -->
+            <ellipse cx="0" cy="-15" rx="14" ry="6" fill="#E8B647"/>
+            <ellipse cx="0" cy="-19" rx="11" ry="8" fill="#E8B647"/>
+            <!-- Master key around neck -->
+            <rect x="-3" y="2" width="6" height="14" fill="#E8B647"/>
+            <circle cx="0" cy="0" r="4" fill="#E8B647" stroke="#3D1A40" stroke-width="1"/>
+            <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+            <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF6E5" font-weight="bold">AUNTIE AMA</text>
+            <text x="0" y="62" text-anchor="middle" font-family="Inter" font-size="8" fill="#FFF6E5">(owner)</text>
+          </g>
+
+          <!-- Master key label -->
+          <g transform="translate(60, 390)">
+            <rect x="-1" y="0" width="2" height="20" fill="#3D1A40"/>
+            <rect x="-30" y="-15" width="55" height="18" rx="2" fill="#E8B647" stroke="#3D1A40" stroke-width="1.5"/>
+            <text x="-2" y="-3" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#3D1A40">ROOT KEY</text>
+          </g>
+
+          <!-- Caption -->
+          <g transform="translate(250, 460)">
+            <rect x="-130" y="-15" width="260" height="22" rx="11" fill="#FFF6E5" opacity="0.9"/>
+            <text x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#3D1A40" font-weight="bold">One AWS account, one root user, many identities</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-users">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 2 · The Workers</span>
+      <h2>Each worker has <em>their own ID badge</em></h2>
+      <p>Auntie Ama hires three workers: <strong>Kwesi</strong> the cashier, <strong>Adwoa</strong> the restocker, and <strong>Kofi</strong> the cleaner. Each one gets a personalized name badge and a key to the side door. The keys are NOT the same as Ama's master key.</p>
+      <p>Kwesi's badge says "Kwesi · Cashier." Adwoa's badge says "Adwoa · Restocker." Each badge is unique to its owner. If Kofi loses his badge, only Kofi's access gets revoked — not everyone's.</p>
+      <p>That's exactly what an <span class="term">IAM User<span class="tooltip">An IAM User is a permanent identity within your AWS account that represents a single person or service. Each user has unique credentials.</span></span> is in AWS. One user = one human (or one application). Each has their own login, their own credentials, their own identity.</p>
+      <div class="aws-pill">IAM Users — One Per Person</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <text x="250" y="50" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#3D1A40">Three workers · Three badges</text>
+
+          <!-- Kwesi -->
+          <g class="float">
+            <g transform="translate(110, 280)">
+              <ellipse cx="0" cy="14" rx="14" ry="22" fill="#2A9D8F"/>
+              <circle cx="0" cy="-8" r="11" fill="#6B3410"/>
+              <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+              <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+              <!-- ID badge -->
+              <rect x="-15" y="0" width="30" height="18" fill="#FFF6E5" stroke="#3D1A40" stroke-width="1.5"/>
+              <line x1="-13" y1="5" x2="13" y2="5" stroke="#2A9D8F" stroke-width="2"/>
+              <text x="0" y="14" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3D1A40">KWESI</text>
+            </g>
+            <text x="110" y="370" text-anchor="middle" font-family="Inter" font-size="11" font-weight="bold" fill="#3D1A40">Kwesi</text>
+            <text x="110" y="385" text-anchor="middle" font-family="Inter" font-size="9" fill="#5A3E2B">Cashier</text>
+            <!-- Key -->
+            <g transform="translate(110, 410)">
+              <circle cx="0" cy="0" r="5" fill="#E8B647" stroke="#3D1A40" stroke-width="1"/>
+              <rect x="-1.5" y="3" width="3" height="10" fill="#E8B647"/>
+              <rect x="-3" y="10" width="2" height="3" fill="#E8B647"/>
+            </g>
+          </g>
+
+          <!-- Adwoa -->
+          <g class="float" style="animation-delay: 0.4s;">
+            <g transform="translate(250, 280)">
+              <ellipse cx="0" cy="14" rx="14" ry="22" fill="#B8336A"/>
+              <circle cx="0" cy="-8" r="11" fill="#6B3410"/>
+              <ellipse cx="0" cy="-15" rx="13" ry="5" fill="#E8B647"/>
+              <ellipse cx="0" cy="-19" rx="10" ry="7" fill="#E8B647"/>
+              <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+              <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+              <rect x="-15" y="0" width="30" height="18" fill="#FFF6E5" stroke="#3D1A40" stroke-width="1.5"/>
+              <line x1="-13" y1="5" x2="13" y2="5" stroke="#B8336A" stroke-width="2"/>
+              <text x="0" y="14" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3D1A40">ADWOA</text>
+            </g>
+            <text x="250" y="370" text-anchor="middle" font-family="Inter" font-size="11" font-weight="bold" fill="#3D1A40">Adwoa</text>
+            <text x="250" y="385" text-anchor="middle" font-family="Inter" font-size="9" fill="#5A3E2B">Restocker</text>
+            <g transform="translate(250, 410)">
+              <circle cx="0" cy="0" r="5" fill="#E8B647" stroke="#3D1A40" stroke-width="1"/>
+              <rect x="-1.5" y="3" width="3" height="10" fill="#E8B647"/>
+              <rect x="-3" y="10" width="2" height="3" fill="#E8B647"/>
+            </g>
+          </g>
+
+          <!-- Kofi -->
+          <g class="float" style="animation-delay: 0.8s;">
+            <g transform="translate(390, 280)">
+              <ellipse cx="0" cy="14" rx="14" ry="22" fill="#E76F51"/>
+              <circle cx="0" cy="-8" r="11" fill="#6B3410"/>
+              <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+              <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+              <rect x="-15" y="0" width="30" height="18" fill="#FFF6E5" stroke="#3D1A40" stroke-width="1.5"/>
+              <line x1="-13" y1="5" x2="13" y2="5" stroke="#E76F51" stroke-width="2"/>
+              <text x="0" y="14" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3D1A40">KOFI</text>
+            </g>
+            <text x="390" y="370" text-anchor="middle" font-family="Inter" font-size="11" font-weight="bold" fill="#3D1A40">Kofi</text>
+            <text x="390" y="385" text-anchor="middle" font-family="Inter" font-size="9" fill="#5A3E2B">Cleaner</text>
+            <g transform="translate(390, 410)">
+              <circle cx="0" cy="0" r="5" fill="#E8B647" stroke="#3D1A40" stroke-width="1"/>
+              <rect x="-1.5" y="3" width="3" height="10" fill="#E8B647"/>
+              <rect x="-3" y="10" width="2" height="3" fill="#E8B647"/>
+            </g>
+          </g>
+
+          <g transform="translate(250, 460)">
+            <rect x="-140" y="-15" width="280" height="22" rx="11" fill="#FFF6E5" opacity="0.9"/>
+            <text x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#3D1A40" font-weight="bold">Each user · their own credentials · their own access</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-policies">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 3 · The Rule Cards</span>
+      <h2>What can each worker <em>actually do?</em></h2>
+      <p>Auntie Ama writes a rule card for each worker. They're simple, written in plain ink:</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--magenta); padding: 12px 16px; border-radius: 6px; font-style: italic; color: var(--ink); margin-bottom: 8px;"><strong>Kwesi's card:</strong> "Allowed to open cash box. Allowed to give change. NOT allowed to touch shelves."</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--coral); padding: 12px 16px; border-radius: 6px; font-style: italic; color: var(--ink); margin-bottom: 8px;"><strong>Adwoa's card:</strong> "Allowed to restock shelves. Allowed to count inventory. NOT allowed near cash box."</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--teal); padding: 12px 16px; border-radius: 6px; font-style: italic; color: var(--ink);"><strong>Kofi's card:</strong> "Allowed to sweep floors. NOT allowed to touch ANY merchandise or cash."</p>
+      <p>That's a <strong>policy</strong>. It's a written document that says exactly what someone is allowed (and not allowed) to do. Each worker carries their card. The shop doesn't follow the worker — it follows the card.</p>
+      <div class="aws-pill">IAM Policies — JSON Permissions</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayPolicies()">Replay rule check</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="policiesSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- Kwesi reaching for cash box -->
+          <g id="kwesiScene" transform="translate(130, 290)">
+            <ellipse cx="0" cy="14" rx="12" ry="20" fill="#2A9D8F"/>
+            <circle cx="0" cy="-8" r="10" fill="#6B3410"/>
+            <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+            <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+            <text x="0" y="-22" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">Kwesi</text>
+          </g>
+
+          <!-- Cash box -->
+          <g transform="translate(220, 320)">
+            <rect x="-25" y="-15" width="50" height="30" fill="#E8B647" stroke="#3D1A40" stroke-width="1.5"/>
+            <rect x="-8" y="-5" width="16" height="5" fill="#3D1A40"/>
+            <text x="0" y="30" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF6E5" font-weight="bold">CASH BOX</text>
+          </g>
+
+          <!-- Rule card popup for Kwesi -->
+          <g id="kwesiCard" transform="translate(170, 100)" style="opacity:0">
+            <rect x="-70" y="-30" width="140" height="60" rx="3" fill="#FFF6E5" stroke="#3D1A40" stroke-width="2"/>
+            <rect x="-70" y="-30" width="140" height="14" fill="#2A9D8F"/>
+            <text x="0" y="-19" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#FFF6E5">KWESI'S CARD</text>
+            <text x="-65" y="-3" font-family="Inter" font-size="8" fill="#27AE60">✓ open cash box</text>
+            <text x="-65" y="9" font-family="Inter" font-size="8" fill="#27AE60">✓ give change</text>
+            <text x="-65" y="21" font-family="Inter" font-size="8" fill="#C0392B">✗ touch shelves</text>
+          </g>
+
+          <!-- Decision label -->
+          <g id="kwesiDecision" style="opacity:0">
+            <rect x="270" y="305" width="80" height="22" rx="11" fill="#27AE60"/>
+            <text x="310" y="320" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF6E5" font-weight="bold">✓ ALLOWED</text>
+          </g>
+
+          <!-- Adwoa reaching for cash box -->
+          <g id="adwoaScene" transform="translate(130, 410)" style="opacity:0">
+            <ellipse cx="0" cy="14" rx="12" ry="20" fill="#B8336A"/>
+            <circle cx="0" cy="-8" r="10" fill="#6B3410"/>
+            <ellipse cx="0" cy="-15" rx="12" ry="5" fill="#E8B647"/>
+            <ellipse cx="0" cy="-19" rx="9" ry="7" fill="#E8B647"/>
+            <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+            <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">Adwoa</text>
+          </g>
+
+          <!-- Adwoa rule card -->
+          <g id="adwoaCard" transform="translate(170, 220)" style="opacity:0">
+            <rect x="-70" y="-30" width="140" height="60" rx="3" fill="#FFF6E5" stroke="#3D1A40" stroke-width="2"/>
+            <rect x="-70" y="-30" width="140" height="14" fill="#B8336A"/>
+            <text x="0" y="-19" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#FFF6E5">ADWOA'S CARD</text>
+            <text x="-65" y="-3" font-family="Inter" font-size="8" fill="#27AE60">✓ restock shelves</text>
+            <text x="-65" y="9" font-family="Inter" font-size="8" fill="#27AE60">✓ count inventory</text>
+            <text x="-65" y="21" font-family="Inter" font-size="8" fill="#C0392B">✗ touch cash box</text>
+          </g>
+
+          <!-- Adwoa decision -->
+          <g id="adwoaDecision" style="opacity:0">
+            <rect x="270" y="425" width="80" height="22" rx="11" fill="#C0392B"/>
+            <text x="310" y="440" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF6E5" font-weight="bold">✗ DENIED</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="policiesLabel" style="top: 12%; right: 10%;">Watching the rules</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-groups">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 4 · The Worker Groups</span>
+      <h2>Hire 50 cashiers? <em>Group them up.</em></h2>
+      <p>Suppose Auntie Ama's business explodes. She now has 20 cashiers, 15 restockers, and 10 cleaners. Writing 45 individual rule cards would be madness. And what if cashier rules need to change? She'd have to update 20 cards.</p>
+      <p>So she does something smarter. She writes <strong>three group cards</strong>:</p>
+      <p>• <strong>"CASHIERS"</strong> group card — allowed to use cash boxes.<br>• <strong>"RESTOCKERS"</strong> group card — allowed to handle inventory.<br>• <strong>"CLEANERS"</strong> group card — allowed to use cleaning supplies.</p>
+      <p>Then she just stamps each worker into a group: "You're a cashier. You're a restocker." When she hires a new cashier, she just adds them to the cashier group — no new rule writing needed.</p>
+      <p>That's an <strong>IAM Group</strong>. Permissions live on the group. People join the group. <strong>Never assign permissions to individuals when a group will do.</strong></p>
+      <div class="aws-pill">IAM Groups — Permissions in Bulk</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <text x="250" y="40" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#3D1A40">Three groups · One card each</text>
+
+          <!-- CASHIERS group -->
+          <g>
+            <rect x="40" y="80" width="130" height="380" rx="8" fill="rgba(42,157,143,0.15)" stroke="#2A9D8F" stroke-width="2.5" stroke-dasharray="6,4"/>
+            <rect x="60" y="65" width="90" height="22" rx="11" fill="#2A9D8F"/>
+            <text x="105" y="80" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#FFF6E5">CASHIERS</text>
+            <!-- group rule card -->
+            <g transform="translate(105, 120)">
+              <rect x="-40" y="-15" width="80" height="35" rx="3" fill="#FFF6E5" stroke="#3D1A40" stroke-width="1.5"/>
+              <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="7" font-weight="bold" fill="#3D1A40">CASHIER RULES</text>
+              <text x="-35" y="9" font-family="Inter" font-size="6" fill="#27AE60">✓ use cash box</text>
+              <text x="-35" y="17" font-family="Inter" font-size="6" fill="#27AE60">✓ give receipts</text>
+            </g>
+            <!-- members -->
+            <g transform="translate(75, 220)">
+              <circle cx="0" cy="0" r="10" fill="#2A9D8F"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(135, 220)">
+              <circle cx="0" cy="0" r="10" fill="#2A9D8F"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(75, 270)">
+              <circle cx="0" cy="0" r="10" fill="#2A9D8F"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(135, 270)">
+              <circle cx="0" cy="0" r="10" fill="#2A9D8F"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(75, 320)">
+              <circle cx="0" cy="0" r="10" fill="#2A9D8F"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(135, 320)">
+              <circle cx="0" cy="0" r="10" fill="#2A9D8F"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <text x="105" y="370" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">+ 14 more...</text>
+            <text x="105" y="440" text-anchor="middle" font-family="Inter" font-size="11" fill="#FFF6E5" font-weight="bold">20 cashiers</text>
+          </g>
+
+          <!-- RESTOCKERS group -->
+          <g>
+            <rect x="185" y="80" width="130" height="380" rx="8" fill="rgba(184,51,106,0.15)" stroke="#B8336A" stroke-width="2.5" stroke-dasharray="6,4"/>
+            <rect x="205" y="65" width="90" height="22" rx="11" fill="#B8336A"/>
+            <text x="250" y="80" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#FFF6E5">RESTOCKERS</text>
+            <g transform="translate(250, 120)">
+              <rect x="-40" y="-15" width="80" height="35" rx="3" fill="#FFF6E5" stroke="#3D1A40" stroke-width="1.5"/>
+              <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="7" font-weight="bold" fill="#3D1A40">RESTOCK RULES</text>
+              <text x="-35" y="9" font-family="Inter" font-size="6" fill="#27AE60">✓ touch shelves</text>
+              <text x="-35" y="17" font-family="Inter" font-size="6" fill="#27AE60">✓ count stock</text>
+            </g>
+            <g transform="translate(220, 220)">
+              <circle cx="0" cy="0" r="10" fill="#B8336A"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(280, 220)">
+              <circle cx="0" cy="0" r="10" fill="#B8336A"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(220, 270)">
+              <circle cx="0" cy="0" r="10" fill="#B8336A"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(280, 270)">
+              <circle cx="0" cy="0" r="10" fill="#B8336A"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(220, 320)">
+              <circle cx="0" cy="0" r="10" fill="#B8336A"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(280, 320)">
+              <circle cx="0" cy="0" r="10" fill="#B8336A"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <text x="250" y="370" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">+ 9 more...</text>
+            <text x="250" y="440" text-anchor="middle" font-family="Inter" font-size="11" fill="#FFF6E5" font-weight="bold">15 restockers</text>
+          </g>
+
+          <!-- CLEANERS group -->
+          <g>
+            <rect x="330" y="80" width="130" height="380" rx="8" fill="rgba(231,111,81,0.15)" stroke="#E76F51" stroke-width="2.5" stroke-dasharray="6,4"/>
+            <rect x="350" y="65" width="90" height="22" rx="11" fill="#E76F51"/>
+            <text x="395" y="80" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#FFF6E5">CLEANERS</text>
+            <g transform="translate(395, 120)">
+              <rect x="-40" y="-15" width="80" height="35" rx="3" fill="#FFF6E5" stroke="#3D1A40" stroke-width="1.5"/>
+              <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="7" font-weight="bold" fill="#3D1A40">CLEAN RULES</text>
+              <text x="-35" y="9" font-family="Inter" font-size="6" fill="#27AE60">✓ sweep / mop</text>
+              <text x="-35" y="17" font-family="Inter" font-size="6" fill="#C0392B">✗ touch goods</text>
+            </g>
+            <g transform="translate(365, 220)">
+              <circle cx="0" cy="0" r="10" fill="#E76F51"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(425, 220)">
+              <circle cx="0" cy="0" r="10" fill="#E76F51"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(365, 270)">
+              <circle cx="0" cy="0" r="10" fill="#E76F51"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(425, 270)">
+              <circle cx="0" cy="0" r="10" fill="#E76F51"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(365, 320)">
+              <circle cx="0" cy="0" r="10" fill="#E76F51"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <g transform="translate(425, 320)">
+              <circle cx="0" cy="0" r="10" fill="#E76F51"/>
+              <circle cx="0" cy="-3" r="5" fill="#6B3410"/>
+            </g>
+            <text x="395" y="370" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">+ 4 more...</text>
+            <text x="395" y="440" text-anchor="middle" font-family="Inter" font-size="11" fill="#FFF6E5" font-weight="bold">10 cleaners</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-roles">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 5 · The Borrowed Apron</span>
+      <h2>"Wear my apron <em>just for now</em>"</h2>
+      <p>One afternoon, a delivery driver from Tema arrives with new fabric rolls. He needs to walk into the storeroom to drop them off. But he's not a worker — he doesn't have a badge or a key.</p>
+      <p>Auntie Ama doesn't hire him. She just hands him an apron and says: <strong>"Wear this for the next 10 minutes. It gives you access to the storeroom only. When you leave, give it back."</strong></p>
+      <p>The apron isn't his. He never owned it. He just <em>borrowed</em> it temporarily for one task. When the task is done, he hands it back, and he goes back to being just a delivery driver.</p>
+      <p>That's an <span class="term">IAM Role<span class="tooltip">An IAM Role is an identity that can be temporarily assumed by a user, application, or AWS service. Roles use temporary credentials that expire — perfect for cross-account access, EC2 instances accessing S3, and federated logins.</span></span>. It's not tied to a specific person. Anyone (or anything) authorized can <strong>"assume" the role</strong> for a limited time, do their job, then drop it.</p>
+      <p>This is how an EC2 server reads from an S3 bucket. The server doesn't have a username — it temporarily wears the "S3 access" apron.</p>
+      <div class="aws-pill">IAM Roles — Temporary Apron</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayRole()">Replay the apron</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="rolesSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- Storeroom -->
+          <rect x="320" y="240" width="160" height="200" fill="#5B2C5F"/>
+          <polygon points="315,240 485,240 400,200" fill="#3D1A40"/>
+          <rect x="380" y="320" width="40" height="80" fill="#3D1A40"/>
+          <text x="400" y="430" text-anchor="middle" font-family="Inter" font-size="11" font-weight="bold" fill="#FFF6E5">STOREROOM</text>
+
+          <!-- Auntie Ama (with apron held out) -->
+          <g transform="translate(220, 290)">
+            <ellipse cx="0" cy="14" rx="14" ry="22" fill="#B8336A"/>
+            <circle cx="0" cy="-8" r="11" fill="#6B3410"/>
+            <ellipse cx="0" cy="-15" rx="13" ry="5" fill="#E8B647"/>
+            <ellipse cx="0" cy="-19" rx="10" ry="7" fill="#E8B647"/>
+            <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+            <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">Auntie Ama</text>
+          </g>
+
+          <!-- The apron (sits on Ama, then moves to driver, then back) -->
+          <g id="apron" transform="translate(220, 310)">
+            <path d="M -12 -5 Q -16 0 -14 12 L 14 12 Q 16 0 12 -5 Z" fill="#E8B647" stroke="#3D1A40" stroke-width="1.5"/>
+            <text x="0" y="6" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3D1A40">APRON</text>
+          </g>
+
+          <!-- Delivery driver -->
+          <g id="driver" transform="translate(80, 350)">
+            <ellipse cx="0" cy="14" rx="13" ry="20" fill="#5B2C5F"/>
+            <circle cx="0" cy="-8" r="10" fill="#6B3410"/>
+            <!-- cap -->
+            <ellipse cx="0" cy="-15" rx="11" ry="3" fill="#3D1A40"/>
+            <ellipse cx="0" cy="-17" rx="8" ry="4" fill="#3D1A40"/>
+            <rect x="-4" y="34" width="3" height="12" fill="#3D1A40"/>
+            <rect x="1" y="34" width="3" height="12" fill="#3D1A40"/>
+            <!-- box he's carrying -->
+            <rect x="-15" y="-2" width="14" height="14" fill="#6B3410" stroke="#3D1A40" stroke-width="1"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="9" fill="#3D1A40" font-weight="bold">Driver</text>
+          </g>
+
+          <!-- Timer/duration label -->
+          <g id="timer" transform="translate(250, 100)" style="opacity:0">
+            <rect x="-65" y="-15" width="130" height="22" rx="11" fill="#3D1A40"/>
+            <text id="timerText" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#E8B647" font-weight="bold">⏱ 10 min · STS token</text>
+          </g>
+
+          <!-- Storeroom access label -->
+          <g id="accessLabel" transform="translate(400, 460)" style="opacity:0">
+            <rect x="-60" y="-15" width="120" height="22" rx="11" fill="#27AE60"/>
+            <text id="accessText" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF6E5" font-weight="bold">✓ ACCESS GRANTED</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="rolesLabel" style="top: 12%; left: 10%;">Watching the loan</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-root">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 6 · The Master Key</span>
+      <h2>The owner's key — <em>lock it away</em></h2>
+      <p>Remember Auntie Ama's master key from the very beginning? It opens everything. The cash box, the storeroom, the books, the safe in the back, even the ledger she doesn't show anyone.</p>
+      <p>If a thief gets that key, the entire shop is lost. So Ama keeps it locked in a safe at home and almost never carries it. She uses her own personal cashier badge for daily work. The master key only comes out for emergencies — once a year, maybe.</p>
+      <p>That's the <strong>root user</strong> in AWS. It's the email and password you signed up with. It can do <em>everything</em> — including delete the account itself.</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--coral-deep); padding: 12px 16px; border-radius: 6px; color: var(--ink);"><strong>The honest truth:</strong> after creating your account, log out of root, create a personal IAM user with admin permissions, and use THAT for everything. Never use root for daily work. Enable MFA on root. Lock it away.</p>
+      <div class="aws-pill">Root User — Emergencies Only</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#A0682E"/>
+
+          <!-- Safe -->
+          <g class="pulse">
+            <rect x="170" y="240" width="160" height="170" rx="8" fill="#3D1A40" stroke="#1a0a1c" stroke-width="3"/>
+            <rect x="180" y="250" width="140" height="150" rx="4" fill="#5B2C5F"/>
+            <!-- safe dial -->
+            <circle cx="250" cy="310" r="40" fill="#2D1810" stroke="#E8B647" stroke-width="3"/>
+            <circle cx="250" cy="310" r="34" fill="#3D1A40"/>
+            <line x1="250" y1="310" x2="250" y2="285" stroke="#E8B647" stroke-width="3" stroke-linecap="round"/>
+            <!-- handle -->
+            <rect x="240" y="370" width="20" height="8" rx="3" fill="#E8B647"/>
+            <text x="250" y="240" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#FFF6E5">🔒 LOCKED</text>
+          </g>
+
+          <!-- Master key inside (glowing) -->
+          <g transform="translate(250, 310)" opacity="0.7">
+            <circle cx="0" cy="0" r="10" fill="#E8B647" stroke="#3D1A40" stroke-width="1.5" filter="url(#glow)"/>
+            <rect x="-2" y="6" width="4" height="18" fill="#E8B647"/>
+            <rect x="-4" y="20" width="3" height="4" fill="#E8B647"/>
+            <rect x="1" y="20" width="3" height="4" fill="#E8B647"/>
+          </g>
+
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- MFA shield -->
+          <g transform="translate(250, 440)">
+            <path d="M 0 -15 L -15 -8 L -15 8 L 0 18 L 15 8 L 15 -8 Z" fill="#2A9D8F" stroke="#3D1A40" stroke-width="2"/>
+            <text x="0" y="4" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#FFF6E5">MFA</text>
+          </g>
+
+          <!-- Warning badge -->
+          <g transform="translate(80, 110)">
+            <rect x="-10" y="-15" width="160" height="40" rx="6" fill="#C0392B"/>
+            <text x="70" y="-2" text-anchor="middle" font-family="Inter" font-size="10" font-weight="bold" fill="#FFF6E5">⚠ NEVER use root</text>
+            <text x="70" y="14" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF6E5">for daily work</text>
+          </g>
+
+          <!-- Best practice card -->
+          <g transform="translate(420, 110)">
+            <rect x="-80" y="-15" width="80" height="40" rx="6" fill="#27AE60"/>
+            <text x="-40" y="-2" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#FFF6E5">Use IAM user</text>
+            <text x="-40" y="14" text-anchor="middle" font-family="Inter" font-size="8" fill="#FFF6E5">with admin perms</text>
+          </g>
+
+          <text x="250" y="475" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF6E5" font-weight="bold" font-style="italic">"The key that opens everything · Use only when nothing else works"</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene summary" id="scene-summary">
+  <div class="scene-inner" style="grid-template-columns: 1fr;">
+    <div class="scene-text" style="text-align:center;">
+      <span class="chapter-tag">The Map</span>
+      <h2>The whole market, in <em>AWS terms</em></h2>
+      <p style="max-width: 640px; margin: 0 auto 0;">IAM is the most exam-tested topic for a reason — it's the foundation of AWS security. But you don't need to memorize it. Just remember Ama's stall.</p>
+      <div class="summary-grid">
+        <div class="summary-card c5">
+          <div class="icon">🔑</div>
+          <div class="farm-side">Auntie Ama (the owner)</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Root User</div>
+          <p>Master key. Can do everything. Use only in emergencies.</p>
+        </div>
+        <div class="summary-card c1">
+          <div class="icon">🪪</div>
+          <div class="farm-side">Worker name badge</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">IAM User</div>
+          <p>One per person. Has its own credentials and login.</p>
+        </div>
+        <div class="summary-card c2">
+          <div class="icon">📋</div>
+          <div class="farm-side">The rule card</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">IAM Policy</div>
+          <p>JSON document listing what's allowed and what's denied.</p>
+        </div>
+        <div class="summary-card c4">
+          <div class="icon">👥</div>
+          <div class="farm-side">Worker categories</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">IAM Group</div>
+          <p>Permissions in bulk. Add a person, they inherit the rules.</p>
+        </div>
+        <div class="summary-card c3">
+          <div class="icon">🦺</div>
+          <div class="farm-side">The borrowed apron</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">IAM Role</div>
+          <p>Temporary identity. Assumed for a task, then dropped.</p>
+        </div>
+      </div>
+      <div class="end-cta">
+        <p>"AWS security isn't paranoia. It's just running your shop properly."</p>
+        <a href="#intro" class="next-btn">Read the story again</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <strong>The Stalls of Makola Market</strong> · A Ghanaian story for understanding AWS IAM · cloudwithshad
+</div>
+
+<script>
+  const progressFill = document.getElementById('progressFill');
+  const dots = document.querySelectorAll('.chapter-dot');
+  const sections = ['intro', 'scene-shop', 'scene-users', 'scene-policies', 'scene-groups', 'scene-roles', 'scene-root', 'scene-summary'];
+
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressFill.style.width = (scrollPos / docHeight * 100) + '%';
+    let activeIdx = 0;
+    sections.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && scrollPos + window.innerHeight * 0.5 >= el.offsetTop) activeIdx = i;
+    });
+    dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+  });
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(dot.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        triggerSceneAnimations(entry.target.id);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.scene').forEach(s => observer.observe(s));
+
+  const triggered = new Set();
+  function triggerSceneAnimations(id) {
+    if (triggered.has(id)) return;
+    triggered.add(id);
+    if (id === 'scene-policies') setTimeout(replayPolicies, 400);
+    if (id === 'scene-roles') setTimeout(replayRole, 400);
+  }
+
+  function replayPolicies() {
+    const kwesiCard = document.getElementById('kwesiCard');
+    const kwesiDecision = document.getElementById('kwesiDecision');
+    const adwoaScene = document.getElementById('adwoaScene');
+    const adwoaCard = document.getElementById('adwoaCard');
+    const adwoaDecision = document.getElementById('adwoaDecision');
+    const label = document.getElementById('policiesLabel');
+    if (!kwesiCard) return;
+
+    [kwesiCard, kwesiDecision, adwoaScene, adwoaCard, adwoaDecision].forEach(el => {
+      el.style.transition = 'opacity 0.5s';
+      el.style.opacity = '0';
+    });
+    label.classList.remove('visible', 'allow', 'deny');
+
+    setTimeout(() => {
+      label.textContent = 'Kwesi reaches for cash box';
+      label.classList.add('visible');
+      setTimeout(() => {
+        kwesiCard.style.opacity = '1';
+        label.textContent = 'Checking Kwesi\'s rule card...';
+        setTimeout(() => {
+          kwesiDecision.style.opacity = '1';
+          label.textContent = '✓ ALLOWED — cashier perms';
+          label.classList.add('allow');
+          setTimeout(() => {
+            adwoaScene.style.opacity = '1';
+            label.textContent = 'Adwoa reaches for cash box';
+            label.classList.remove('allow');
+            setTimeout(() => {
+              adwoaCard.style.opacity = '1';
+              label.textContent = 'Checking Adwoa\'s rule card...';
+              setTimeout(() => {
+                adwoaDecision.style.opacity = '1';
+                label.textContent = '✗ DENIED — restocker only';
+                label.classList.add('deny');
+                setTimeout(() => label.classList.remove('visible'), 3000);
+              }, 1300);
+            }, 1500);
+          }, 1800);
+        }, 1300);
+      }, 1500);
+    }, 600);
+  }
+
+  function replayRole() {
+    const apron = document.getElementById('apron');
+    const driver = document.getElementById('driver');
+    const timer = document.getElementById('timer');
+    const accessLabel = document.getElementById('accessLabel');
+    const label = document.getElementById('rolesLabel');
+    if (!apron) return;
+
+    apron.style.transition = 'none';
+    apron.setAttribute('transform', 'translate(220, 310)');
+    driver.style.transition = 'none';
+    driver.setAttribute('transform', 'translate(80, 350)');
+    timer.style.opacity = '0';
+    accessLabel.style.opacity = '0';
+    label.classList.remove('visible', 'allow', 'deny');
+
+    setTimeout(() => {
+      label.textContent = 'Driver arrives at shop';
+      label.classList.add('visible');
+      driver.style.transition = 'transform 1.5s ease-in-out';
+      driver.setAttribute('transform', 'translate(170, 350)');
+
+      setTimeout(() => {
+        label.textContent = 'Ama lends apron (assumes role)';
+        apron.style.transition = 'transform 1.2s ease-in-out';
+        apron.setAttribute('transform', 'translate(170, 365)');
+        timer.style.transition = 'opacity 0.5s';
+        timer.style.opacity = '1';
+
+        setTimeout(() => {
+          label.textContent = 'Driver heads to storeroom';
+          label.classList.add('allow');
+          driver.style.transition = 'transform 2s ease-in-out';
+          driver.setAttribute('transform', 'translate(380, 350)');
+          apron.style.transition = 'transform 2s ease-in-out';
+          apron.setAttribute('transform', 'translate(380, 365)');
+
+          setTimeout(() => {
+            accessLabel.style.opacity = '1';
+            label.textContent = '✓ Storeroom unlocked';
+            setTimeout(() => {
+              label.textContent = '...task done · returning apron';
+              label.classList.remove('allow');
+              accessLabel.style.opacity = '0';
+              driver.style.transition = 'transform 2s ease-in-out';
+              driver.setAttribute('transform', 'translate(80, 350)');
+              apron.style.transition = 'transform 2s ease-in-out';
+              apron.setAttribute('transform', 'translate(220, 310)');
+              timer.style.opacity = '0';
+              setTimeout(() => {
+                label.textContent = '✓ Apron returned · access expired';
+                label.classList.add('allow');
+                setTimeout(() => label.classList.remove('visible'), 2500);
+              }, 2200);
+            }, 1800);
+          }, 2200);
+        }, 1500);
+      }, 1700);
+    }, 600);
+  }
+
+  window.replayPolicies = replayPolicies;
+  window.replayRole = replayRole;
+</script>
+</body>
+</html>

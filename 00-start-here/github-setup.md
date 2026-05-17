@@ -172,7 +172,7 @@ Quick wins (5 minutes each):
 2. **Pinned repos**: pin this fork once you've completed Week 1
 3. **README profile**: create a special repo named `YOUR-USERNAME/YOUR-USERNAME` with a markdown file — it shows up at the top of your profile
 
-See [`shared-resources/github-portfolio-tips.md`](../shared-resources/github-portfolio-tips.md) for more (coming soon).
+See [`shared-resources/`](../shared-resources/) for more tips (additional guides coming soon).
 
 ---
 

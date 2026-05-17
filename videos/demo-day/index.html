@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo Day | cloudwithshad Bootcamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0A1628; --navy-2: #13243A; --cyan: #00B4D8; --gold: #F4B942;
+    --white: #FFFFFF; --gray: #94A3B8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy); color: var(--white); min-height: 100vh;
+    line-height: 1.6;
+  }
+  nav.topbar {
+    background: rgba(10,22,40,0.92); backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto; padding: 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand { font-size: 17px; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back { color: var(--gray); text-decoration: none; font-size: 13px; }
+  .nav-back:hover { color: var(--cyan); }
+  main {
+    max-width: 700px; margin: 0 auto;
+    padding: 80px 24px; text-align: center;
+  }
+  .week-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 180px; font-weight: 800; line-height: 1;
+    color: rgba(0,180,216,0.18); margin-bottom: 4px;
+  }
+  @media (max-width: 720px) { .week-num { font-size: 120px; } }
+  .lock { font-size: 56px; margin-bottom: 20px; }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px; font-weight: 800; line-height: 1.15;
+    margin-bottom: 14px; color: var(--white);
+  }
+  @media (max-width: 720px) { h1 { font-size: 32px; } }
+  h1 .accent { color: var(--gold); }
+  .sub { font-size: 18px; color: var(--gray); margin: 0 auto 36px; max-width: 520px; }
+  .date-pill {
+    display: inline-block;
+    background: rgba(244,185,66,0.12);
+    border: 1px solid rgba(244,185,66,0.4);
+    color: var(--gold); padding: 8px 20px; border-radius: 22px;
+    font-size: 14px; font-weight: 600; margin-bottom: 36px;
+  }
+  .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 26px; border-radius: 10px;
+    font-size: 14px; font-weight: 700; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--cyan); color: var(--navy); }
+  .btn-primary:hover { background: #00C8F0; transform: translateY(-2px); }
+  .btn-secondary {
+    background: transparent; color: var(--white);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.06); border-color: var(--cyan); }
+</style>
+</head>
+<body>
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html" class="nav-back">← Recordings</a>
+  </div>
+</nav>
+<main>
+  <div class="week-num">🏆</div>
+  <div class="lock">🔒</div>
+  <h1>Demo Day recording <span class="accent">coming soon.</span></h1>
+  <p class="sub">The grand finale — every team demos their group project live. Five mini-awards announced. Recording will appear here within 24 hours.</p>
+  <div class="date-pill">📅 Records Saturday 20 June 2026</div>
+  <div class="actions">
+    <a href="../index.html" class="btn btn-primary">← Back to recordings</a>
+    <a href="../../index.html#weeks" class="btn btn-secondary">View this week's content</a>
+  </div>
+</main>
+</body>
+</html>

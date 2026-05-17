@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Banking Hall — AWS SQS, SNS &amp; EventBridge, the Ghana Way</title>
+<style>
+  :root {
+    --bank-blue: #1B3A57;
+    --bank-blue-deep: #0F2438;
+    --queue: #2E86C1;
+    --queue-deep: #1F608E;
+    --announce: #E67E22;
+    --announce-deep: #B8631B;
+    --smart: #7D3C98;
+    --smart-deep: #5B2C6F;
+    --gold: #E8B647;
+    --gold-deep: #C99320;
+    --teal: #2A9D8F;
+    --green: #4A8C3F;
+    --green-deep: #356228;
+    --red: #C0392B;
+    --cream: #FFF8E7;
+    --warm-bg: #F5D6A1;
+    --warm-deep: #E0AE5E;
+    --marble: #F5F0E1;
+    --ink: #2A1810;
+    --ink-soft: #5A3E2B;
+    --shadow: rgba(42, 24, 16, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Georgia', 'Lora', serif;
+    background: radial-gradient(ellipse at top, #FCE7BD 0%, var(--warm-bg) 30%, var(--warm-deep) 65%, #C99362 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .progress-rail { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: rgba(42, 24, 16, 0.1); z-index: 200; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--queue), var(--smart)); width: 0%; transition: width 0.4s ease; }
+
+  .chapter-nav { position: fixed; right: 24px; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+  .chapter-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(42, 24, 16, 0.25); border: 2px solid var(--cream); cursor: pointer; transition: all 0.3s ease; position: relative; }
+  .chapter-dot:hover { transform: scale(1.4); background: var(--gold); }
+  .chapter-dot.active { background: var(--queue); transform: scale(1.4); box-shadow: 0 0 0 4px rgba(46, 134, 193, 0.25); }
+  .chapter-dot::after { content: attr(data-label); position: absolute; right: 22px; top: 50%; transform: translateY(-50%); background: var(--ink); color: var(--cream); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: 'Inter', system-ui, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .chapter-dot:hover::after { opacity: 1; }
+  @media (max-width: 700px) { .chapter-nav { display: none; } }
+
+  .scene { min-height: 100vh; width: 100%; padding: 80px 20px 60px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .scene-inner { max-width: 1100px; width: 100%; display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+  @media (max-width: 900px) { .scene-inner { grid-template-columns: 1fr; gap: 28px; } }
+
+  .scene-text { opacity: 0; transform: translateY(40px); transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  .scene.in-view .scene-text { opacity: 1; transform: translateY(0); }
+  .scene-visual { opacity: 0; transform: translateY(40px) scale(0.96); transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s, transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s; }
+  .scene.in-view .scene-visual { opacity: 1; transform: translateY(0) scale(1); }
+
+  .chapter-tag { display: inline-block; padding: 6px 14px; background: rgba(46, 134, 193, 0.15); border: 1.5px solid var(--queue); color: var(--queue-deep); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 30px; margin-bottom: 18px; }
+  .scene h2 { font-family: 'Georgia', serif; font-size: clamp(28px, 4vw, 44px); color: var(--ink); line-height: 1.15; margin-bottom: 18px; font-weight: 700; }
+  .scene h2 em { color: var(--queue-deep); font-style: italic; }
+  .scene-text p { font-size: 17px; color: var(--ink-soft); line-height: 1.75; margin-bottom: 14px; }
+  .scene-text p strong { color: var(--ink); background: rgba(232, 182, 71, 0.4); padding: 1px 6px; border-radius: 3px; }
+
+  .aws-pill { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; padding: 10px 18px; background: var(--ink); color: var(--gold); border-radius: 30px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 6px 18px var(--shadow); }
+  .aws-pill::before { content: '☁'; font-size: 16px; color: var(--queue); }
+
+  .term { background: rgba(232, 182, 71, 0.4); color: var(--ink); border-bottom: 2px dotted var(--gold-deep); cursor: help; position: relative; padding: 0 3px; font-weight: 600; }
+  .term:hover .tooltip { opacity: 1; transform: translate(-50%, -2px); pointer-events: auto; }
+  .tooltip { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, 6px); background: var(--ink); color: var(--cream); padding: 10px 14px; border-radius: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 400; line-height: 1.5; width: max-content; max-width: 240px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 50; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+  .tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--ink); }
+
+  .stage { width: 100%; aspect-ratio: 1 / 1; max-width: 540px; margin: 0 auto; background: linear-gradient(180deg, #FCE7BD 0%, #F0BD7C 60%, #C28447 100%); border-radius: 20px; box-shadow: 0 20px 50px var(--shadow), inset 0 0 0 3px rgba(255,255,255,0.4); position: relative; overflow: hidden; }
+  .stage svg { width: 100%; height: 100%; display: block; }
+
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes bobble { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-2px); } 75% { transform: translateY(1px); } }
+  @keyframes pulse-ring { 0% { r: 18; opacity: 0.7; } 100% { r: 60; opacity: 0; } }
+
+  .float { animation: float 3s ease-in-out infinite; }
+  .bobble { animation: bobble 0.4s ease-in-out infinite; }
+
+  .intro { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; position: relative; overflow: hidden; }
+  .intro-content { max-width: 800px; z-index: 2; }
+  .intro .badge { display: inline-block; padding: 6px 16px; background: rgba(46, 134, 193, 0.15); border: 1.5px solid var(--queue); color: var(--queue-deep); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border-radius: 30px; margin-bottom: 24px; animation: float 4s ease-in-out infinite; }
+  .intro h1 { font-family: 'Georgia', serif; font-size: clamp(40px, 7vw, 76px); color: var(--ink); line-height: 1.05; margin-bottom: 18px; font-weight: 700; }
+  .intro h1 em { color: var(--queue-deep); font-style: italic; display: block; }
+  .intro p { font-size: 19px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  .start-btn, .next-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: linear-gradient(180deg, var(--queue), var(--queue-deep)); color: var(--cream); border: none; border-radius: 50px; font-family: 'Georgia', serif; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(46, 134, 193, 0.4); transition: all 0.3s ease; text-decoration: none; }
+  .start-btn:hover, .next-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(46, 134, 193, 0.5); }
+  .start-btn::after, .next-btn::after { content: '→'; font-size: 18px; transition: transform 0.3s; }
+  .start-btn:hover::after, .next-btn:hover::after { transform: translateX(4px); }
+
+  .scroll-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: var(--ink-soft); font-family: 'Inter', system-ui, sans-serif; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7; animation: float 2s ease-in-out infinite; }
+  .scroll-hint::after { content: ''; display: block; width: 1px; height: 30px; background: var(--ink-soft); margin: 8px auto 0; }
+
+  .float-element { position: absolute; font-size: 60px; opacity: 0.18; pointer-events: none; }
+
+  .scene-action { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .replay-btn { padding: 10px 18px; background: transparent; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 30px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .replay-btn:hover { background: var(--ink); color: var(--cream); }
+  .replay-btn::before { content: '↻ '; }
+
+  .scene-label { position: absolute; background: var(--ink); color: var(--cream); padding: 4px 12px; border-radius: 14px; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 5; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+  .scene-label.visible { opacity: 1; }
+  .scene-label.fast { background: var(--green); }
+  .scene-label.slow { background: var(--red); }
+
+  .summary { background: linear-gradient(180deg, rgba(255,248,231,0.4) 0%, rgba(232,182,71,0.4) 100%); }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 30px; }
+  @media (max-width: 800px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  .summary-card { background: var(--cream); border-radius: 14px; padding: 18px 20px; border-left: 5px solid var(--queue); box-shadow: 0 6px 18px var(--shadow); transition: transform 0.3s, box-shadow 0.3s; }
+  .summary-card:hover { transform: translateY(-4px); box-shadow: 0 12px 26px var(--shadow); }
+  .summary-card .icon { font-size: 32px; margin-bottom: 6px; }
+  .summary-card .farm-side { font-family: 'Georgia', serif; font-size: 16px; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+  .summary-card .arrow { color: var(--queue-deep); font-size: 18px; margin: 4px 0; }
+  .summary-card .aws-side { font-family: 'Courier New', monospace; font-size: 14px; color: var(--ink); font-weight: 700; background: var(--gold); padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .summary-card p { font-size: 13px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
+  .summary-card.c1 { border-left-color: var(--queue); }
+  .summary-card.c2 { border-left-color: var(--announce); }
+  .summary-card.c3 { border-left-color: var(--smart); }
+
+  .end-cta { text-align: center; margin-top: 40px; }
+  .end-cta p { margin-bottom: 20px; font-style: italic; color: var(--ink); }
+
+  .footer { text-align: center; padding: 30px 20px; color: var(--ink-soft); font-size: 13px; font-family: 'Inter', system-ui, sans-serif; background: rgba(42, 24, 16, 0.06); }
+  .footer strong { color: var(--queue-deep); }
+</style>
+</head>
+<body>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="chapter-nav" id="chapterNav">
+  <div class="chapter-dot" data-target="intro" data-label="Welcome"></div>
+  <div class="chapter-dot" data-target="scene-bank" data-label="The Bank"></div>
+  <div class="chapter-dot" data-target="scene-queue" data-label="The Line (SQS)"></div>
+  <div class="chapter-dot" data-target="scene-announcer" data-label="Announcer (SNS)"></div>
+  <div class="chapter-dot" data-target="scene-receptionist" data-label="Receptionist (EventBridge)"></div>
+  <div class="chapter-dot" data-target="scene-when" data-label="When to Use"></div>
+  <div class="chapter-dot" data-target="scene-summary" data-label="Summary"></div>
+</nav>
+
+<section class="intro" id="intro">
+  <div class="float-element" style="top: 12%; left: 8%; animation: float 5s ease-in-out infinite;">🏦</div>
+  <div class="float-element" style="top: 22%; right: 12%; animation: float 6s ease-in-out infinite 1s;">📢</div>
+  <div class="float-element" style="bottom: 18%; left: 15%; animation: float 4s ease-in-out infinite 0.5s;">🎫</div>
+  <div class="float-element" style="bottom: 28%; right: 20%; animation: float 5s ease-in-out infinite 1.5s;">📋</div>
+  <div class="intro-content">
+    <span class="badge">An AWS Messaging Story</span>
+    <h1>The Banking Hall<br>at <em>GCB Plaza</em></h1>
+    <p>You walk into a busy Ghana bank. There's a queue. There's an announcer calling numbers. There's a receptionist who decides where each customer goes. Three completely different ways of moving people around — and each is exactly how AWS moves messages between your services.</p>
+    <a href="#scene-bank" class="start-btn">Take a number</a>
+  </div>
+  <div class="scroll-hint">SCROLL TO QUEUE</div>
+</section>
+
+<section class="scene" id="scene-bank">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 1 · The Banking Hall</span>
+      <h2>One bank. <em>Three ways</em> to move customers.</h2>
+      <p>Imagine the inside of GCB's main branch in Accra. Customers come in needing different things — deposits, withdrawals, statements, account opening, loan inquiries. The bank can't just let everyone rush the tellers at once.</p>
+      <p>So the bank uses three different systems to handle the flow:</p>
+      <p>1. A <strong>numbered queue</strong> — pull a ticket, wait your turn, one teller serves you.</p>
+      <p>2. A <strong>public announcer</strong> — "All loan officers, please come to the front desk!" — broadcasts to many people at once.</p>
+      <p>3. A <strong>smart receptionist</strong> — asks what you need, then sends you to the RIGHT department based on the answer.</p>
+      <p>In AWS, you have all three. They look intimidating with names like SQS, SNS, and EventBridge — but they're just digital versions of what GCB already does every day.</p>
+      <div class="aws-pill">SQS · SNS · EventBridge — Three Messaging Systems</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <circle cx="430" cy="80" r="35" fill="#E8B647" opacity="0.6"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A3E2B"/>
+
+          <!-- Bank facade -->
+          <rect x="40" y="80" width="420" height="380" fill="#1B3A57" stroke="#0F2438" stroke-width="3"/>
+          <!-- Columns -->
+          <rect x="60" y="100" width="20" height="280" fill="#F5F0E1"/>
+          <rect x="180" y="100" width="20" height="280" fill="#F5F0E1"/>
+          <rect x="300" y="100" width="20" height="280" fill="#F5F0E1"/>
+          <rect x="420" y="100" width="20" height="280" fill="#F5F0E1"/>
+          <!-- Pediment -->
+          <polygon points="40,100 460,100 250,60" fill="#0F2438"/>
+          <!-- Sign -->
+          <rect x="160" y="120" width="180" height="30" fill="#E8B647" stroke="#1B3A57" stroke-width="2"/>
+          <text x="250" y="140" text-anchor="middle" font-family="Georgia" font-size="13" font-weight="bold" fill="#1B3A57">GCB PLAZA · ACCRA</text>
+
+          <!-- Three section icons inside -->
+          <!-- Queue -->
+          <g transform="translate(120, 250)">
+            <rect x="-40" y="-15" width="80" height="80" rx="6" fill="#FFF8E7" stroke="#1B3A57" stroke-width="2"/>
+            <text x="0" y="-2" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">QUEUE</text>
+            <rect x="-25" y="8" width="50" height="40" fill="#2E86C1" rx="3"/>
+            <text x="0" y="33" text-anchor="middle" font-family="Inter" font-size="22" fill="#FFF" font-weight="bold">42</text>
+            <text x="0" y="78" text-anchor="middle" font-family="Inter" font-size="8" fill="#FFF8E7">→ SQS</text>
+          </g>
+
+          <!-- Announcer -->
+          <g transform="translate(250, 250)">
+            <rect x="-40" y="-15" width="80" height="80" rx="6" fill="#FFF8E7" stroke="#1B3A57" stroke-width="2"/>
+            <text x="0" y="-2" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">ANNOUNCER</text>
+            <!-- megaphone -->
+            <g transform="translate(0, 30)">
+              <polygon points="-20,-10 -5,-15 -5,15 -20,10" fill="#E67E22" stroke="#3E1F08" stroke-width="1.5"/>
+              <rect x="-5" y="-10" width="20" height="20" fill="#B8631B" stroke="#3E1F08" stroke-width="1.5"/>
+              <line x1="20" y1="-3" x2="28" y2="-8" stroke="#E67E22" stroke-width="1.5"/>
+              <line x1="20" y1="3" x2="28" y2="8" stroke="#E67E22" stroke-width="1.5"/>
+            </g>
+            <text x="0" y="78" text-anchor="middle" font-family="Inter" font-size="8" fill="#FFF8E7">→ SNS</text>
+          </g>
+
+          <!-- Receptionist -->
+          <g transform="translate(380, 250)">
+            <rect x="-40" y="-15" width="80" height="80" rx="6" fill="#FFF8E7" stroke="#1B3A57" stroke-width="2"/>
+            <text x="0" y="-2" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">RECEPTIONIST</text>
+            <!-- person -->
+            <g transform="translate(0, 30)">
+              <ellipse cx="0" cy="6" rx="11" ry="14" fill="#7D3C98"/>
+              <circle cx="0" cy="-8" r="9" fill="#6B3410"/>
+              <ellipse cx="0" cy="-14" rx="11" ry="3" fill="#5B2C6F"/>
+            </g>
+            <text x="0" y="78" text-anchor="middle" font-family="Inter" font-size="8" fill="#FFF8E7">→ EventBridge</text>
+          </g>
+
+          <!-- Front entrance -->
+          <rect x="220" y="380" width="60" height="60" fill="#0F2438"/>
+          <text x="250" y="420" text-anchor="middle" font-family="Inter" font-size="9" fill="#E8B647" font-weight="bold">↓ ENTER ↓</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-queue">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 2 · The Queue</span>
+      <h2>SQS — the <em>numbered queue</em></h2>
+      <p>You walk in, pull a numbered ticket — say, #42. The screen says "now serving #38." So you sit down. You wait. Eventually the screen shows #42, and a teller calls you to window 3.</p>
+      <p>Notice three important things:</p>
+      <p>• <strong>You don't pick a teller.</strong> Whoever's free serves you.<br>• <strong>Only ONE teller serves you.</strong> Not three. Not all of them. Just one.<br>• <strong>If all tellers are busy, you wait.</strong> The line just gets longer. Nobody panics. Nobody loses their place.</p>
+      <p>This is the entire idea of <span class="term">SQS<span class="tooltip">SQS = Simple Queue Service. Messages sit in a queue and are pulled by ONE consumer. If consumers are slow or down, messages just wait. Perfect for processing tasks one at a time.</span></span> — Simple Queue Service. One sender drops a message in the queue, one worker picks it up, processes it, deletes it. If the worker crashes? The message goes back to the queue and another worker picks it up. <strong>Nothing gets lost.</strong></p>
+      <p style="background: var(--cream); border-left: 4px solid var(--queue); padding: 12px 16px; border-radius: 6px; color: var(--ink);"><strong>Use SQS when:</strong> you have tasks that need to be done one at a time, in order or otherwise — like processing orders, sending emails, generating PDFs, running batch jobs.</p>
+      <div class="aws-pill">Amazon SQS — One-to-One Queue</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayQueue()">Replay the line</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="queueSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#F5F0E1"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A3E2B"/>
+
+          <text x="250" y="40" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#1B3A57">The Queue at GCB</text>
+
+          <!-- Now serving display -->
+          <g transform="translate(250, 80)">
+            <rect x="-80" y="-22" width="160" height="40" rx="6" fill="#1B3A57" stroke="#E8B647" stroke-width="2"/>
+            <text x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="9" fill="#E8B647" font-weight="bold">NOW SERVING</text>
+            <text id="servingNum" x="0" y="13" text-anchor="middle" font-family="Inter" font-size="18" fill="#FFF8E7" font-weight="bold">#38</text>
+          </g>
+
+          <!-- Queue line of customers -->
+          <g id="queueLine">
+            <!-- Customer 1 (#42) -->
+            <g id="cust1" transform="translate(80, 320)">
+              <ellipse cx="0" cy="14" rx="11" ry="18" fill="#C0392B"/>
+              <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+              <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="-12" y="-22" width="24" height="14" fill="#FFF8E7" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-12" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#3E1F08">#42</text>
+            </g>
+            <!-- Customer 2 (#43) -->
+            <g id="cust2" transform="translate(140, 320)">
+              <ellipse cx="0" cy="14" rx="11" ry="18" fill="#27AE60"/>
+              <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+              <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="-12" y="-22" width="24" height="14" fill="#FFF8E7" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-12" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#3E1F08">#43</text>
+            </g>
+            <!-- Customer 3 (#44) -->
+            <g id="cust3" transform="translate(200, 320)">
+              <ellipse cx="0" cy="14" rx="11" ry="18" fill="#E67E22"/>
+              <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+              <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="-12" y="-22" width="24" height="14" fill="#FFF8E7" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-12" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#3E1F08">#44</text>
+            </g>
+            <!-- Customer 4 (#45) -->
+            <g id="cust4" transform="translate(260, 320)">
+              <ellipse cx="0" cy="14" rx="11" ry="18" fill="#7D3C98"/>
+              <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+              <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+              <rect x="-12" y="-22" width="24" height="14" fill="#FFF8E7" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-12" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#3E1F08">#45</text>
+            </g>
+          </g>
+
+          <!-- Teller window -->
+          <g transform="translate(420, 280)">
+            <rect x="-40" y="-30" width="80" height="60" fill="#1B3A57" stroke="#0F2438" stroke-width="2"/>
+            <rect x="-32" y="-22" width="64" height="35" fill="#FFF8E7"/>
+            <text x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">TELLER</text>
+            <!-- teller person -->
+            <g transform="translate(0, -2)">
+              <circle cx="0" cy="0" r="6" fill="#6B3410"/>
+              <ellipse cx="0" cy="9" rx="6" ry="6" fill="#2E86C1"/>
+            </g>
+            <text x="0" y="48" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#FFF8E7">Window 3</text>
+          </g>
+
+          <!-- Queue label -->
+          <g transform="translate(170, 380)">
+            <rect x="-90" y="-15" width="180" height="22" rx="11" fill="#2E86C1"/>
+            <text x="0" y="0" text-anchor="middle" font-family="Courier New" font-size="10" fill="#FFF" font-weight="bold">SQS QUEUE (FIFO)</text>
+          </g>
+
+          <!-- Status -->
+          <g transform="translate(250, 460)">
+            <rect x="-180" y="-15" width="360" height="22" rx="11" fill="#FFF8E7" opacity="0.9"/>
+            <text id="queueStatus" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#1B3A57" font-weight="bold">4 customers waiting · 1 teller serving · order preserved</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="queueLabel" style="top: 12%; right: 10%;">Watching the line</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-announcer">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 3 · The Announcer</span>
+      <h2>SNS — the <em>public announcer</em></h2>
+      <p>Now the bank manager grabs a megaphone and shouts: <strong>"ATTENTION! All loan officers, all account managers, all customer service reps — please report to the main floor immediately!"</strong></p>
+      <p>One announcement. Many people hear it. <strong>EVERYONE who's listening responds.</strong> The loan officers come. The account managers come. The CS reps come. They all act on the same single announcement, in parallel, at the same time.</p>
+      <p>Notice the difference from the queue:</p>
+      <p>• <strong>Many recipients</strong> hear the same message at once<br>• <strong>Nobody waits in line</strong> — it's broadcast<br>• <strong>The announcer doesn't care</strong> who responds or how long they take</p>
+      <p>This is <span class="term">SNS<span class="tooltip">SNS = Simple Notification Service. A pub/sub system. ONE message gets fanned out to MANY subscribers — could be email, SMS, Lambda functions, SQS queues, all at once.</span></span> — Simple Notification Service. One publisher sends a message to a "topic." Anyone subscribed to that topic gets a copy. Could be 1 subscriber. Could be 1,000.</p>
+      <p>Real example: an order is placed. SNS broadcasts that fact. The shipping system gets notified. The email system gets notified. The fraud detector gets notified. Everyone reacts simultaneously.</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--announce); padding: 12px 16px; border-radius: 6px; color: var(--ink);"><strong>Use SNS when:</strong> something happens and multiple systems need to know about it — order placed, file uploaded, alarm triggered, payment received.</p>
+      <div class="aws-pill">Amazon SNS — One-to-Many Broadcast</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayAnnouncer()">Replay the announcement</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="announcerSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#F5F0E1"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A3E2B"/>
+
+          <text x="250" y="40" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#1B3A57">The Bank Manager's Announcement</text>
+
+          <!-- Manager with megaphone -->
+          <g transform="translate(80, 280)">
+            <ellipse cx="0" cy="14" rx="14" ry="22" fill="#E67E22"/>
+            <circle cx="0" cy="-8" r="11" fill="#6B3410"/>
+            <ellipse cx="0" cy="-14" rx="13" ry="3" fill="#1B3A57"/>
+            <ellipse cx="0" cy="-19" rx="9" ry="6" fill="#1B3A57"/>
+            <rect x="-5" y="34" width="4" height="14" fill="#3E1F08"/>
+            <rect x="1" y="34" width="4" height="14" fill="#3E1F08"/>
+
+            <!-- megaphone -->
+            <g transform="translate(20, 0)">
+              <polygon points="0,-12 25,-18 25,18 0,12" fill="#E67E22" stroke="#3E1F08" stroke-width="1.5"/>
+              <rect x="-5" y="-10" width="8" height="20" rx="2" fill="#B8631B" stroke="#3E1F08" stroke-width="1"/>
+            </g>
+
+            <!-- Sound waves -->
+            <g id="soundWaves">
+              <path d="M 50 0 Q 65 -8 75 0" fill="none" stroke="#E67E22" stroke-width="2" opacity="0.7"/>
+              <path d="M 55 0 Q 75 -12 90 0" fill="none" stroke="#E67E22" stroke-width="2" opacity="0.5"/>
+              <path d="M 60 0 Q 85 -16 105 0" fill="none" stroke="#E67E22" stroke-width="2" opacity="0.3"/>
+            </g>
+
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="9" fill="#1B3A57" font-weight="bold">MANAGER</text>
+          </g>
+
+          <!-- Topic node (SNS) -->
+          <g transform="translate(220, 280)">
+            <rect x="-40" y="-22" width="80" height="44" rx="22" fill="#E67E22" stroke="#3E1F08" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7" font-weight="bold">SNS Topic</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Courier New" font-size="8" fill="#FFF8E7">staff-call</text>
+          </g>
+
+          <!-- 3 listeners (subscribers) -->
+          <!-- Loan officers -->
+          <g id="sub1" transform="translate(380, 180)">
+            <rect x="-50" y="-18" width="100" height="40" rx="6" fill="#FFF8E7" stroke="#1B3A57" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">Loan Officers</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Inter" font-size="7" fill="#5A3E2B">5 people listening</text>
+            <g id="sub1Status" transform="translate(40, 0)" style="opacity:0">
+              <circle cx="0" cy="0" r="9" fill="#27AE60"/>
+              <text x="0" y="3" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF" font-weight="bold">✓</text>
+            </g>
+          </g>
+
+          <!-- Account managers -->
+          <g id="sub2" transform="translate(380, 280)">
+            <rect x="-50" y="-18" width="100" height="40" rx="6" fill="#FFF8E7" stroke="#1B3A57" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">Account Mgrs</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Inter" font-size="7" fill="#5A3E2B">3 people listening</text>
+            <g id="sub2Status" transform="translate(40, 0)" style="opacity:0">
+              <circle cx="0" cy="0" r="9" fill="#27AE60"/>
+              <text x="0" y="3" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF" font-weight="bold">✓</text>
+            </g>
+          </g>
+
+          <!-- CS reps -->
+          <g id="sub3" transform="translate(380, 380)">
+            <rect x="-50" y="-18" width="100" height="40" rx="6" fill="#FFF8E7" stroke="#1B3A57" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">CS Reps</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Inter" font-size="7" fill="#5A3E2B">8 people listening</text>
+            <g id="sub3Status" transform="translate(40, 0)" style="opacity:0">
+              <circle cx="0" cy="0" r="9" fill="#27AE60"/>
+              <text x="0" y="3" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF" font-weight="bold">✓</text>
+            </g>
+          </g>
+
+          <!-- Connection lines -->
+          <g stroke="#E67E22" stroke-width="2" stroke-dasharray="4,3" fill="none" opacity="0.6">
+            <line x1="260" y1="270" x2="330" y2="190"/>
+            <line x1="260" y1="280" x2="330" y2="280"/>
+            <line x1="260" y1="290" x2="330" y2="370"/>
+          </g>
+
+          <!-- Status -->
+          <g transform="translate(250, 460)">
+            <rect x="-180" y="-15" width="360" height="22" rx="11" fill="#FFF8E7" opacity="0.9"/>
+            <text id="snsStatus" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#1B3A57" font-weight="bold">1 message · 3 subscribers · everyone responds</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="snsLabel" style="top: 12%; right: 10%;">Listening for broadcast</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-receptionist">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 4 · The Receptionist</span>
+      <h2>EventBridge — the <em>smart receptionist</em></h2>
+      <p>Now meet the bank's receptionist. She sits at a desk near the entrance with a clipboard. Every customer that walks in goes to her FIRST. She asks: <em>"Good morning, how can I help you today?"</em></p>
+      <p>The customer says "I want to open a savings account" — she sends them to <strong>account opening</strong>.</p>
+      <p>Another says "I lost my ATM card" — she sends them to <strong>card services</strong>.</p>
+      <p>A third says "I want a loan over 100,000 cedis" — she sends them to the <strong>senior loan manager</strong>, NOT the regular loan desk.</p>
+      <p>She doesn't broadcast. She doesn't queue. She <strong>reads the request and routes it intelligently</strong> based on rules.</p>
+      <p>This is <span class="term">EventBridge<span class="tooltip">EventBridge is an event bus that lets you route events to different targets based on rules. You can filter by content, transform data, and even integrate with SaaS apps like Stripe, Datadog, Zendesk.</span></span>. It's the most flexible of the three. Events come in. Rules look at the content. Each rule sends matching events to specific targets — Lambda, SQS, SNS, even external SaaS apps.</p>
+      <p>It's like SNS with a brain. Or SQS with rules.</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--smart); padding: 12px 16px; border-radius: 6px; color: var(--ink);"><strong>Use EventBridge when:</strong> different events need different reactions — "if order &gt; $1000 alert finance, if order &lt; $50 just send confirmation, if from VIP customer notify account manager."</p>
+      <div class="aws-pill">Amazon EventBridge — Event-Driven Routing</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayReceptionist()">Replay the routing</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="receptionistSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#F5F0E1"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A3E2B"/>
+
+          <text x="250" y="40" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#1B3A57">The Receptionist's Desk</text>
+
+          <!-- Receptionist desk in middle -->
+          <g transform="translate(250, 280)">
+            <rect x="-50" y="-30" width="100" height="60" fill="#7D3C98" stroke="#3E1F08" stroke-width="2"/>
+            <rect x="-50" y="-38" width="100" height="10" fill="#5B2C6F"/>
+            <!-- person -->
+            <g transform="translate(0, -12)">
+              <circle cx="0" cy="0" r="9" fill="#6B3410"/>
+              <ellipse cx="0" cy="-6" rx="11" ry="3" fill="#3E1F08"/>
+            </g>
+            <!-- clipboard -->
+            <rect x="-12" y="-2" width="24" height="14" fill="#FFF8E7" stroke="#3E1F08" stroke-width="0.8"/>
+            <line x1="-9" y1="2" x2="9" y2="2" stroke="#5A3E2B" stroke-width="0.5"/>
+            <line x1="-9" y1="6" x2="9" y2="6" stroke="#5A3E2B" stroke-width="0.5"/>
+            <line x1="-9" y1="10" x2="9" y2="10" stroke="#5A3E2B" stroke-width="0.5"/>
+            <text x="0" y="50" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7" font-weight="bold">RECEPTIONIST</text>
+          </g>
+
+          <!-- Customer entering (animated) -->
+          <g id="visitor" transform="translate(50, 290)">
+            <ellipse cx="0" cy="14" rx="11" ry="18" fill="#C0392B"/>
+            <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+            <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+            <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+          </g>
+
+          <!-- Speech bubble for customer -->
+          <g id="visitorSpeech" transform="translate(50, 220)" style="opacity:0">
+            <rect x="-50" y="-22" width="100" height="32" rx="6" fill="#FFF8E7" stroke="#3E1F08" stroke-width="1.5"/>
+            <polygon points="-6,10 0,18 6,10" fill="#FFF8E7" stroke="#3E1F08" stroke-width="1.5"/>
+            <text id="visitorMsg" x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#1B3A57">"I want to open</text>
+            <text x="0" y="3" text-anchor="middle" font-family="Inter" font-size="8" font-weight="bold" fill="#1B3A57">an account"</text>
+          </g>
+
+          <!-- 3 destination desks on right -->
+          <g id="dest1" transform="translate(420, 130)">
+            <rect x="-45" y="-18" width="90" height="40" rx="4" fill="#FFF8E7" stroke="#1B3A57" stroke-width="1.5"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">Account Opening</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Courier New" font-size="7" fill="#27AE60">→ Lambda</text>
+            <g id="dest1Highlight" style="opacity:0">
+              <rect x="-50" y="-22" width="100" height="48" rx="6" fill="none" stroke="#27AE60" stroke-width="3"/>
+            </g>
+          </g>
+
+          <g id="dest2" transform="translate(420, 230)">
+            <rect x="-45" y="-18" width="90" height="40" rx="4" fill="#FFF8E7" stroke="#1B3A57" stroke-width="1.5"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">Card Services</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Courier New" font-size="7" fill="#27AE60">→ SQS Queue</text>
+            <g id="dest2Highlight" style="opacity:0">
+              <rect x="-50" y="-22" width="100" height="48" rx="6" fill="none" stroke="#27AE60" stroke-width="3"/>
+            </g>
+          </g>
+
+          <g id="dest3" transform="translate(420, 330)">
+            <rect x="-45" y="-18" width="90" height="40" rx="4" fill="#FFF8E7" stroke="#1B3A57" stroke-width="1.5"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Inter" font-size="9" font-weight="bold" fill="#1B3A57">Senior Loan Mgr</text>
+            <text x="0" y="10" text-anchor="middle" font-family="Courier New" font-size="7" fill="#27AE60">→ SNS Alert</text>
+            <g id="dest3Highlight" style="opacity:0">
+              <rect x="-50" y="-22" width="100" height="48" rx="6" fill="none" stroke="#27AE60" stroke-width="3"/>
+            </g>
+          </g>
+
+          <!-- routing arrow (animated) -->
+          <g id="routeArrow" style="opacity:0">
+            <line id="routeLine" x1="300" y1="280" x2="370" y2="130" stroke="#7D3C98" stroke-width="2.5" stroke-dasharray="5,3"/>
+            <polygon id="routeArrowHead" points="0,0 -8,-4 -8,4" fill="#7D3C98" transform="translate(370, 130) rotate(-65)"/>
+          </g>
+
+          <!-- Rules display -->
+          <g transform="translate(80, 130)">
+            <rect x="-40" y="-22" width="100" height="50" rx="4" fill="#1B3A57"/>
+            <text x="10" y="-8" text-anchor="middle" font-family="Inter" font-size="8" fill="#E8B647" font-weight="bold">RULES</text>
+            <text x="-35" y="3" font-family="Courier New" font-size="6" fill="#FFF8E7">if "open"  →  Lambda</text>
+            <text x="-35" y="13" font-family="Courier New" font-size="6" fill="#FFF8E7">if "card"  →  SQS</text>
+            <text x="-35" y="23" font-family="Courier New" font-size="6" fill="#FFF8E7">if "loan"  →  SNS</text>
+          </g>
+
+          <!-- Status -->
+          <g transform="translate(250, 460)">
+            <rect x="-180" y="-15" width="360" height="22" rx="11" fill="#FFF8E7" opacity="0.9"/>
+            <text id="ebStatus" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#1B3A57" font-weight="bold">EventBridge: read content · match rule · route to right target</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="ebLabel" style="top: 12%; right: 10%;">Watching the routing</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-when">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 5 · Choosing Wisely</span>
+      <h2>So which one do you <em>actually pick?</em></h2>
+      <p>Newbies always get this question wrong on the cert. The trick is asking ONE question:</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--queue); padding: 16px; border-radius: 6px; color: var(--ink); font-size: 18px;"><strong>"How many things should react to this message?"</strong></p>
+      <p>• <strong>One thing</strong> reacts → SQS (queue, one worker)<br>• <strong>Many things</strong> react, all the same way → SNS (broadcast)<br>• <strong>Different things</strong> react based on content → EventBridge (smart routing)</p>
+      <p style="margin-top: 16px;">A few real-world examples:</p>
+      <p><strong>Order placed</strong> → many systems care (shipping, billing, email, fraud) → <span style="color: var(--announce-deep); font-weight: 700;">SNS</span></p>
+      <p><strong>Image upload to be resized</strong> → one Lambda needs to pick it up and process it → <span style="color: var(--queue-deep); font-weight: 700;">SQS</span></p>
+      <p><strong>Customer activity stream</strong> → if VIP, alert manager; if international, run compliance check; otherwise just log → <span style="color: var(--smart-deep); font-weight: 700;">EventBridge</span></p>
+      <p style="margin-top: 16px;">A pro tip: <strong>SNS + SQS together</strong> is one of the most common AWS patterns. SNS broadcasts, and each subscriber is its own SQS queue, so each system processes at its own pace.</p>
+      <div class="aws-pill">SNS → SQS Fanout — A Classic Pattern</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="500" fill="#F5F0E1"/>
+
+          <text x="250" y="40" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#1B3A57">SNS + SQS Fanout Pattern</text>
+
+          <!-- Order event source -->
+          <g transform="translate(80, 130)">
+            <rect x="-40" y="-25" width="80" height="50" rx="6" fill="#1B3A57" stroke="#0F2438" stroke-width="2"/>
+            <text x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF8E7" font-weight="bold">ORDER</text>
+            <text x="0" y="6" text-anchor="middle" font-family="Inter" font-size="9" fill="#E8B647">PLACED</text>
+            <text x="0" y="18" text-anchor="middle" font-family="Inter" font-size="7" fill="#FFF8E7">(event)</text>
+          </g>
+
+          <!-- SNS topic -->
+          <g transform="translate(200, 250)">
+            <rect x="-50" y="-25" width="100" height="50" rx="25" fill="#E67E22" stroke="#3E1F08" stroke-width="2"/>
+            <text x="0" y="-5" text-anchor="middle" font-family="Inter" font-size="10" fill="#FFF8E7" font-weight="bold">SNS Topic</text>
+            <text x="0" y="9" text-anchor="middle" font-family="Courier New" font-size="9" fill="#FFF8E7">order-events</text>
+          </g>
+
+          <!-- 3 SQS queues -->
+          <g transform="translate(380, 130)">
+            <rect x="-50" y="-25" width="100" height="50" rx="6" fill="#2E86C1" stroke="#1F3D5C" stroke-width="2"/>
+            <text x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7" font-weight="bold">SQS Queue</text>
+            <text x="0" y="5" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7">SHIPPING</text>
+            <text x="0" y="16" text-anchor="middle" font-family="Inter" font-size="7" fill="#FFF8E7">→ Lambda</text>
+          </g>
+
+          <g transform="translate(380, 250)">
+            <rect x="-50" y="-25" width="100" height="50" rx="6" fill="#2E86C1" stroke="#1F3D5C" stroke-width="2"/>
+            <text x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7" font-weight="bold">SQS Queue</text>
+            <text x="0" y="5" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7">EMAIL</text>
+            <text x="0" y="16" text-anchor="middle" font-family="Inter" font-size="7" fill="#FFF8E7">→ Lambda</text>
+          </g>
+
+          <g transform="translate(380, 370)">
+            <rect x="-50" y="-25" width="100" height="50" rx="6" fill="#2E86C1" stroke="#1F3D5C" stroke-width="2"/>
+            <text x="0" y="-7" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7" font-weight="bold">SQS Queue</text>
+            <text x="0" y="5" text-anchor="middle" font-family="Inter" font-size="9" fill="#FFF8E7">FRAUD CHECK</text>
+            <text x="0" y="16" text-anchor="middle" font-family="Inter" font-size="7" fill="#FFF8E7">→ Lambda</text>
+          </g>
+
+          <!-- Connections -->
+          <g stroke="#1B3A57" stroke-width="2" fill="none" opacity="0.7">
+            <line x1="125" y1="140" x2="155" y2="240"/>
+          </g>
+          <g stroke="#E67E22" stroke-width="2" stroke-dasharray="4,3" fill="none" opacity="0.7">
+            <line x1="245" y1="240" x2="335" y2="140"/>
+            <line x1="250" y1="250" x2="335" y2="250"/>
+            <line x1="245" y1="260" x2="335" y2="365"/>
+          </g>
+
+          <!-- Annotations -->
+          <text x="135" y="195" text-anchor="middle" font-family="Inter" font-size="8" fill="#5A3E2B" font-style="italic">publish</text>
+          <text x="290" y="148" text-anchor="middle" font-family="Inter" font-size="8" fill="#5A3E2B" font-style="italic">fanout</text>
+          <text x="290" y="245" text-anchor="middle" font-family="Inter" font-size="8" fill="#5A3E2B" font-style="italic">fanout</text>
+          <text x="290" y="345" text-anchor="middle" font-family="Inter" font-size="8" fill="#5A3E2B" font-style="italic">fanout</text>
+
+          <!-- Why this pattern -->
+          <g transform="translate(50, 440)">
+            <rect x="-10" y="-20" width="430" height="55" rx="6" fill="#1B3A57"/>
+            <text x="10" y="-5" font-family="Inter" font-size="10" fill="#E8B647" font-weight="bold">Why both SNS + SQS?</text>
+            <text x="10" y="9" font-family="Inter" font-size="9" fill="#FFF8E7">• If shipping is down, its queue holds the message · email still goes</text>
+            <text x="10" y="22" font-family="Inter" font-size="9" fill="#FFF8E7">• Each system processes at its own pace · no blocking</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene summary" id="scene-summary">
+  <div class="scene-inner" style="grid-template-columns: 1fr;">
+    <div class="scene-text" style="text-align:center;">
+      <span class="chapter-tag">The Map</span>
+      <h2>The whole banking hall, in <em>AWS terms</em></h2>
+      <p style="max-width: 640px; margin: 0 auto 0;">When you see a question about queues, topics, or event buses on the cert — picture GCB. The numbered line. The megaphone. The receptionist with the clipboard. The right answer becomes obvious.</p>
+      <div class="summary-grid">
+        <div class="summary-card c1">
+          <div class="icon">🎫</div>
+          <div class="farm-side">The Numbered Queue</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Amazon SQS</div>
+          <p>One sender, one worker. Tasks line up. If the worker fails, the message comes back.</p>
+        </div>
+        <div class="summary-card c2">
+          <div class="icon">📢</div>
+          <div class="farm-side">The Public Announcer</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Amazon SNS</div>
+          <p>One message broadcasts to many subscribers. Everyone reacts in parallel.</p>
+        </div>
+        <div class="summary-card c3">
+          <div class="icon">📋</div>
+          <div class="farm-side">The Smart Receptionist</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Amazon EventBridge</div>
+          <p>Reads the request. Applies rules. Routes to the right target based on content.</p>
+        </div>
+      </div>
+      <div class="end-cta">
+        <p>"AWS messaging isn't magic. It's just a well-organized banking hall."</p>
+        <a href="#intro" class="next-btn">Read the story again</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <strong>The Banking Hall at GCB Plaza</strong> · A Ghanaian story for understanding AWS messaging · cloudwithshad
+</div>
+
+<script>
+  const progressFill = document.getElementById('progressFill');
+  const dots = document.querySelectorAll('.chapter-dot');
+  const sections = ['intro', 'scene-bank', 'scene-queue', 'scene-announcer', 'scene-receptionist', 'scene-when', 'scene-summary'];
+
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressFill.style.width = (scrollPos / docHeight * 100) + '%';
+    let activeIdx = 0;
+    sections.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && scrollPos + window.innerHeight * 0.5 >= el.offsetTop) activeIdx = i;
+    });
+    dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+  });
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(dot.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        triggerSceneAnimations(entry.target.id);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.scene').forEach(s => observer.observe(s));
+
+  const triggered = new Set();
+  function triggerSceneAnimations(id) {
+    if (triggered.has(id)) return;
+    triggered.add(id);
+    if (id === 'scene-queue') setTimeout(replayQueue, 400);
+    if (id === 'scene-announcer') setTimeout(replayAnnouncer, 400);
+    if (id === 'scene-receptionist') setTimeout(replayReceptionist, 400);
+  }
+
+  function replayQueue() {
+    const cust1 = document.getElementById('cust1');
+    const cust2 = document.getElementById('cust2');
+    const cust3 = document.getElementById('cust3');
+    const cust4 = document.getElementById('cust4');
+    const servingNum = document.getElementById('servingNum');
+    const status = document.getElementById('queueStatus');
+    const label = document.getElementById('queueLabel');
+    if (!cust1) return;
+
+    // Reset
+    cust1.style.transition = 'none';
+    cust2.style.transition = 'none';
+    cust3.style.transition = 'none';
+    cust4.style.transition = 'none';
+    cust1.setAttribute('transform', 'translate(80, 320)');
+    cust2.setAttribute('transform', 'translate(140, 320)');
+    cust3.setAttribute('transform', 'translate(200, 320)');
+    cust4.setAttribute('transform', 'translate(260, 320)');
+    cust1.style.opacity = '1';
+    cust2.style.opacity = '1';
+    cust3.style.opacity = '1';
+    cust4.style.opacity = '1';
+    servingNum.textContent = '#38';
+    status.textContent = '4 customers waiting · 1 teller serving';
+    label.classList.remove('visible', 'fast', 'slow');
+
+    setTimeout(() => {
+      label.textContent = 'Now serving #42';
+      label.classList.add('visible');
+      servingNum.textContent = '#42';
+
+      // Customer 1 walks to teller
+      cust1.style.transition = 'transform 2.5s ease-in-out';
+      cust1.setAttribute('transform', 'translate(415, 290)');
+
+      setTimeout(() => {
+        // Customer 1 disappears (served), others shift forward
+        cust1.style.transition = 'opacity 0.5s';
+        cust1.style.opacity = '0';
+        servingNum.textContent = '#43';
+        label.textContent = '✓ #42 served · now #43';
+        label.classList.add('fast');
+
+        cust2.style.transition = 'transform 1s ease-in-out';
+        cust3.style.transition = 'transform 1s ease-in-out';
+        cust4.style.transition = 'transform 1s ease-in-out';
+        cust2.setAttribute('transform', 'translate(80, 320)');
+        cust3.setAttribute('transform', 'translate(140, 320)');
+        cust4.setAttribute('transform', 'translate(200, 320)');
+
+        setTimeout(() => {
+          cust2.style.transition = 'transform 2s ease-in-out';
+          cust2.setAttribute('transform', 'translate(415, 290)');
+
+          setTimeout(() => {
+            cust2.style.transition = 'opacity 0.5s';
+            cust2.style.opacity = '0';
+            servingNum.textContent = '#44';
+            label.textContent = 'One at a time, in order';
+            cust3.style.transition = 'transform 1s ease-in-out';
+            cust4.style.transition = 'transform 1s ease-in-out';
+            cust3.setAttribute('transform', 'translate(80, 320)');
+            cust4.setAttribute('transform', 'translate(140, 320)');
+            status.textContent = '✓ Order preserved · nothing lost';
+            setTimeout(() => label.classList.remove('visible'), 2500);
+          }, 2200);
+        }, 1200);
+      }, 2700);
+    }, 600);
+  }
+
+  function replayAnnouncer() {
+    const sub1Status = document.getElementById('sub1Status');
+    const sub2Status = document.getElementById('sub2Status');
+    const sub3Status = document.getElementById('sub3Status');
+    const status = document.getElementById('snsStatus');
+    const label = document.getElementById('snsLabel');
+    if (!sub1Status) return;
+
+    [sub1Status, sub2Status, sub3Status].forEach(s => {
+      s.style.transition = 'opacity 0.4s';
+      s.style.opacity = '0';
+    });
+    status.textContent = 'Manager preparing announcement...';
+    label.classList.remove('visible', 'fast');
+
+    setTimeout(() => {
+      label.textContent = '📢 BROADCASTING!';
+      label.classList.add('visible', 'fast');
+      status.textContent = '"All staff to main floor!"';
+
+      // All three subscribers respond at the same time
+      setTimeout(() => {
+        sub1Status.style.opacity = '1';
+        sub2Status.style.opacity = '1';
+        sub3Status.style.opacity = '1';
+        label.textContent = 'All 3 groups responded simultaneously';
+        status.textContent = '✓ 3 subscribers · 16 people responding';
+        setTimeout(() => label.classList.remove('visible'), 3000);
+      }, 800);
+    }, 600);
+  }
+
+  function replayReceptionist() {
+    const visitor = document.getElementById('visitor');
+    const visitorSpeech = document.getElementById('visitorSpeech');
+    const visitorMsg = document.getElementById('visitorMsg');
+    const dest1H = document.getElementById('dest1Highlight');
+    const dest2H = document.getElementById('dest2Highlight');
+    const dest3H = document.getElementById('dest3Highlight');
+    const routeArrow = document.getElementById('routeArrow');
+    const routeLine = document.getElementById('routeLine');
+    const routeArrowHead = document.getElementById('routeArrowHead');
+    const status = document.getElementById('ebStatus');
+    const label = document.getElementById('ebLabel');
+    if (!visitor) return;
+
+    function resetScene() {
+      visitor.style.transition = 'none';
+      visitor.setAttribute('transform', 'translate(50, 290)');
+      visitor.style.opacity = '1';
+      visitorSpeech.style.opacity = '0';
+      [dest1H, dest2H, dest3H].forEach(d => d.style.opacity = '0');
+      routeArrow.style.opacity = '0';
+    }
+
+    function routeTo(targetId, message, lineCoords, arrowRotate, status_text) {
+      visitor.style.transition = 'transform 1.5s ease-in-out';
+      visitor.setAttribute('transform', 'translate(180, 290)');
+
+      setTimeout(() => {
+        visitorMsg.textContent = message;
+        visitorSpeech.style.transition = 'opacity 0.4s';
+        visitorSpeech.style.opacity = '1';
+
+        setTimeout(() => {
+          // route arrow
+          routeLine.setAttribute('x1', lineCoords[0]);
+          routeLine.setAttribute('y1', lineCoords[1]);
+          routeLine.setAttribute('x2', lineCoords[2]);
+          routeLine.setAttribute('y2', lineCoords[3]);
+          routeArrowHead.setAttribute('transform', `translate(${lineCoords[2]}, ${lineCoords[3]}) rotate(${arrowRotate})`);
+          routeArrow.style.transition = 'opacity 0.4s';
+          routeArrow.style.opacity = '1';
+
+          document.getElementById(targetId).style.transition = 'opacity 0.4s';
+          document.getElementById(targetId).style.opacity = '1';
+
+          status.textContent = status_text;
+        }, 1000);
+      }, 1500);
+    }
+
+    resetScene();
+    label.classList.remove('visible', 'fast');
+
+    setTimeout(() => {
+      label.textContent = 'Customer 1 → "Open account"';
+      label.classList.add('visible');
+      routeTo('dest1Highlight', '"I want to open\nan account"', [300, 270, 370, 130], -65, '✓ Routed to Account Opening');
+
+      setTimeout(() => {
+        resetScene();
+        label.textContent = 'Customer 2 → "Lost ATM card"';
+        routeTo('dest2Highlight', '"I lost my\nATM card"', [300, 280, 370, 230], -35, '✓ Routed to Card Services');
+
+        setTimeout(() => {
+          resetScene();
+          label.textContent = 'Customer 3 → "Big loan inquiry"';
+          routeTo('dest3Highlight', '"I want a loan\nover 100k cedis"', [300, 290, 370, 330], 35, '✓ Routed to Senior Loan Mgr');
+          setTimeout(() => label.classList.remove('visible'), 3500);
+        }, 4500);
+      }, 4500);
+    }, 600);
+  }
+
+  window.replayQueue = replayQueue;
+  window.replayAnnouncer = replayAnnouncer;
+  window.replayReceptionist = replayReceptionist;
+</script>
+</body>
+</html>

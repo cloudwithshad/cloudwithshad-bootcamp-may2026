@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 1 · Lab 2 — Launch EC2 + Deploy Web App | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --blue-light: #1976D2;
+    --cyan: #00B4D8;
+    --cyan-light: #E0F7FA;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: var(--cyan); width: 0%; transition: width 0.4s ease; }
+
+  .hero { background: var(--navy); padding: 48px 24px 40px; text-align: center; border-bottom: 3px solid var(--cyan); }
+  .hero-badge { display: inline-block; background: var(--cyan); color: var(--navy); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 16px; }
+  .hero h1 { font-size: 32px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+  .hero h1 span { color: var(--cyan); }
+  .hero-sub { font-size: 15px; color: #90CAF9; margin-bottom: 24px; }
+  .hero-meta { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 20px; text-align: center; }
+  .hero-meta-item .val { font-size: 18px; font-weight: 700; color: var(--cyan); }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 820px) { .page { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { position: sticky; top: 56px; }
+  .sidebar-card { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; margin-bottom: 16px; }
+  .sidebar-title { background: var(--navy); color: var(--white); font-size: 12px; font-weight: 700; padding: 10px 14px; letter-spacing: 0.5px; }
+  .sidebar-steps { padding: 8px 0; }
+  .sidebar-step { display: flex; align-items: center; gap: 10px; padding: 7px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; text-decoration: none; }
+  .sidebar-step:hover { background: var(--lgray); border-left-color: var(--cyan); }
+  .sidebar-step.active { background: var(--light); border-left-color: var(--cyan); }
+  .step-dot { width: 22px; height: 22px; border-radius: 50%; background: #CBD5E1; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--white); flex-shrink: 0; transition: background 0.3s; }
+  .step-dot.active { background: var(--cyan); }
+  .step-label { font-size: 12px; color: var(--dark); }
+  .step-time { font-size: 10px; color: var(--gray); margin-left: auto; white-space: nowrap; }
+
+  .build-overview { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; padding: 24px; margin-bottom: 24px; }
+  .build-overview h2 { font-size: 18px; color: var(--dark); font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .build-overview h2::before { content: ''; display: inline-block; width: 4px; height: 20px; background: var(--cyan); border-radius: 2px; }
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .overview-item { background: var(--lgray); border-radius: 8px; padding: 14px; }
+  .overview-item .icon { font-size: 22px; margin-bottom: 6px; }
+  .overview-item h4 { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-item p { font-size: 13px; color: var(--gray); line-height: 1.5; }
+
+  .arch-section { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; padding: 24px; margin-bottom: 24px; }
+  .arch-section h2 { font-size: 18px; color: var(--dark); font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .arch-section h2::before { content: ''; display: inline-block; width: 4px; height: 20px; background: var(--cyan); border-radius: 2px; }
+  .arch-flow { background: #F8FAFC; border: 2px dashed #B0BEC5; border-radius: 12px; padding: 20px; }
+  .arch-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .arch-node { background: var(--white); border: 2px solid var(--cyan); border-radius: 10px; padding: 12px 24px; font-size: 13px; font-weight: 700; color: var(--navy); text-align: center; min-width: 240px; }
+  .arch-node.user { background: var(--navy); color: var(--cyan); border-color: var(--cyan); }
+  .arch-node.ec2 { background: #FFF3E0; border-color: #E65100; color: #BF360C; }
+  .arch-node.nginx { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .arch-node small { display: block; font-size: 11px; font-weight: 400; color: var(--gray); margin-top: 4px; }
+  .arch-arrow { color: var(--cyan); font-size: 22px; line-height: 1; }
+
+  .step-card { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 24px; overflow: hidden; scroll-margin-top: 70px; }
+  .step-header { display: flex; align-items: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid #F1F5F9; }
+  .step-number { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: white; flex-shrink: 0; }
+  .step-header-text { flex: 1; }
+  .step-header-text h2 { font-size: 17px; font-weight: 700; color: var(--dark); }
+  .step-header-text p { font-size: 13px; color: var(--gray); margin-top: 2px; }
+  .step-time-badge { background: var(--lgray); color: var(--gray); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  .step-body { padding: 24px; }
+
+  .explainer { background: var(--light); border-left: 4px solid var(--blue); border-radius: 0 8px 8px 0; padding: 14px 16px; margin-bottom: 20px; }
+  .explainer h4 { font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+  .explainer p, .explainer li { font-size: 13px; color: var(--dark); line-height: 1.7; }
+  .explainer ul { padding-left: 18px; }
+
+  .instruction-list { list-style: none; padding: 0; margin-bottom: 16px; }
+  .instruction-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F1F5F9; align-items: flex-start; }
+  .instruction-list li:last-child { border-bottom: none; }
+  .inst-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .inst-content { flex: 1; }
+  .inst-content strong { font-size: 13px; color: var(--dark); display: block; margin-bottom: 3px; }
+  .inst-content span { font-size: 13px; color: var(--gray); }
+  .inst-content .nav-path { font-size: 12px; color: var(--blue); font-weight: 600; background: var(--light); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 3px; }
+
+  .field-row { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: center; padding: 8px 12px; background: var(--lgray); border-radius: 6px; margin-bottom: 6px; }
+  .field-label { font-size: 12px; color: var(--gray); font-weight: 600; }
+  .field-value { font-size: 13px; color: var(--dark); font-family: 'Courier New', monospace; background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #E2E8F0; word-break: break-all; }
+  .field-value.highlight { color: var(--blue); font-weight: 700; }
+  @media(max-width: 500px) { .field-row { grid-template-columns: 1fr; } }
+
+  .code-block { background: var(--code-bg); border-radius: 8px; padding: 16px 18px; margin: 12px 0; position: relative; overflow-x: auto; }
+  .code-block pre { font-family: 'Courier New', Consolas, monospace; font-size: 13px; color: var(--code-text); line-height: 1.7; white-space: pre; margin: 0; }
+  .code-label { font-size: 10px; color: #7986CB; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #B0BEC5; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+  .copy-btn.copied { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+  .code-comment { color: #546E7A; }
+  .code-cmd { color: #80CBC4; }
+  .code-flag { color: #FFD54F; }
+  .code-path { color: #A5D6A7; }
+  .code-ip { color: #FF8A65; }
+
+  .tip { background: var(--yellow); border: 1px solid var(--yellow-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .tip-header { font-size: 12px; font-weight: 700; color: #E65100; margin-bottom: 5px; }
+  .tip p, .tip li { font-size: 13px; color: #4E342E; line-height: 1.6; }
+  .tip ul { padding-left: 16px; margin-top: 4px; }
+
+  .warn { background: var(--red); border: 1px solid var(--red-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .warn-header { font-size: 12px; font-weight: 700; color: var(--red-border); margin-bottom: 5px; }
+  .warn p, .warn li { font-size: 13px; color: #4a0000; line-height: 1.6; }
+
+  .info { background: var(--purple); border: 1px solid var(--purple-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .info-header { font-size: 12px; font-weight: 700; color: var(--purple-border); margin-bottom: 5px; }
+  .info p { font-size: 13px; color: #2D1B69; line-height: 1.6; }
+
+  .exam-tip { background: #E8EAF6; border: 1px solid #3949AB; border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .exam-tip-header { font-size: 12px; font-weight: 700; color: #1A237E; margin-bottom: 5px; }
+  .exam-tip p { font-size: 13px; color: #1A237E; line-height: 1.6; }
+
+  .verify-box { background: var(--green-light); border: 1px solid #81C784; border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
+  .verify-box h4 { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+  .verify-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .verify-item:last-child { margin-bottom: 0; }
+  .verify-item input[type=checkbox] { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--green-mid); cursor: pointer; flex-shrink: 0; }
+  .verify-item label { font-size: 13px; color: var(--dark); cursor: pointer; line-height: 1.5; }
+  .verify-item label.checked { text-decoration: line-through; color: var(--gray); }
+
+  .screenshot-prompt { background: #FFF8E1; border: 1px dashed #FFA000; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 13px; color: #4E342E; }
+  .screenshot-prompt strong { color: #E65100; }
+
+  .section-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 16px; }
+  .section-divider span { font-size: 12px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: #E2E8F0; }
+
+  .expected { background: #F0FFF4; border: 1px solid #68D391; border-radius: 8px; padding: 14px 16px; margin: 12px 0; }
+  .expected h4 { font-size: 12px; font-weight: 700; color: #276749; margin-bottom: 8px; }
+  .expected p, .expected li { font-size: 13px; color: #1C4532; line-height: 1.6; }
+  .expected ul { padding-left: 16px; }
+
+  .troubleshoot { background: var(--orange); border: 1px solid var(--orange-border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .troubleshoot h4 { font-size: 12px; font-weight: 700; color: var(--orange-border); margin-bottom: 8px; }
+  .ts-item { margin-bottom: 10px; }
+  .ts-item .ts-problem { font-size: 13px; font-weight: 600; color: #BF360C; margin-bottom: 3px; }
+  .ts-item .ts-fix { font-size: 13px; color: #4E342E; }
+
+  .completion-banner { background: linear-gradient(135deg, #0A1628 0%, #1565C0 100%); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px; border: 2px solid var(--cyan); }
+  .completion-banner h2 { font-size: 24px; color: white; font-weight: 700; margin-bottom: 8px; }
+  .completion-banner p { font-size: 14px; color: #90CAF9; margin-bottom: 20px; }
+  .completion-checklist { text-align: left; background: rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 20px; }
+  .completion-checklist .verify-item label { color: #E3F2FD; }
+  .completion-checklist .verify-item label.checked { color: #546E7A; }
+
+  .cleanup-card { background: var(--white); border-radius: 12px; border: 2px solid #EF9A9A; margin-bottom: 24px; overflow: hidden; }
+  .cleanup-header { background: #C62828; color: white; padding: 14px 24px; font-size: 14px; font-weight: 700; }
+  .cleanup-body { padding: 20px 24px; }
+  .cleanup-step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .cleanup-num { background: #C62828; color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cleanup-text { font-size: 13px; color: var(--dark); line-height: 1.6; }
+  .cleanup-text .nav-path { font-size: 12px; color: var(--blue); font-weight: 600; background: var(--light); padding: 2px 8px; border-radius: 4px; display: inline; }
+
+  .footer { background: var(--navy); color: var(--gray); text-align: center; padding: 20px; font-size: 12px; }
+  .footer span { color: var(--cyan); font-weight: 600; }
+
+  @media print { .topnav, .sidebar { display: none; } .page { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Week 1 · Lab 2 · AWS Cloud Practitioner Bootcamp</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">WEEK 1 · LAB 2 (BUILD-ON-YOUR-OWN)</div>
+  <h1>Launch <span>EC2</span> + Deploy<br>Your First Web App</h1>
+  <p class="hero-sub">SSH into a real Linux server in another country — and serve a website from it</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="val">8</div><div class="lbl">Steps</div></div>
+    <div class="hero-meta-item"><div class="val">~75 min</div><div class="lbl">Estimated time</div></div>
+    <div class="hero-meta-item"><div class="val">CLF-C02</div><div class="lbl">Cert aligned</div></div>
+    <div class="hero-meta-item"><div class="val">Free Tier</div><div class="lbl">$0 if you stop the instance</div></div>
+  </div>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">LAB STEPS</div>
+      <div class="sidebar-steps">
+        <a class="sidebar-step" href="#step0"><div class="step-dot" id="dot0">0</div><span class="step-label">Before you start</span><span class="step-time">5 min</span></a>
+        <a class="sidebar-step" href="#step1"><div class="step-dot" id="dot1">1</div><span class="step-label">Create key pair</span><span class="step-time">5 min</span></a>
+        <a class="sidebar-step" href="#step2"><div class="step-dot" id="dot2">2</div><span class="step-label">Create security group</span><span class="step-time">8 min</span></a>
+        <a class="sidebar-step" href="#step3"><div class="step-dot" id="dot3">3</div><span class="step-label">Launch EC2 instance</span><span class="step-time">10 min</span></a>
+        <a class="sidebar-step" href="#step4"><div class="step-dot" id="dot4">4</div><span class="step-label">SSH into the server</span><span class="step-time">10 min</span></a>
+        <a class="sidebar-step" href="#step5"><div class="step-dot" id="dot5">5</div><span class="step-label">Install Nginx</span><span class="step-time">10 min</span></a>
+        <a class="sidebar-step" href="#step6"><div class="step-dot" id="dot6">6</div><span class="step-label">Deploy your page</span><span class="step-time">12 min</span></a>
+        <a class="sidebar-step" href="#step7"><div class="step-dot" id="dot7">7</div><span class="step-label">Bonus — make it dynamic</span><span class="step-time">15 min</span></a>
+        <a class="sidebar-step" href="#complete"><div class="step-dot" id="dot8" style="background:var(--green-mid)">✓</div><span class="step-label">Complete + Cleanup</span></a>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">WHAT YOU'LL BUILD</div>
+      <div style="padding:12px 14px;font-size:12px;color:var(--gray);line-height:1.7">
+        A real Linux web server running on AWS EC2. You'll SSH in from your laptop, install Nginx, serve a custom HTML page, and (bonus) deploy a tiny dynamic Node.js app.
+      </div>
+    </div>
+  </aside>
+
+  <main>
+
+    <div class="build-overview">
+      <h2>What you'll build</h2>
+      <div class="overview-grid">
+        <div class="overview-item">
+          <div class="icon">🔑</div>
+          <h4>SSH Key Pair</h4>
+          <p>The cryptographic key that lets you log into your server securely</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🛡️</div>
+          <h4>Security Group</h4>
+          <p>A virtual firewall that only allows the traffic you specify</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🖥️</div>
+          <h4>EC2 Instance</h4>
+          <p>A real Linux server, running on Amazon's hardware, controlled by you</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🌐</div>
+          <h4>Nginx Web Server</h4>
+          <p>The same web server software powering Netflix, Airbnb, GitHub</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🚀</div>
+          <h4>Live Web Page</h4>
+          <p>A real public URL serving HTML you wrote</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">⚡</div>
+          <h4>Bonus: Node API</h4>
+          <p>A tiny dynamic API that proves you can do more than static</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-section">
+      <h2>Architecture</h2>
+      <div class="arch-flow">
+        <div class="arch-row">
+          <div class="arch-node user">💻 You — laptop in Accra</div>
+          <div class="arch-arrow">↓ SSH (port 22) + HTTP (port 80)</div>
+          <div class="arch-node" style="background:#FFF3E0;border-color:#E65100;color:#BF360C">🛡️ Security Group<small>Allows: SSH from your IP · HTTP from anywhere</small></div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-node ec2">🖥️ EC2 Instance (t2.micro)<small>Amazon Linux 2023 · Public IP · 1 vCPU · 1 GB RAM</small></div>
+          <div class="arch-arrow">↓ runs</div>
+          <div class="arch-node nginx">🌐 Nginx Web Server<small>Serves your HTML on port 80</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 0 -->
+    <div class="step-card" id="step0">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--gray)">0</div>
+        <div class="step-header-text">
+          <h2>Before you start — what you need</h2>
+          <p>You should have completed Lab 1 first</p>
+        </div>
+        <div class="step-time-badge">5 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>Read this first</h4>
+          <p>Lab 1 was about static hosting — drop files in a bucket, done. Lab 2 is the next level: <strong>you control the actual server</strong>. You'll SSH in like a real engineer, install software, and run it. This is what people mean when they say "I deployed it to the cloud".</p>
+          <p style="margin-top:8px">A few moments will feel weird at first — like getting a "permission denied" on a file YOU just downloaded. That's normal. We'll explain everything as we go.</p>
+        </div>
+
+        <div class="section-divider"><span>Requirements</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Lab 1 completed</strong>
+              <span>You should have an active AWS account with billing alarm set. If not, do Lab 1 first — it teaches the basics we'll build on here.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>A working terminal</strong>
+              <span>You'll be typing SSH commands.</span>
+              <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:var(--lgray);padding:10px;border-radius:6px;font-size:12px"><strong>Mac / Linux</strong><br>Built-in Terminal app. You're set.</div>
+                <div style="background:var(--lgray);padding:10px;border-radius:6px;font-size:12px"><strong>Windows</strong><br>Use WSL, Git Bash, or PowerShell. WSL recommended.</div>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Find your current IP address</strong>
+              <span>Visit <a href="https://whatismyip.com" target="_blank" style="color:var(--blue)">whatismyip.com</a> and note it. We'll use it to lock SSH access to ONLY your laptop. AWS has a "My IP" button that auto-fills it.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="warn">
+          <div class="warn-header">⚠️ Free tier guard rail</div>
+          <p>EC2 t2.micro is FREE for 750 hours/month for 12 months. That's 31 days × 24 hours = 744 hours — enough to run ONE instance 24/7 all month. <strong>Don't run two at the same time</strong> — that doubles your hours and you'll get charged. <strong>Stop the instance</strong> when not using it.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Ready to go when:</h4>
+          <div class="verify-item"><input type="checkbox" id="c0a" onchange="markCheck(this)"><label for="c0a">Terminal opens and runs commands</label></div>
+          <div class="verify-item"><input type="checkbox" id="c0b" onchange="markCheck(this)"><label for="c0b">Logged into AWS</label></div>
+          <div class="verify-item"><input type="checkbox" id="c0c" onchange="markCheck(this)"><label for="c0c">Region matches Lab 1's region</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 1: KEY PAIR -->
+    <div class="step-card" id="step1">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--blue)">1</div>
+        <div class="step-header-text">
+          <h2>Create an SSH key pair</h2>
+          <p>The "password" for your future server</p>
+        </div>
+        <div class="step-time-badge">5 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>What is an SSH key pair?</h4>
+          <p>SSH (Secure Shell) is how you remotely log into a Linux server. Instead of using a password, AWS uses <strong>key pairs</strong> — two cryptographic files that work together: a <strong>public key</strong> (lives on the server) and a <strong>private key</strong> (stays on your laptop, NEVER shared). When you connect, the keys "shake hands" mathematically. Much more secure than a password.</p>
+        </div>
+
+        <div class="section-divider"><span>Create the key pair</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Navigate to EC2 → Key Pairs</strong>
+              <div class="nav-path">AWS Console → Search "EC2" → click EC2 → left sidebar → Network &amp; Security → Key Pairs</div>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Click "Create key pair" (orange button)</strong>
+            </div>
+          </li>
+        </ul>
+
+        <div class="section-divider"><span>Fill in these values</span></div>
+        <div class="field-row"><div class="field-label">Name</div><div class="field-value highlight">cloudwithshad-key</div></div>
+        <div class="field-row"><div class="field-label">Key pair type</div><div class="field-value highlight">RSA</div></div>
+        <div class="field-row"><div class="field-label">Private key format</div><div class="field-value highlight">.pem (Mac/Linux/WSL) — or .ppk if you must use PuTTY on Windows</div></div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Click "Create key pair"</strong>
+              <span>Your browser will IMMEDIATELY download a file called <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">cloudwithshad-key.pem</code></span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="warn">
+          <div class="warn-header">⚠️ CRITICAL — save your .pem file safely RIGHT NOW</div>
+          <p><strong>AWS will NEVER let you download this file again.</strong> If you lose it, you permanently lose access to any server using it. You'd have to delete the server and start over.</p>
+          <p style="margin-top:6px">Recommended: create a folder called <code style="background:rgba(0,0,0,0.1);padding:2px 5px;border-radius:3px">~/aws-keys/</code> and move the .pem file there. Don't put it in Downloads where you'll accidentally clear it.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c1a" onchange="markCheck(this)"><label for="c1a">cloudwithshad-key listed in EC2 Key Pairs</label></div>
+          <div class="verify-item"><input type="checkbox" id="c1b" onchange="markCheck(this)"><label for="c1b">.pem file saved in a safe folder on your laptop</label></div>
+          <div class="verify-item"><input type="checkbox" id="c1c" onchange="markCheck(this)"><label for="c1c">You know exactly where on disk it lives (path noted)</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: SECURITY GROUP -->
+    <div class="step-card" id="step2">
+      <div class="step-header">
+        <div class="step-number" style="background:#6A1B9A">2</div>
+        <div class="step-header-text">
+          <h2>Create a security group</h2>
+          <p>The firewall that decides who can reach your server</p>
+        </div>
+        <div class="step-time-badge">8 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>What is a security group?</h4>
+          <p>A security group is a virtual firewall attached to your EC2 instance. By default, it blocks ALL inbound traffic. You explicitly allow what you need:</p>
+          <ul style="margin-top:6px">
+            <li><strong>Port 22 (SSH)</strong> — so YOU can log in from your laptop</li>
+            <li><strong>Port 80 (HTTP)</strong> — so visitors can see your website</li>
+          </ul>
+          <p style="margin-top:6px">It's STATEFUL — return traffic is automatically allowed. You only configure the inbound side.</p>
+        </div>
+
+        <div class="section-divider"><span>Create the security group</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Go to Security Groups</strong>
+              <div class="nav-path">EC2 → left sidebar → Network &amp; Security → Security Groups → Create security group</div>
+            </div>
+          </li>
+        </ul>
+        <div class="field-row"><div class="field-label">Security group name</div><div class="field-value highlight">cloudwithshad-web-sg</div></div>
+        <div class="field-row"><div class="field-label">Description</div><div class="field-value">SSH from my IP + HTTP from anywhere</div></div>
+        <div class="field-row"><div class="field-label">VPC</div><div class="field-value">default (or your existing VPC)</div></div>
+
+        <div class="section-divider"><span>Inbound rule 1 — SSH for YOU only</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Click "Add rule" under Inbound rules</strong>
+            </div>
+          </li>
+        </ul>
+        <div class="field-row"><div class="field-label">Type</div><div class="field-value highlight">SSH</div></div>
+        <div class="field-row"><div class="field-label">Protocol/Port</div><div class="field-value">TCP 22 (auto-fills)</div></div>
+        <div class="field-row"><div class="field-label">Source</div><div class="field-value highlight">My IP (click dropdown — AWS auto-detects your IP)</div></div>
+
+        <div class="section-divider"><span>Inbound rule 2 — HTTP for the world</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Click "Add rule" again</strong>
+            </div>
+          </li>
+        </ul>
+        <div class="field-row"><div class="field-label">Type</div><div class="field-value highlight">HTTP</div></div>
+        <div class="field-row"><div class="field-label">Protocol/Port</div><div class="field-value">TCP 80 (auto-fills)</div></div>
+        <div class="field-row"><div class="field-label">Source</div><div class="field-value highlight">Anywhere-IPv4 (0.0.0.0/0)</div></div>
+
+        <div class="tip">
+          <div class="tip-header">💡 Why "My IP" for SSH but "Anywhere" for HTTP?</div>
+          <p>SSH gives shell access — full control of the server. You don't want bots in Russia trying to brute-force in. Restricting to your IP means even if someone steals your .pem, they can't use it from a different network.</p>
+          <p style="margin-top:6px">HTTP is for your visitors — they could be anywhere in the world, so we open it to everyone. The web server itself only serves the files you give it; no shell access.</p>
+        </div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">4</div>
+            <div class="inst-content">
+              <strong>Leave Outbound rules as default</strong>
+              <span>Default = "all traffic to anywhere". The server needs to reach the internet to download Nginx etc.</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">5</div>
+            <div class="inst-content">
+              <strong>Click "Create security group"</strong>
+            </div>
+          </li>
+        </ul>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c2a" onchange="markCheck(this)"><label for="c2a">cloudwithshad-web-sg created</label></div>
+          <div class="verify-item"><input type="checkbox" id="c2b" onchange="markCheck(this)"><label for="c2b">Inbound rule: SSH (22) from My IP</label></div>
+          <div class="verify-item"><input type="checkbox" id="c2c" onchange="markCheck(this)"><label for="c2c">Inbound rule: HTTP (80) from 0.0.0.0/0</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: LAUNCH EC2 -->
+    <div class="step-card" id="step3">
+      <div class="step-header">
+        <div class="step-number" style="background:#E65100">3</div>
+        <div class="step-header-text">
+          <h2>Launch your EC2 instance</h2>
+          <p>Click a few buttons → real Linux server</p>
+        </div>
+        <div class="step-time-badge">10 min</div>
+      </div>
+      <div class="step-body">
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Go to EC2 → Instances</strong>
+              <div class="nav-path">EC2 → Instances → Launch instances (orange button)</div>
+            </div>
+          </li>
+        </ul>
+
+        <div class="section-divider"><span>Name and Image</span></div>
+        <div class="field-row"><div class="field-label">Name</div><div class="field-value highlight">cloudwithshad-web-server</div></div>
+        <div class="field-row"><div class="field-label">AMI</div><div class="field-value highlight">Amazon Linux 2023 AMI (Free tier eligible — green badge)</div></div>
+        <div class="field-row"><div class="field-label">Architecture</div><div class="field-value">64-bit (x86)</div></div>
+
+        <div class="section-divider"><span>Instance type</span></div>
+        <div class="field-row"><div class="field-label">Type</div><div class="field-value highlight">t2.micro (Free tier eligible)</div></div>
+
+        <div class="info">
+          <div class="info-header">ℹ️ What's in a t2.micro?</div>
+          <p>1 vCPU, 1 GB RAM. Tiny — but plenty for learning, testing, and small workloads. Real production apps use bigger instances (t3.large, m5.xlarge, etc.) but the launch process is identical.</p>
+        </div>
+
+        <div class="section-divider"><span>Key pair</span></div>
+        <div class="field-row"><div class="field-label">Key pair</div><div class="field-value highlight">cloudwithshad-key (select from dropdown)</div></div>
+
+        <div class="section-divider"><span>Network settings — click "Edit"</span></div>
+        <div class="field-row"><div class="field-label">VPC</div><div class="field-value">Default (or matches your SG's VPC)</div></div>
+        <div class="field-row"><div class="field-label">Subnet</div><div class="field-value">No preference</div></div>
+        <div class="field-row"><div class="field-label">Auto-assign public IP</div><div class="field-value highlight">Enable ← critical, else you can't SSH in</div></div>
+        <div class="field-row"><div class="field-label">Firewall (SG)</div><div class="field-value highlight">Select existing → cloudwithshad-web-sg</div></div>
+
+        <div class="section-divider"><span>Storage</span></div>
+        <div class="field-row"><div class="field-label">Size</div><div class="field-value">8 GiB gp3 (default — free tier covers up to 30 GB)</div></div>
+
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Click "Launch instance"</strong>
+              <span>AWS provisions the server in 1–2 minutes. Status will go from "Pending" → "Running" → and after about a minute, "Status check: 2/2 checks passed".</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Note the Public IPv4 address</strong>
+              <span>Once running, click on your instance → look for <strong>Public IPv4 address</strong> in the details panel. Looks like <code style="background:var(--lgray);padding:2px 5px;border-radius:3px;font-size:11px">54.123.45.67</code>. Write it down.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="screenshot-prompt"><strong>📸 Screenshot moment</strong> — capture your running instance with its public IP. You're now controlling a server in another country.</div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c3a" onchange="markCheck(this)"><label for="c3a">Instance state = Running</label></div>
+          <div class="verify-item"><input type="checkbox" id="c3b" onchange="markCheck(this)"><label for="c3b">Status checks = 2/2 passed</label></div>
+          <div class="verify-item"><input type="checkbox" id="c3c" onchange="markCheck(this)"><label for="c3c">Public IPv4 noted: ____________</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: SSH -->
+    <div class="step-card" id="step4">
+      <div class="step-header">
+        <div class="step-number" style="background:#E65100">4</div>
+        <div class="step-header-text">
+          <h2>SSH into your server</h2>
+          <p>The "I'm actually inside the cloud" moment</p>
+        </div>
+        <div class="step-time-badge">10 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>What's about to happen</h4>
+          <p>You're going to open a terminal on your laptop in Accra → connect over SSH to a Linux server in (probably) Virginia → and your typing will run on that remote machine, not yours. The first time it works, it feels magical.</p>
+        </div>
+
+        <div class="section-divider"><span>Fix .pem file permissions (one-time setup)</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Open your terminal and navigate to where the .pem is</strong>
+              <span>e.g. <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">cd ~/aws-keys</code></span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="code-block">
+          <div class="code-label">Terminal — fix key permissions (Mac/Linux/WSL)</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-comment"># SSH refuses to use a key that's readable by other users — security feature</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">400</span> <span class="code-path">cloudwithshad-key.pem</span>
+
+<span class="code-comment"># Verify — should show: -r-------- 1 you you ... cloudwithshad-key.pem</span>
+<span class="code-cmd">ls</span> <span class="code-flag">-la</span> cloudwithshad-key.pem</pre>
+        </div>
+
+        <div class="section-divider"><span>SSH into the server</span></div>
+        <div class="code-block">
+          <div class="code-label">Terminal — replace with YOUR public IP</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-comment"># -i = identity file (your private key)</span>
+<span class="code-cmd">ssh</span> <span class="code-flag">-i</span> cloudwithshad-key.pem ec2-user@<span class="code-ip">YOUR_PUBLIC_IP</span>
+
+<span class="code-comment"># Real example:</span>
+<span class="code-cmd">ssh</span> <span class="code-flag">-i</span> cloudwithshad-key.pem ec2-user@<span class="code-ip">54.123.45.67</span></pre>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 First time SSHing — "Are you sure you want to continue?"</div>
+          <p>You'll see something like: <em>"The authenticity of host '54.x.x.x' can't be established. Are you sure you want to continue connecting (yes/no)?"</em>. Type <strong>yes</strong> + Enter. This is normal — SSH is asking you to verify it's the right server. After you say yes, it remembers and won't ask again.</p>
+        </div>
+
+        <div class="expected">
+          <h4>✅ What you should see after connecting</h4>
+          <ul>
+            <li>An ASCII Amazon Linux banner</li>
+            <li>Your prompt changes to something like: <code style="background:var(--lgray);padding:2px 6px;border-radius:3px;font-size:12px">[ec2-user@ip-172-31-x-x ~]$</code></li>
+            <li>You're now inside the server — every command you type runs there</li>
+          </ul>
+        </div>
+
+        <div class="section-divider"><span>Prove you're really there</span></div>
+        <div class="code-block">
+          <div class="code-label">From inside the server</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-comment"># What machine am I on?</span>
+<span class="code-cmd">hostname</span>
+
+<span class="code-comment"># What OS?</span>
+<span class="code-cmd">cat</span> /etc/os-release
+
+<span class="code-comment"># Where in the world is this server?</span>
+<span class="code-cmd">curl</span> http://169.254.169.254/latest/meta-data/placement/region
+
+<span class="code-comment"># How much RAM and CPU does it have?</span>
+<span class="code-cmd">free</span> <span class="code-flag">-h</span>
+<span class="code-cmd">nproc</span></pre>
+        </div>
+
+        <div class="screenshot-prompt"><strong>📸 Screenshot</strong> — show your terminal connected to the EC2 instance with the prompt visible. This is the screenshot that will impress your non-technical friends.</div>
+
+        <div class="troubleshoot">
+          <h4>🔧 Common SSH problems</h4>
+          <div class="ts-item">
+            <div class="ts-problem">"Permission denied (publickey)"</div>
+            <div class="ts-fix">You forgot <code>chmod 400</code> OR you're using the wrong username. For Amazon Linux always use <code>ec2-user</code>. (For Ubuntu it would be <code>ubuntu</code>.)</div>
+          </div>
+          <div class="ts-item">
+            <div class="ts-problem">"Connection timed out"</div>
+            <div class="ts-fix">Either the security group doesn't allow your IP, OR your IP changed since you set up the SG. Go to EC2 → Security Groups → cloudwithshad-web-sg → Inbound rules → edit the SSH rule → "My IP" again.</div>
+          </div>
+          <div class="ts-item">
+            <div class="ts-problem">"Unprotected private key file"</div>
+            <div class="ts-fix">You skipped the chmod step. Run <code>chmod 400 cloudwithshad-key.pem</code> first.</div>
+          </div>
+          <div class="ts-item">
+            <div class="ts-problem">"Could not resolve hostname"</div>
+            <div class="ts-fix">Check there are no typos in your public IP. Make sure you used the IPv4, not IPv6.</div>
+          </div>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c4a" onchange="markCheck(this)"><label for="c4a">SSH connection successful</label></div>
+          <div class="verify-item"><input type="checkbox" id="c4b" onchange="markCheck(this)"><label for="c4b">Prompt shows ec2-user@ip-...</label></div>
+          <div class="verify-item"><input type="checkbox" id="c4c" onchange="markCheck(this)"><label for="c4c">Ran a few commands (hostname, free -h)</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5: INSTALL NGINX -->
+    <div class="step-card" id="step5">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--green-mid)">5</div>
+        <div class="step-header-text">
+          <h2>Install Nginx</h2>
+          <p>The world's most popular web server</p>
+        </div>
+        <div class="step-time-badge">10 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>Why Nginx?</h4>
+          <p>Nginx (pronounced "engine-X") is a web server that takes incoming HTTP requests and returns HTML pages. It powers Netflix, Airbnb, Cloudflare, GitHub, and most of the high-traffic web. It's free, fast, and easier to learn than Apache.</p>
+        </div>
+
+        <div class="section-divider"><span>Inside the EC2 SSH session — install &amp; start</span></div>
+        <div class="code-block">
+          <div class="code-label">Run these on the EC2 server (one at a time)</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-comment"># Update the package manager (good habit on a fresh server)</span>
+<span class="code-cmd">sudo</span> dnf update <span class="code-flag">-y</span>
+
+<span class="code-comment"># Install nginx</span>
+<span class="code-cmd">sudo</span> dnf install <span class="code-flag">-y</span> nginx
+
+<span class="code-comment"># Start the service</span>
+<span class="code-cmd">sudo</span> systemctl start nginx
+
+<span class="code-comment"># Make it auto-start on reboot</span>
+<span class="code-cmd">sudo</span> systemctl enable nginx
+
+<span class="code-comment"># Verify it's running — should say "active (running)"</span>
+<span class="code-cmd">sudo</span> systemctl status nginx</pre>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 What's <code>sudo</code>?</div>
+          <p><strong>sudo</strong> = "Super User DO". Linux protects system-level operations (installing software, starting services) by requiring elevated privileges. Putting <code>sudo</code> in front of a command says: "run this as the admin (root) user". It's a safety feature.</p>
+        </div>
+
+        <div class="section-divider"><span>Test it from your laptop</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Open a browser on your laptop</strong>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Visit your server's public IP</strong>
+              <span>Just paste the public IP into the URL bar — no <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">https://</code> needed (we're using port 80, plain HTTP).</span>
+              <div class="nav-path">http://YOUR_PUBLIC_IP</div>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected">
+          <h4>✅ What you should see</h4>
+          <ul>
+            <li>Default Nginx welcome page: "Welcome to nginx!"</li>
+            <li>This means: your laptop hit your security group → which let port 80 through → which reached your EC2 → which Nginx answered with its default page</li>
+          </ul>
+        </div>
+
+        <div class="warn">
+          <div class="warn-header">⚠️ Browser shows error or hangs?</div>
+          <p>Most likely: you typed <strong>https://</strong> — remove the <strong>s</strong>. We didn't set up HTTPS yet, only HTTP. OR check the security group has port 80 open from 0.0.0.0/0.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c5a" onchange="markCheck(this)"><label for="c5a">Nginx installed without errors</label></div>
+          <div class="verify-item"><input type="checkbox" id="c5b" onchange="markCheck(this)"><label for="c5b">Service status: active (running)</label></div>
+          <div class="verify-item"><input type="checkbox" id="c5c" onchange="markCheck(this)"><label for="c5c">http://&lt;your-IP&gt; shows the Nginx welcome page</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6: DEPLOY HTML -->
+    <div class="step-card" id="step6">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--green-mid)">6</div>
+        <div class="step-header-text">
+          <h2>Deploy your own HTML page</h2>
+          <p>Replace the default Nginx page with something yours</p>
+        </div>
+        <div class="step-time-badge">12 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>How web servers serve files</h4>
+          <p>Nginx looks in a specific folder on the server (called the "document root") whenever a request comes in. On Amazon Linux, that folder is <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">/usr/share/nginx/html/</code>. We replace the default <code>index.html</code> there with our own.</p>
+        </div>
+
+        <div class="section-divider"><span>Edit the index.html on the server</span></div>
+        <div class="code-block">
+          <div class="code-label">Inside SSH — back up old + create new</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-comment"># Back up the default page (just in case)</span>
+<span class="code-cmd">sudo</span> mv /usr/share/nginx/html/index.html /usr/share/nginx/html/index.html.bak
+
+<span class="code-comment"># Create your own (using a heredoc — multi-line input)</span>
+<span class="code-cmd">sudo</span> tee /usr/share/nginx/html/index.html &gt; /dev/null &lt;&lt;'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;My EC2 Server | cloudwithshad&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: system-ui, sans-serif; background: #0A1628;
+           color: white; max-width: 720px; margin: 60px auto;
+           padding: 0 20px; line-height: 1.6; }
+    h1 { color: #00B4D8; font-size: 42px; }
+    .badge { background: #00B4D8; color: #0A1628; padding: 4px 10px;
+             border-radius: 14px; font-size: 13px; font-weight: 700; }
+    .info { background: rgba(255,255,255,0.05); padding: 16px;
+            border-radius: 8px; margin-top: 20px; }
+    code { background: rgba(255,255,255,0.1); padding: 2px 6px;
+           border-radius: 3px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;span class="badge"&gt;LIVE FROM EC2&lt;/span&gt;
+  &lt;h1&gt;Hello from my AWS server!&lt;/h1&gt;
+  &lt;p&gt;This page is being served by Nginx running on Amazon Linux 2023,
+     on a t2.micro EC2 instance.&lt;/p&gt;
+  &lt;div class="info"&gt;
+    &lt;p&gt;Built in Week 1 of the cloudwithshad bootcamp by &lt;strong&gt;Your Name&lt;/strong&gt;.&lt;/p&gt;
+    &lt;p&gt;Stack: &lt;code&gt;EC2&lt;/code&gt; · &lt;code&gt;Nginx&lt;/code&gt; · &lt;code&gt;Linux&lt;/code&gt;&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF
+
+<span class="code-comment"># Reload Nginx to pick up the change (faster than restart)</span>
+<span class="code-cmd">sudo</span> systemctl reload nginx</pre>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 Why <code>tee</code> and not <code>nano</code>?</div>
+          <p>You CAN use <code>sudo nano /usr/share/nginx/html/index.html</code> if you prefer an editor — it works fine. The <code>tee</code> + heredoc approach lets us paste a whole file in one command, which is reproducible and copy-friendly. Both are valid.</p>
+        </div>
+
+        <div class="section-divider"><span>Refresh your browser</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>Refresh http://&lt;your-IP&gt; in your browser</strong>
+              <span>You should see your dark-themed page with "Hello from my AWS server!"</span>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Edit your name in the HTML and reload Nginx</strong>
+              <span>SSH session: <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">sudo nano /usr/share/nginx/html/index.html</code> → change "Your Name" → save (Ctrl+O, Enter, Ctrl+X) → <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">sudo systemctl reload nginx</code> → refresh browser</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="screenshot-prompt"><strong>📸 Screenshot</strong> — your custom page hosted on YOUR server. Different from Lab 1 because YOU control the underlying machine.</div>
+
+        <div class="exam-tip">
+          <div class="exam-tip-header">📝 Cloud Practitioner Exam Tip</div>
+          <p>S3 vs EC2 for static sites — both can do it. <strong>S3 is cheaper, simpler, scales automatically.</strong> EC2 is more flexible (run any code) but you manage the server yourself. The exam asks "which would you recommend for a static site with no backend?" — answer: S3.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check before moving on:</h4>
+          <div class="verify-item"><input type="checkbox" id="c6a" onchange="markCheck(this)"><label for="c6a">Custom page loads at http://&lt;your-IP&gt;</label></div>
+          <div class="verify-item"><input type="checkbox" id="c6b" onchange="markCheck(this)"><label for="c6b">Successfully edited the file and saw changes</label></div>
+          <div class="verify-item"><input type="checkbox" id="c6c" onchange="markCheck(this)"><label for="c6c">Page shows YOUR name, not the placeholder</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 7: BONUS - DYNAMIC -->
+    <div class="step-card" id="step7">
+      <div class="step-header">
+        <div class="step-number" style="background:var(--cyan)">7</div>
+        <div class="step-header-text">
+          <h2>BONUS — Run a tiny Node.js API</h2>
+          <p>Prove your server can do more than static files</p>
+        </div>
+        <div class="step-time-badge">15 min</div>
+      </div>
+      <div class="step-body">
+        <div class="explainer">
+          <h4>This is optional but worth doing</h4>
+          <p>So far you served static HTML — same as S3 could do. Let's prove the EC2 advantage by running an actual program: a tiny Node.js HTTP server that returns a different message every time you reload.</p>
+        </div>
+
+        <div class="section-divider"><span>Install Node.js</span></div>
+        <div class="code-block">
+          <div class="code-label">Inside SSH</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-comment"># Install Node.js (Amazon Linux 2023 has it as a package)</span>
+<span class="code-cmd">sudo</span> dnf install <span class="code-flag">-y</span> nodejs
+
+<span class="code-comment"># Verify version</span>
+<span class="code-cmd">node</span> <span class="code-flag">--version</span></pre>
+        </div>
+
+        <div class="section-divider"><span>Create a tiny API server</span></div>
+        <div class="code-block">
+          <div class="code-label">Inside SSH — create app.js</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="code-cmd">cat</span> &gt; ~/app.js &lt;&lt;'EOF'
+const http = require('http');
+const facts = [
+  "S3 stands for Simple Storage Service.",
+  "EC2 stands for Elastic Compute Cloud.",
+  "AWS has 30+ regions globally.",
+  "CloudFront has 400+ edge locations.",
+  "t2.micro has 1 vCPU and 1 GB RAM.",
+  "IAM means Identity and Access Management."
+];
+
+http.createServer((req, res) =&gt; {
+  const fact = facts[Math.floor(Math.random() * facts.length)];
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    message: "Hello from Node.js on EC2!",
+    random_aws_fact: fact,
+    timestamp: new Date().toISOString()
+  }));
+}).listen(3000);
+
+console.log('API listening on port 3000');
+EOF
+
+<span class="code-comment"># Run it (will block your terminal — that's fine)</span>
+<span class="code-cmd">node</span> ~/app.js</pre>
+        </div>
+
+        <div class="section-divider"><span>Open a SECOND inbound rule for port 3000</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">1</div>
+            <div class="inst-content">
+              <strong>In another browser tab, go to your security group</strong>
+              <div class="nav-path">EC2 → Security Groups → cloudwithshad-web-sg → Edit inbound rules</div>
+            </div>
+          </li>
+          <li>
+            <div class="inst-num">2</div>
+            <div class="inst-content">
+              <strong>Add a new rule</strong>
+              <span>Type: Custom TCP · Port: 3000 · Source: Anywhere-IPv4 (0.0.0.0/0) · Save</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="section-divider"><span>Test from your laptop</span></div>
+        <ul class="instruction-list">
+          <li>
+            <div class="inst-num">3</div>
+            <div class="inst-content">
+              <strong>Visit http://&lt;your-IP&gt;:3000 in your browser</strong>
+              <span>You should see JSON with a random AWS fact. Refresh — different fact. THAT'S a dynamic API.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected">
+          <h4>✅ What you should see</h4>
+          <ul>
+            <li>JSON response: <code style="background:var(--lgray);padding:2px 5px;border-radius:3px">{"message":"Hello from Node.js on EC2!","random_aws_fact":"...","timestamp":"..."}</code></li>
+            <li>Each refresh shows a different fact</li>
+            <li>Your terminal in SSH is showing the running Node process</li>
+          </ul>
+        </div>
+
+        <div class="info">
+          <div class="info-header">🚀 What you just did</div>
+          <p>You ran custom code on a server you control, listening on a port you exposed, returning data you generated. <strong>This is what an API is.</strong> Backend developers build apps exactly like this — just bigger. Frameworks like Express, Flask, FastAPI all do the same thing under the hood.</p>
+        </div>
+
+        <div class="tip">
+          <div class="tip-header">💡 To stop the Node server</div>
+          <p>Press <strong>Ctrl+C</strong> in the SSH session where it's running. To run it in the background even after you log out, use <code>nohup node ~/app.js &amp;</code> — but for learning, just keep the terminal open.</p>
+        </div>
+
+        <div class="verify-box">
+          <h4>✅ Check:</h4>
+          <div class="verify-item"><input type="checkbox" id="c7a" onchange="markCheck(this)"><label for="c7a">Node.js installed</label></div>
+          <div class="verify-item"><input type="checkbox" id="c7b" onchange="markCheck(this)"><label for="c7b">Port 3000 opened in security group</label></div>
+          <div class="verify-item"><input type="checkbox" id="c7c" onchange="markCheck(this)"><label for="c7c">Visiting :3000 returns JSON</label></div>
+          <div class="verify-item"><input type="checkbox" id="c7d" onchange="markCheck(this)"><label for="c7d">Refresh shows different facts</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-banner" id="complete">
+      <h2>🎉 Lab 2 Complete!</h2>
+      <p>You launched and managed a real Linux server in the cloud. You SSH'd in, installed software, and served custom content. This is the foundational skill of every cloud engineer.</p>
+      <div class="completion-checklist">
+        <div style="font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:12px">Final checklist:</div>
+        <div class="verify-item"><input type="checkbox" id="f1" onchange="markCheck(this)"><label for="f1">SSH key pair created and saved</label></div>
+        <div class="verify-item"><input type="checkbox" id="f2" onchange="markCheck(this)"><label for="f2">Security group with SSH (My IP) + HTTP (anywhere)</label></div>
+        <div class="verify-item"><input type="checkbox" id="f3" onchange="markCheck(this)"><label for="f3">EC2 instance launched and running</label></div>
+        <div class="verify-item"><input type="checkbox" id="f4" onchange="markCheck(this)"><label for="f4">Successfully SSH'd in</label></div>
+        <div class="verify-item"><input type="checkbox" id="f5" onchange="markCheck(this)"><label for="f5">Nginx installed and serving</label></div>
+        <div class="verify-item"><input type="checkbox" id="f6" onchange="markCheck(this)"><label for="f6">Custom HTML page deployed</label></div>
+        <div class="verify-item"><input type="checkbox" id="f7" onchange="markCheck(this)"><label for="f7">(Bonus) Node.js API running</label></div>
+        <div class="verify-item"><input type="checkbox" id="f8" onchange="markCheck(this)"><label for="f8">Screenshots taken</label></div>
+      </div>
+    </div>
+
+    <!-- CLEANUP -->
+    <div class="cleanup-card">
+      <div class="cleanup-header">🗑️ Cleanup — DO THIS unless you really want to keep the server running</div>
+      <div class="cleanup-body">
+        <p style="font-size:13px;color:var(--gray);margin-bottom:16px">
+          Unlike S3 (which is basically free at small sizes), <strong>a running EC2 instance accumulates hours every minute</strong>. Free tier covers 750 hrs/month — but if you launch a second instance for any lab, you double-count. Safest: stop or terminate when done.
+        </p>
+
+        <div class="cleanup-step">
+          <div class="cleanup-num">1</div>
+          <div class="cleanup-text"><strong>Option A: STOP (keeps the data, pause billing for compute)</strong><br>
+          <span class="nav-path">EC2 → Instances → select instance → Instance state → Stop instance</span><br>
+          You can restart it later. Note: stopping gives a NEW public IP on restart.</div>
+        </div>
+        <div class="cleanup-step">
+          <div class="cleanup-num">2</div>
+          <div class="cleanup-text"><strong>Option B: TERMINATE (delete the server entirely)</strong><br>
+          <span class="nav-path">EC2 → Instances → select instance → Instance state → Terminate instance → confirm</span><br>
+          Permanent. The instance is destroyed and you can't get it back. Most thorough cleanup.</div>
+        </div>
+        <div class="cleanup-step">
+          <div class="cleanup-num">3</div>
+          <div class="cleanup-text"><strong>Delete the security group (only after instance is terminated)</strong><br>
+          <span class="nav-path">EC2 → Security Groups → cloudwithshad-web-sg → Delete</span></div>
+        </div>
+        <div class="cleanup-step">
+          <div class="cleanup-num">4</div>
+          <div class="cleanup-text"><strong>Keep the key pair</strong><br>
+          You'll reuse <code>cloudwithshad-key</code> in future labs. No charge for storing key pairs in AWS.</div>
+        </div>
+
+        <div class="warn" style="margin-top:16px">
+          <div class="warn-header">⚠️ Verify cleanup</div>
+          <p>After cleanup, go to <strong>EC2 → Instances</strong> and confirm: either (a) instance shows "Stopped" or "Terminated", and (b) no other running instances exist. If anything is "running", it's accumulating hours.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHAT'S NEXT -->
+    <div class="build-overview">
+      <h2>What's next — Lab 3 + Week 2</h2>
+      <div class="overview-grid">
+        <div class="overview-item">
+          <div class="icon">🎮</div>
+          <h4>Lab 3 — Build the Architecture</h4>
+          <p>Interactive quiz where you assemble Week 1's architecture by answering questions correctly</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🧠</div>
+          <h4>Week 2 — IAM Deep Dive</h4>
+          <p>Users, roles, policies — the security backbone of every AWS account</p>
+        </div>
+        <div class="overview-item">
+          <div class="icon">🌐</div>
+          <h4>Week 2 — Networking</h4>
+          <p>VPCs, subnets, route tables — wire up a real production-style network</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="footer">
+  <span>cloudwithshad</span> · Instructor: Shadrack Darku · AWS Cloud Practitioner Bootcamp · Week 1 Lab 2
+</div>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.body.scrollHeight - window.innerHeight;
+    const progress = (scrollTop / docHeight) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+  });
+
+  function markCheck(el) {
+    const label = el.nextElementSibling;
+    if (el.checked) label.classList.add('checked');
+    else label.classList.remove('checked');
+  }
+
+  function copyCode(btn) {
+    const pre = btn.nextElementSibling;
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  const stepIds = ['step0','step1','step2','step3','step4','step5','step6','step7','complete'];
+  window.addEventListener('scroll', () => {
+    let current = 0;
+    stepIds.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 100) current = i;
+    });
+    document.querySelectorAll('.sidebar-step').forEach((s, i) => {
+      s.classList.toggle('active', i === current);
+    });
+    document.querySelectorAll('.step-dot').forEach((d, i) => {
+      if (i < current) d.style.background = 'var(--green-mid)';
+      else if (i === current) d.style.background = 'var(--cyan)';
+      else d.style.background = '#CBD5E1';
+    });
+  });
+</script>
+</body>
+</html>

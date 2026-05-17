@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 2 · Lab 4 — Serverless Image Resizer | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --blue-light: #1976D2;
+    --cyan: #00B4D8;
+    --cyan-light: #E0F7FA;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: #F4B942; width: 0%; transition: width 0.4s ease; }
+
+  .hero { background: var(--navy); padding: 48px 24px 40px; text-align: center; border-bottom: 3px solid #F4B942; }
+  .hero-badge { display: inline-block; background: #F4B942; color: var(--navy); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 16px; }
+  .hero h1 { font-size: 32px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+  .hero h1 span { color: #F4B942; }
+  .hero-sub { font-size: 15px; color: #FFD580; margin-bottom: 24px; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .hero-meta { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 20px; text-align: center; }
+  .hero-meta-item .val { font-size: 18px; font-weight: 700; color: #F4B942; }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+  .independent-banner { background: linear-gradient(135deg, #FFF9C4, #FFF3E0); border: 2px solid #F9A825; border-radius: 12px; padding: 20px 24px; margin-bottom: 28px; display: flex; gap: 16px; align-items: flex-start; }
+  .independent-banner-icon { font-size: 32px; flex-shrink: 0; }
+  .independent-banner h3 { color: #BF360C; font-size: 18px; margin-bottom: 6px; }
+  .independent-banner p { color: #5D4037; font-size: 14px; margin: 0; }
+
+  .content { background: var(--white); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 36px 40px; }
+  @media(max-width: 600px) { .content { padding: 24px 18px; } }
+
+  .section-block { padding-bottom: 32px; border-bottom: 1px solid #E2E8F0; margin-bottom: 32px; }
+  .section-block:last-of-type { border-bottom: none; margin-bottom: 0; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .section-num { width: 38px; height: 38px; background: #F4B942; color: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .section-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+
+  .section-block p { margin: 12px 0; color: var(--dark); font-size: 15px; }
+  .section-block ul, .section-block ol { margin: 12px 0 12px 20px; }
+  .section-block li { margin-bottom: 8px; font-size: 15px; color: var(--dark); }
+  .section-block strong { color: var(--navy); }
+
+  .code-block { background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 14px 0; white-space: pre; }
+  .code-block .cmd { color: #82B1FF; }
+  .code-block .comment { color: #B0BEC5; font-style: italic; }
+  .code-block .green { color: #69F0AE; }
+  .code-block .yellow { color: #FFD54F; }
+  .code-block .pink { color: #FF80AB; }
+  .code-block .orange { color: #FFAB91; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 18px 0; border-left: 5px solid; font-size: 14px; }
+  .callout.tip { background: var(--yellow); border-color: var(--yellow-border); color: #5D4037; }
+  .callout.warn { background: var(--red); border-color: var(--red-border); color: #B71C1C; }
+  .callout.info { background: var(--light); border-color: var(--blue); color: #0D47A1; }
+  .callout.exam { background: var(--purple); border-color: var(--purple-border); color: #4A148C; }
+  .callout.success { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .callout .label { font-weight: 700; display: inline-block; margin-right: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  .callout p { margin: 4px 0; font-size: 14px; }
+
+  .checklist { background: var(--lgray); border-radius: 10px; padding: 20px 24px; margin: 16px 0; }
+  .checklist-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #E2E8F0; align-items: flex-start; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-num { background: #F4B942; color: var(--navy); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .checklist-content { font-size: 14px; }
+  .checklist-content strong { color: var(--navy); }
+
+  .arch-diagram { background: var(--lgray); border: 2px dashed #CBD5E1; border-radius: 12px; padding: 28px 20px; margin: 18px 0; text-align: center; }
+  .arch-diagram svg { max-width: 100%; height: auto; }
+  .arch-caption { font-size: 12px; color: var(--gray); margin-top: 10px; font-style: italic; }
+
+  .hint-toggle { background: var(--light); border: 1px solid var(--blue); border-radius: 10px; margin: 14px 0; overflow: hidden; }
+  .hint-toggle summary { padding: 12px 18px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--blue); list-style: none; display: flex; align-items: center; gap: 8px; }
+  .hint-toggle summary::-webkit-details-marker { display: none; }
+  .hint-toggle summary::before { content: '💡'; font-size: 16px; }
+  .hint-toggle[open] summary { border-bottom: 1px solid #BBDEFB; }
+  .hint-toggle .hint-body { padding: 14px 18px; background: var(--white); }
+  .hint-toggle .hint-body p { font-size: 14px; margin: 6px 0; }
+
+  .bonus-banner { background: linear-gradient(135deg, var(--purple), #E1BEE7); border: 2px solid var(--purple-border); border-radius: 12px; padding: 20px 24px; margin: 24px 0; }
+  .bonus-banner h4 { color: var(--purple-border); margin-bottom: 8px; font-size: 17px; }
+  .bonus-banner p { color: #4A148C; font-size: 14px; margin: 0; }
+
+  .completion { background: linear-gradient(135deg, var(--green-light), #F1F8E9); border: 2px solid var(--green-mid); border-radius: 14px; padding: 28px; text-align: center; margin-top: 28px; }
+  .completion-icon { font-size: 48px; margin-bottom: 12px; }
+  .completion h2 { font-size: 24px; color: var(--green); margin-bottom: 8px; }
+  .completion p { color: #2E7D32; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Week 2 · Lab 4 · Serverless Image Resizer</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">BUILD-ON-YOUR-OWN · ~75 MINUTES</div>
+  <h1>Build a <span>serverless image resizer</span></h1>
+  <p class="hero-sub">Drop any image into an S3 bucket and watch it auto-resize into a thumbnail — no servers, no Nginx, no SSH. This is what serverless really feels like.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="val">5</div><div class="lbl">PHASES</div></div>
+    <div class="hero-meta-item"><div class="val">75 min</div><div class="lbl">DURATION</div></div>
+    <div class="hero-meta-item"><div class="val">FREE</div><div class="lbl">TIER OK</div></div>
+    <div class="hero-meta-item"><div class="val">S3 + Lambda</div><div class="lbl">SERVICES</div></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="independent-banner">
+    <div class="independent-banner-icon">🛠️</div>
+    <div>
+      <h3>This one's on you</h3>
+      <p>Lab 4 is a <strong>build-on-your-own</strong> challenge. We give you the goal, the architecture, the IAM permissions, and the starter code — you wire it together. Stuck? Expand the hints (💡) for guidance. Beat the lab? Post your test images in the cohort group.</p>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <!-- THE GOAL -->
+    <section class="section-block" id="goal">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title">The goal</div>
+      </div>
+      <p>By the end of this lab, you'll have a fully serverless system where:</p>
+
+      <div class="arch-diagram">
+        <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg">
+          <!-- User -->
+          <circle cx="60" cy="120" r="22" fill="#00B4D8"/>
+          <text x="60" y="170" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="#00B4D8">You</text>
+          <line x1="85" y1="120" x2="135" y2="120" stroke="#64748B" stroke-width="2" stroke-dasharray="3,3"/>
+          <text x="110" y="110" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="#64748B">upload</text>
+
+          <!-- S3 -->
+          <rect x="145" y="85" width="120" height="70" rx="8" fill="#1B5E20" stroke="#1B5E20"/>
+          <text x="205" y="115" text-anchor="middle" font-family="Segoe UI" font-size="13" font-weight="700" fill="white">S3 bucket</text>
+          <text x="205" y="135" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">/uploads/photo.jpg</text>
+
+          <!-- Trigger arrow -->
+          <line x1="265" y1="120" x2="320" y2="120" stroke="#F4B942" stroke-width="3"/>
+          <polygon points="320,120 313,116 313,124" fill="#F4B942"/>
+          <text x="293" y="110" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="#F4B942" font-weight="700">triggers</text>
+
+          <!-- Lambda -->
+          <rect x="330" y="85" width="120" height="70" rx="8" fill="#F4B942" stroke="#C99320"/>
+          <text x="390" y="113" text-anchor="middle" font-family="Segoe UI" font-size="13" font-weight="700" fill="#0A1628">Lambda λ</text>
+          <text x="390" y="130" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="#0A1628">resize-image</text>
+          <text x="390" y="146" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#0A1628">Python · Pillow</text>
+
+          <!-- Output arrow -->
+          <line x1="450" y1="120" x2="505" y2="120" stroke="#1B5E20" stroke-width="3"/>
+          <polygon points="505,120 498,116 498,124" fill="#1B5E20"/>
+          <text x="478" y="110" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="#1B5E20" font-weight="700">writes</text>
+
+          <!-- Output S3 -->
+          <rect x="515" y="85" width="140" height="70" rx="8" fill="#1B5E20" stroke="#1B5E20"/>
+          <text x="585" y="115" text-anchor="middle" font-family="Segoe UI" font-size="13" font-weight="700" fill="white">S3 bucket</text>
+          <text x="585" y="135" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">/thumbs/photo.jpg</text>
+        </svg>
+        <div class="arch-caption">Upload → Lambda fires automatically → resized version appears.</div>
+      </div>
+
+      <p><strong>Requirements:</strong></p>
+      <ul>
+        <li>One S3 bucket with a <code>uploads/</code> prefix and a <code>thumbs/</code> prefix</li>
+        <li>A Lambda function that runs whenever a new image lands in <code>uploads/</code></li>
+        <li>The function resizes the image to <strong>200px wide</strong> (keep aspect ratio) and writes it to <code>thumbs/</code></li>
+        <li>The whole thing must work end-to-end with zero EC2, zero servers, zero SSH</li>
+      </ul>
+    </section>
+
+    <!-- PHASE 1: S3 -->
+    <section class="section-block" id="phase1">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title">Phase 1 — Create the S3 bucket</div>
+      </div>
+      <p>Create a brand new S3 bucket. Suggested name: <code>cloudwithshad-resizer-&lt;your-initials&gt;-&lt;random-number&gt;</code> (bucket names must be globally unique).</p>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content"><strong>Bucket name</strong>: globally unique. Use lowercase only.</div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content"><strong>Region</strong>: same as your other resources (consistency).</div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content"><strong>Block all public access</strong>: keep this ON. The Lambda will access it, not the public.</div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content"><strong>Versioning</strong>: off (for this lab).</div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">After creation, open the bucket and create two "folders": <code>uploads/</code> and <code>thumbs/</code></div></div>
+      </div>
+
+      <details class="hint-toggle">
+        <summary>Hint: how to create a "folder" in S3</summary>
+        <div class="hint-body">
+          <p>S3 doesn't really have folders — it has <strong>object key prefixes</strong>. But the console lets you click "Create folder" and it adds a zero-byte object ending in <code>/</code>. That's enough to act like a folder for our trigger.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- PHASE 2: IAM ROLE -->
+    <section class="section-block" id="phase2">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title">Phase 2 — Create an IAM role for Lambda</div>
+      </div>
+      <p>Your Lambda function needs permission to do three things: <strong>read from S3, write to S3, write logs to CloudWatch</strong>.</p>
+
+      <ol>
+        <li>Go to <strong>IAM → Roles → Create role</strong></li>
+        <li>Trusted entity type: <strong>AWS service</strong></li>
+        <li>Use case: <strong>Lambda</strong></li>
+        <li>Attach these managed policies:
+          <ul>
+            <li><code>AWSLambdaBasicExecutionRole</code> — for CloudWatch logs</li>
+            <li><code>AmazonS3FullAccess</code> — for read/write to S3 (we'll tighten this later)</li>
+          </ul>
+        </li>
+        <li>Role name: <code>cloudwithshad-resizer-role</code></li>
+      </ol>
+
+      <div class="callout exam">
+        <span class="label">Exam tip</span>
+        <p>In production, you'd never use <code>S3FullAccess</code> — you'd write a custom policy granting access only to that ONE bucket. This is the principle of least privilege. For learning, broad permissions are fine.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 3: LAMBDA -->
+    <section class="section-block" id="phase3">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title">Phase 3 — Create the Lambda function</div>
+      </div>
+
+      <ol>
+        <li>Go to <strong>Lambda → Create function</strong></li>
+        <li>Author from scratch</li>
+        <li>Function name: <code>resize-image</code></li>
+        <li>Runtime: <strong>Python 3.12</strong></li>
+        <li>Architecture: <strong>x86_64</strong></li>
+        <li>Execution role: <strong>Use existing</strong> → <code>cloudwithshad-resizer-role</code></li>
+        <li>Click <strong>Create function</strong></li>
+      </ol>
+
+      <p>Once created, scroll to the <strong>Code</strong> tab. Paste this starter code:</p>
+
+      <div class="code-block">
+<span class="comment"># Lambda handler — resizes any image dropped into uploads/</span>
+<span class="cmd">import</span> boto3
+<span class="cmd">import</span> os
+<span class="cmd">from</span> PIL <span class="cmd">import</span> Image
+<span class="cmd">from</span> io <span class="cmd">import</span> BytesIO
+
+s3 = boto3.client(<span class="green">'s3'</span>)
+
+<span class="cmd">def</span> <span class="yellow">lambda_handler</span>(event, context):
+    bucket = event[<span class="green">'Records'</span>][0][<span class="green">'s3'</span>][<span class="green">'bucket'</span>][<span class="green">'name'</span>]
+    key    = event[<span class="green">'Records'</span>][0][<span class="green">'s3'</span>][<span class="green">'object'</span>][<span class="green">'key'</span>]
+
+    <span class="comment"># Ignore re-triggers from our own thumb writes</span>
+    <span class="cmd">if</span> <span class="cmd">not</span> key.startswith(<span class="green">'uploads/'</span>):
+        <span class="cmd">return</span> {<span class="green">'status'</span>: <span class="green">'skip'</span>}
+
+    <span class="comment"># Download original</span>
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    img = Image.open(obj[<span class="green">'Body'</span>])
+
+    <span class="comment"># Resize to 200px wide, keep aspect ratio</span>
+    w_pct = <span class="orange">200</span> / <span class="cmd">float</span>(img.size[<span class="orange">0</span>])
+    h_size = <span class="cmd">int</span>(<span class="cmd">float</span>(img.size[<span class="orange">1</span>]) * w_pct)
+    img = img.resize((<span class="orange">200</span>, h_size), Image.LANCZOS)
+
+    <span class="comment"># Save into buffer + upload to thumbs/</span>
+    buffer = BytesIO()
+    img.save(buffer, format=<span class="green">'JPEG'</span>)
+    buffer.seek(<span class="orange">0</span>)
+    thumb_key = key.replace(<span class="green">'uploads/'</span>, <span class="green">'thumbs/'</span>)
+    s3.put_object(Bucket=bucket, Key=thumb_key, Body=buffer, ContentType=<span class="green">'image/jpeg'</span>)
+
+    <span class="cmd">return</span> {<span class="green">'status'</span>: <span class="green">'resized'</span>, <span class="green">'thumb'</span>: thumb_key}
+      </div>
+
+      <p>Click <strong>Deploy</strong>.</p>
+
+      <div class="callout warn">
+        <span class="label">Pillow isn't in Lambda by default</span>
+        <p>The code uses the <code>Pillow</code> library, but Lambda's Python runtime doesn't include it. You need to attach a <strong>Lambda Layer</strong> that provides Pillow. AWS publishes one publicly. Add it under <strong>Layers → Add a layer → Specify ARN</strong> — search for the public Pillow layer for your region.</p>
+      </div>
+
+      <details class="hint-toggle">
+        <summary>Hint: easiest way to get Pillow into Lambda</summary>
+        <div class="hint-body">
+          <p>Two options:</p>
+          <p><strong>Option A:</strong> Use Klayers' public Pillow ARN. Search "Klayers Pillow Python 3.12" + your region and you'll find the ARN. Paste it in the "Specify ARN" field.</p>
+          <p><strong>Option B:</strong> Create your own layer. Zip a Python package with Pillow inside, upload it. More work, more learning.</p>
+          <p>For this lab, Option A is fine.</p>
+        </div>
+      </details>
+
+      <div class="callout tip">
+        <span class="label">Don't forget</span>
+        <p>Set the Lambda <strong>timeout</strong> to at least <strong>30 seconds</strong> and <strong>memory to 512 MB</strong> (Configuration → General configuration → Edit). Image resizing can take a few seconds, and the default 3-second timeout will fail.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 4: TRIGGER -->
+    <section class="section-block" id="phase4">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title">Phase 4 — Wire up the S3 trigger</div>
+      </div>
+      <p>Now we connect S3 to Lambda. In the Lambda function page:</p>
+
+      <ol>
+        <li>Click <strong>"+ Add trigger"</strong> (in the function overview diagram)</li>
+        <li>Select <strong>S3</strong> from the dropdown</li>
+        <li>Bucket: your resizer bucket</li>
+        <li>Event types: <strong>All object create events</strong></li>
+        <li>Prefix: <code>uploads/</code> ← critical — limits the trigger to the uploads folder only</li>
+        <li>Tick "I acknowledge that using the same S3 bucket for both input and output is not recommended..." (we handle this in code with the prefix check)</li>
+        <li>Click <strong>Add</strong></li>
+      </ol>
+
+      <div class="callout warn">
+        <span class="label">Why the prefix matters</span>
+        <p>Without the <code>uploads/</code> prefix, the trigger would fire when Lambda writes the thumb back into S3 — which would trigger another resize — infinite loop. The prefix + the early-return in our code both prevent this.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 5: TEST -->
+    <section class="section-block" id="phase5">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title">Phase 5 — Test it!</div>
+      </div>
+      <p>The moment of truth.</p>
+
+      <ol>
+        <li>Open your S3 bucket in the console</li>
+        <li>Navigate into <code>uploads/</code></li>
+        <li>Click <strong>Upload</strong> and drop in any JPG or PNG (a selfie, a screenshot, anything under 5 MB)</li>
+        <li>Wait ~5 seconds</li>
+        <li>Go to the <code>thumbs/</code> folder and refresh</li>
+        <li>You should see your image — resized to 200px wide 🎉</li>
+      </ol>
+
+      <p>If you check the Lambda function's <strong>Monitor</strong> tab, you'll see:</p>
+      <ul>
+        <li>Invocation count: 1</li>
+        <li>Average duration: 1-3 seconds</li>
+        <li>Errors: 0 (hopefully)</li>
+      </ul>
+
+      <div class="callout success">
+        <span class="label">Submission</span>
+        <p>Take a screenshot showing <strong>both</strong> the original (in uploads/) and the resized version (in thumbs/) side by side. Post it in the cohort WhatsApp group with the caption "Lab 4 done".</p>
+      </div>
+
+      <details class="hint-toggle">
+        <summary>Hint: what to do when it doesn't work</summary>
+        <div class="hint-body">
+          <p>Go to <strong>CloudWatch → Log groups → /aws/lambda/resize-image</strong>. Open the most recent log stream. The error will be in plain English. Most common issues:</p>
+          <ul style="margin-left: 20px; font-size: 14px;">
+            <li><code>No module named 'PIL'</code> → Pillow layer not attached</li>
+            <li><code>Task timed out</code> → bump timeout from 3s to 30s</li>
+            <li><code>AccessDenied</code> → IAM role missing S3 permissions</li>
+            <li>Nothing in logs at all → trigger isn't firing. Check prefix &amp; bucket name.</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- BONUS -->
+    <div class="bonus-banner">
+      <h4>🚀 Bonus challenges (for the keen)</h4>
+      <p>Already done with the main lab? Try one of these — each one teaches a new pattern:</p>
+      <ul style="margin-top: 10px; margin-left: 20px;">
+        <li><strong>Multiple sizes:</strong> Also create <code>thumbs-small/</code> (100px) and <code>thumbs-large/</code> (500px) versions in one Lambda run.</li>
+        <li><strong>Format conversion:</strong> Convert any input to WebP for better compression — and append <code>.webp</code> to the key.</li>
+        <li><strong>Watermark:</strong> Use Pillow's <code>ImageDraw</code> to stamp "cloudwithshad" in the bottom-right corner of every thumb.</li>
+        <li><strong>Notification:</strong> Add SNS — send yourself an email every time a new thumb is created.</li>
+      </ul>
+    </div>
+
+    <!-- CLEANUP -->
+    <section class="section-block" id="cleanup">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div class="section-title">Clean up</div>
+      </div>
+      <p>Lambda + S3 won't break the bank, but tidy habits matter. After your screenshot:</p>
+
+      <ol>
+        <li><strong>Empty the S3 bucket</strong> first (Bucket → Empty), then <strong>Delete</strong> the bucket</li>
+        <li><strong>Delete the Lambda function</strong> (Lambda → resize-image → Delete)</li>
+        <li><strong>Delete the IAM role</strong> (IAM → Roles → cloudwithshad-resizer-role → Delete)</li>
+        <li><strong>Optional:</strong> delete the CloudWatch log group (/aws/lambda/resize-image) — logs are charged after 5 GB</li>
+      </ol>
+
+      <div class="callout info">
+        <span class="label">The honest truth</span>
+        <p>Serverless changes how you think. With EC2 you ask "what server do I need?" With Lambda you ask "what should trigger when?" Both have their place — but the future is event-driven. You just built one. Welcome to serverless.</p>
+      </div>
+    </section>
+
+    <!-- COMPLETION -->
+    <div class="completion">
+      <div class="completion-icon">⚡</div>
+      <h2>Lab 4 complete!</h2>
+      <p>You just built a real-world serverless workflow. The same pattern powers Instagram thumbnails, e-commerce product galleries, and document scanners.</p>
+      <p style="margin-top: 12px; font-size: 13px;"><strong>Next week:</strong> Auto-scaling, load balancing, and CI/CD pipelines</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function updateProgress() {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / docHeight) * 100;
+    document.getElementById('progressFill').style.width = Math.min(100, pct) + '%';
+  }
+  window.addEventListener('scroll', updateProgress);
+</script>
+
+</body>
+</html>

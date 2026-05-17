@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Group Project 3 · DocSmart CV Analyzer | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --cyan-light: #E0F7FA;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+    --kente-gold: #F4B942;
+    --teal: #00897B;
+    --teal-dark: #00695C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: var(--teal); width: 0%; transition: width 0.4s ease; }
+
+  /* DocSmart hero - teal/cyan professional palette */
+  .hero { background: linear-gradient(135deg, #0A1628 0%, #0D2A2E 50%, #0F3A3E 100%); padding: 60px 24px 50px; text-align: center; border-bottom: 4px solid var(--teal); position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -30%; right: -10%; width: 350px; height: 350px; background: radial-gradient(circle, rgba(0,137,123,0.25) 0%, transparent 70%); pointer-events: none; }
+  .hero::after { content: ''; position: absolute; bottom: -30%; left: -10%; width: 350px; height: 350px; background: radial-gradient(circle, rgba(0,180,216,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-badge { display: inline-block; background: var(--teal); color: var(--white); font-size: 11px; font-weight: 700; padding: 5px 16px; border-radius: 20px; letter-spacing: 1.5px; margin-bottom: 18px; }
+  .hero-emoji { font-size: 44px; margin-bottom: 6px; }
+  .hero h1 { font-size: 36px; color: var(--white); font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .hero h1 span { color: var(--cyan); }
+  .hero-sub { font-size: 16px; color: #B2DFDB; margin-bottom: 28px; max-width: 720px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+  .hero-meta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 11px 18px; text-align: center; min-width: 110px; }
+  .hero-meta-item .val { font-size: 17px; font-weight: 700; color: var(--cyan); }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 820px) { .page { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { position: sticky; top: 56px; }
+  .sidebar-card { background: var(--white); border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; margin-bottom: 16px; }
+  .sidebar-title { background: var(--navy); color: var(--white); font-size: 12px; font-weight: 700; padding: 10px 14px; letter-spacing: 0.5px; }
+  .sidebar-steps { padding: 8px 0; }
+  .sidebar-step { display: block; padding: 9px 16px; font-size: 13px; color: var(--gray); text-decoration: none; border-left: 3px solid transparent; transition: all 0.2s; }
+  .sidebar-step:hover { background: var(--lgray); color: var(--navy); }
+  .sidebar-step.active { background: #E0F2F1; border-left-color: var(--teal); color: var(--navy); font-weight: 600; }
+  .sidebar-step .num { display: inline-block; width: 22px; height: 22px; background: var(--lgray); color: var(--gray); border-radius: 50%; text-align: center; font-size: 11px; font-weight: 700; margin-right: 8px; line-height: 22px; }
+  .sidebar-step.active .num { background: var(--teal); color: var(--white); }
+  .sidebar-step.done .num { background: var(--green-mid); color: var(--white); }
+  .sidebar-step.done .num::after { content: '✓'; }
+  .sidebar-step.done .num span { display: none; }
+
+  .content { background: var(--white); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 36px 40px; }
+  @media(max-width: 600px) { .content { padding: 24px 18px; } }
+
+  .step { padding-bottom: 32px; border-bottom: 1px solid #E2E8F0; margin-bottom: 32px; }
+  .step:last-child { border-bottom: none; margin-bottom: 0; }
+  .step-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .step-num { width: 38px; height: 38px; background: var(--teal); color: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .step-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+  .step-time { font-size: 12px; color: var(--gray); margin-left: auto; background: var(--lgray); padding: 4px 10px; border-radius: 6px; }
+
+  .step p { margin: 12px 0; color: var(--dark); font-size: 15px; }
+  .step ul, .step ol { margin: 12px 0 12px 20px; }
+  .step li { margin-bottom: 8px; font-size: 15px; color: var(--dark); }
+  .step strong { color: var(--navy); }
+
+  .code-block { background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 14px 0; white-space: pre; }
+  .code-block .cmd { color: #82B1FF; }
+  .code-block .comment { color: #B0BEC5; font-style: italic; }
+  .code-block .green { color: #69F0AE; }
+  .code-block .yellow { color: #FFD54F; }
+  .code-block .orange { color: #FFAB91; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 18px 0; border-left: 5px solid; font-size: 14px; }
+  .callout.tip { background: var(--yellow); border-color: var(--yellow-border); color: #5D4037; }
+  .callout.warn { background: var(--red); border-color: var(--red-border); color: #B71C1C; }
+  .callout.info { background: var(--light); border-color: var(--blue); color: #0D47A1; }
+  .callout.success { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .callout.team { background: #E0F2F1; border-color: var(--teal); color: #00695C; }
+  .callout .label { font-weight: 700; display: inline-block; margin-right: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  .callout p { margin: 4px 0; font-size: 14px; }
+
+  .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 18px 0; }
+  @media (max-width: 600px) { .team-grid { grid-template-columns: 1fr; } }
+  .team-card { background: linear-gradient(135deg, #E0F2F1, #B2DFDB); border: 1px solid var(--teal); border-radius: 10px; padding: 16px 18px; }
+  .team-card h5 { color: var(--teal-dark); font-size: 14px; font-weight: 800; margin-bottom: 4px; letter-spacing: 0.3px; }
+  .team-card .role-name { font-size: 12px; color: #00695C; opacity: 0.7; font-style: italic; margin-bottom: 8px; }
+  .team-card ul { margin: 0; list-style: none; }
+  .team-card li { font-size: 13px; color: #00695C; padding: 4px 0 4px 18px; position: relative; line-height: 1.5; }
+  .team-card li::before { content: '→'; position: absolute; left: 0; color: var(--teal); font-weight: 700; }
+
+  .awards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 18px 0; }
+  @media (max-width: 600px) { .awards-grid { grid-template-columns: 1fr; } }
+  .award-card { background: white; border: 2px solid #E2E8F0; border-radius: 12px; padding: 16px 18px; transition: all 0.2s; }
+  .award-card:hover { border-color: var(--teal); transform: translateY(-2px); }
+  .award-medal { font-size: 26px; margin-bottom: 6px; }
+  .award-card h5 { color: var(--navy); font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+  .award-card p { font-size: 12.5px; color: var(--gray); line-height: 1.55; margin: 0; }
+
+  .field-table { width: 100%; border-collapse: collapse; margin: 14px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .field-table th { background: var(--navy); color: var(--white); padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 700; }
+  .field-table td { padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-size: 13px; }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table td:first-child { font-weight: 600; color: var(--navy); width: 35%; }
+  .field-table td code { background: var(--lgray); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--blue); }
+
+  .arch-diagram { background: var(--lgray); border: 2px dashed #CBD5E1; border-radius: 12px; padding: 28px 20px; margin: 18px 0; text-align: center; }
+  .arch-diagram svg { max-width: 100%; height: auto; }
+  .arch-caption { font-size: 12px; color: var(--gray); margin-top: 10px; font-style: italic; }
+
+  .hint-toggle { background: var(--light); border: 1px solid var(--blue); border-radius: 10px; margin: 14px 0; overflow: hidden; }
+  .hint-toggle summary { padding: 12px 18px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--blue); list-style: none; display: flex; align-items: center; gap: 8px; }
+  .hint-toggle summary::-webkit-details-marker { display: none; }
+  .hint-toggle summary::before { content: '💡'; font-size: 16px; }
+  .hint-toggle[open] summary { border-bottom: 1px solid #BBDEFB; }
+  .hint-toggle .hint-body { padding: 14px 18px; background: var(--white); }
+  .hint-toggle .hint-body p { font-size: 14px; margin: 6px 0; }
+
+  .demo-card { background: linear-gradient(135deg, #E0F2F1, #B2DFDB); border: 2px solid var(--teal); border-radius: 12px; padding: 22px 26px; margin: 22px 0; }
+  .demo-card h4 { color: var(--teal-dark); font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .demo-card ul { margin-left: 22px; margin-top: 8px; }
+  .demo-card li { color: #00695C; font-size: 13.5px; margin-bottom: 6px; }
+
+  .completion { background: linear-gradient(135deg, #E0F2F1, #FFF8E1, #B2DFDB); border: 2px solid var(--teal); border-radius: 16px; padding: 40px 28px; text-align: center; margin-top: 32px; position: relative; overflow: hidden; }
+  .completion-icon { font-size: 60px; margin-bottom: 14px; position: relative; }
+  .completion h2 { font-size: 28px; color: var(--teal-dark); margin-bottom: 10px; position: relative; font-weight: 800; }
+  .completion p { color: #00695C; font-size: 15px; line-height: 1.7; position: relative; max-width: 600px; margin: 8px auto; }
+
+  .relatable-card { background: linear-gradient(135deg, #FFF8E1, #FFE0B2); border: 2px solid var(--kente-gold); border-radius: 12px; padding: 20px 24px; margin: 18px 0; }
+  .relatable-card h5 { color: #BF360C; font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+  .relatable-card p { color: #5D2A0F; font-size: 13.5px; margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Group Project 3 · DocSmart CV Analyzer</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-emoji">📄</div>
+    <div class="hero-badge">GROUP PROJECT · 1 WEEK · MINI-AWARDS</div>
+    <h1>DocSmart — <span>AI CV &amp; Document Analyzer</span></h1>
+    <p class="hero-sub">A web app that reads any CV, transcript, or scholarship application — extracts skills, matches them to job descriptions, scores the document, and suggests improvements. Built in groups. Deployed on EC2. The one everyone in the cohort will actually use.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="val">3-4</div><div class="lbl">PER TEAM</div></div>
+      <div class="hero-meta-item"><div class="val">1 week</div><div class="lbl">TO BUILD</div></div>
+      <div class="hero-meta-item"><div class="val">4 services</div><div class="lbl">AWS USED</div></div>
+      <div class="hero-meta-item"><div class="val">5</div><div class="lbl">AWARDS</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">PROJECT PHASES</div>
+      <div class="sidebar-steps">
+        <a href="#step1" class="sidebar-step active"><span class="num"><span>1</span></span>The vision</a>
+        <a href="#step2" class="sidebar-step"><span class="num"><span>2</span></span>Team roles</a>
+        <a href="#step3" class="sidebar-step"><span class="num"><span>3</span></span>Architecture</a>
+        <a href="#step4" class="sidebar-step"><span class="num"><span>4</span></span>Local Streamlit setup</a>
+        <a href="#step5" class="sidebar-step"><span class="num"><span>5</span></span>Textract &amp; Comprehend</a>
+        <a href="#step6" class="sidebar-step"><span class="num"><span>6</span></span>Skill matching engine</a>
+        <a href="#step7" class="sidebar-step"><span class="num"><span>7</span></span>Deploy &amp; polish</a>
+        <a href="#step8" class="sidebar-step"><span class="num"><span>8</span></span>Demo day prep</a>
+        <a href="#awards" class="sidebar-step"><span class="num"><span>🏆</span></span>Awards</a>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">SERVICES USED</div>
+      <div style="padding: 12px 14px; font-size: 12px; color: var(--gray); line-height: 1.7;">
+        <div><strong style="color: var(--navy);">EC2:</strong> Streamlit host</div>
+        <div><strong style="color: var(--navy);">Textract:</strong> read CVs</div>
+        <div><strong style="color: var(--navy);">Comprehend:</strong> entities + key phrases</div>
+        <div><strong style="color: var(--navy);">S3:</strong> document storage</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- STEP 1 -->
+    <section class="step" id="step1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">The vision — what you're building</div>
+        <div class="step-time">10 min</div>
+      </div>
+
+      <p>Every job seeker has the same problem: <strong>your CV gets 6 seconds of attention</strong>. Recruiters skim. ATS bots scan for keywords. Most CVs never reach a human reader.</p>
+
+      <p><strong>DocSmart</strong> fixes this. Upload your CV (PDF or image). Paste a job description. The app returns:</p>
+
+      <ul>
+        <li>📊 <strong>Match score</strong> — "Your CV matches 67% of the job's required skills"</li>
+        <li>✅ <strong>Matched skills</strong> — what you have that the job wants (Python, AWS, React, etc.)</li>
+        <li>⚠️ <strong>Missing skills</strong> — what's in the job description but not in your CV</li>
+        <li>📝 <strong>Improvement suggestions</strong> — "Add 'Lambda' explicitly", "Quantify your achievements"</li>
+        <li>🏷️ <strong>Extracted entities</strong> — names, companies, dates, certifications detected automatically</li>
+      </ul>
+
+      <div class="relatable-card">
+        <h5>🎯 Why this one feels different</h5>
+        <p>The other group projects are for hypothetical users. <strong>This one is for YOU.</strong> Every student in this cohort has a CV they're trying to improve. After demo day, you'll run your own CV through your own app. So will your friends. So will future bootcamp cohorts. Build it well — it'll keep getting used.</p>
+      </div>
+    </section>
+
+    <!-- STEP 2 — TEAM ROLES -->
+    <section class="step" id="step2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Team roles — who does what</div>
+        <div class="step-time">15 min</div>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <h5>1. UI Lead</h5>
+          <div class="role-name">"The Experience Designer"</div>
+          <ul>
+            <li>Owns the upload + paste-job-description flow</li>
+            <li>Designs the score visualization (match circle, bar charts)</li>
+            <li>Picks fonts that say "professional, hireable"</li>
+            <li>Handles result presentation (skill chips, callouts)</li>
+          </ul>
+        </div>
+        <div class="team-card">
+          <h5>2. Textract Engineer</h5>
+          <div class="role-name">"The Document Whisperer"</div>
+          <ul>
+            <li>Wires Textract to handle PDFs and images</li>
+            <li>Cleans the extracted text intelligently</li>
+            <li>Detects sections (Education, Experience, Skills)</li>
+            <li>Handles edge cases (scans, low-res, multi-column)</li>
+          </ul>
+        </div>
+        <div class="team-card">
+          <h5>3. Matching Engineer</h5>
+          <div class="role-name">"The Skill Detector"</div>
+          <ul>
+            <li>Builds the skills taxonomy (Python, AWS, React, etc.)</li>
+            <li>Wires Comprehend for entity + key phrase extraction</li>
+            <li>Writes the matching/scoring algorithm</li>
+            <li>Designs the improvement-suggestions logic</li>
+          </ul>
+        </div>
+        <div class="team-card">
+          <h5>4. AWS &amp; Polish Lead</h5>
+          <div class="role-name">"The Operator"</div>
+          <ul>
+            <li>Provisions EC2 + IAM + S3</li>
+            <li>Sets up deployment + restart policies</li>
+            <li>Owns demo day prep + presentation deck</li>
+            <li>Curates demo CVs (real ones, anonymized)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout team">
+        <span class="label">Your secret weapon</span>
+        <p>Every team member has their own CV. <strong>Use each other as test data.</strong> Your team owns 4 real CVs out of the gate — more than any other team. Anonymize them (remove email/phone for demos), and you'll have a much better app by Friday than teams using only public sample CVs.</p>
+      </div>
+    </section>
+
+    <!-- STEP 3 — ARCHITECTURE -->
+    <section class="step" id="step3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Architecture — simple but powerful</div>
+        <div class="step-time">10 min</div>
+      </div>
+
+      <div class="arch-diagram">
+        <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+          <!-- User -->
+          <circle cx="50" cy="160" r="22" fill="#00B4D8"/>
+          <text x="50" y="200" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="#00B4D8">Job Seeker</text>
+
+          <line x1="74" y1="160" x2="130" y2="160" stroke="#64748B" stroke-width="2" stroke-dasharray="3,3"/>
+          <text x="102" y="150" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#64748B">uploads CV</text>
+
+          <!-- EC2 + Streamlit -->
+          <rect x="135" y="120" width="170" height="85" rx="10" fill="#00897B" stroke="#00695C" stroke-width="2"/>
+          <text x="220" y="148" text-anchor="middle" font-family="Segoe UI" font-size="13" font-weight="700" fill="white">EC2 + Streamlit</text>
+          <text x="220" y="164" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">port 8501</text>
+          <text x="220" y="180" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">upload form +</text>
+          <text x="220" y="195" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">match results</text>
+
+          <!-- S3 -->
+          <line x1="220" y1="207" x2="220" y2="240" stroke="#1B5E20" stroke-width="1.5"/>
+          <rect x="155" y="245" width="130" height="40" rx="6" fill="#1B5E20" stroke="#1B5E20"/>
+          <text x="220" y="270" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="white">📁 S3 bucket</text>
+
+          <!-- Textract branch -->
+          <line x1="305" y1="145" x2="360" y2="80" stroke="#C8512A" stroke-width="2"/>
+          <polygon points="360,80 354,79 355,86" fill="#C8512A"/>
+
+          <rect x="365" y="60" width="140" height="50" rx="8" fill="#C8512A" stroke="#A0421F"/>
+          <text x="435" y="83" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="white">📄 Textract</text>
+          <text x="435" y="99" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">extracts CV text</text>
+
+          <!-- Comprehend branch -->
+          <line x1="305" y1="180" x2="360" y2="180" stroke="#9B59B6" stroke-width="2"/>
+          <polygon points="360,180 353,176 353,184" fill="#9B59B6"/>
+
+          <rect x="365" y="160" width="140" height="40" rx="8" fill="#9B59B6" stroke="#7D3C98"/>
+          <text x="435" y="178" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="white">🧠 Comprehend</text>
+          <text x="435" y="192" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">entities + key phrases</text>
+
+          <!-- Skills DB -->
+          <rect x="365" y="240" width="140" height="50" rx="8" fill="#FFF" stroke="#F4B942" stroke-width="2" stroke-dasharray="4,2"/>
+          <text x="435" y="260" text-anchor="middle" font-family="Segoe UI" font-size="11" font-weight="700" fill="#BF360C">🏷️ skills.json</text>
+          <text x="435" y="275" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#5D2A0F">your team's curated</text>
+          <text x="435" y="288" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#5D2A0F">skills taxonomy</text>
+
+          <!-- Match engine -->
+          <rect x="540" y="120" width="150" height="80" rx="8" fill="#13243A" stroke="#00B4D8" stroke-width="2"/>
+          <text x="615" y="145" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="#00B4D8">⚡ Match Engine</text>
+          <text x="615" y="163" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">match score · gaps</text>
+          <text x="615" y="180" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">suggestions</text>
+          <text x="615" y="194" text-anchor="middle" font-family="Segoe UI" font-size="8" fill="white">(your code, no AWS!)</text>
+
+          <line x1="505" y1="85" x2="555" y2="130" stroke="#C8512A" stroke-width="1.5" stroke-dasharray="2,2"/>
+          <line x1="505" y1="180" x2="555" y2="170" stroke="#9B59B6" stroke-width="1.5" stroke-dasharray="2,2"/>
+          <line x1="505" y1="262" x2="555" y2="200" stroke="#F4B942" stroke-width="1.5" stroke-dasharray="2,2"/>
+        </svg>
+        <div class="arch-caption">CV → Textract (extract) + Comprehend (analyze) + skills.json (compare) → Match Engine scores it → Streamlit shows results.</div>
+      </div>
+
+      <table class="field-table">
+        <tr><th>Component</th><th>What it does</th></tr>
+        <tr><td>EC2 t2.micro</td><td>Streamlit app — upload form + results display</td></tr>
+        <tr><td>S3 bucket</td><td>Temporary storage for uploaded CVs (delete after processing)</td></tr>
+        <tr><td>Textract</td><td>Extracts text + table data from PDF and image CVs</td></tr>
+        <tr><td>Comprehend</td><td>Extracts entities (people, companies, dates) + key phrases</td></tr>
+        <tr><td>skills.json (local)</td><td>Your curated taxonomy — Python, AWS, React, Project Mgmt, etc.</td></tr>
+        <tr><td>Match engine (Python)</td><td>Compares extracted skills to job description, scores, suggests</td></tr>
+      </table>
+    </section>
+
+    <!-- STEP 4 — LOCAL SETUP -->
+    <section class="step" id="step4">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">Build it locally — upload + display</div>
+        <div class="step-time">3 hours</div>
+      </div>
+
+      <p>Set up the project:</p>
+      <div class="code-block">
+<span class="cmd">mkdir</span> docsmart
+<span class="cmd">cd</span> docsmart
+<span class="cmd">python -m venv</span> venv
+<span class="cmd">source</span> venv/bin/activate
+
+<span class="cmd">pip install</span> streamlit boto3 pandas plotly
+      </div>
+
+      <p>The two-column layout: left = upload, right = results. Create <code>app.py</code>:</p>
+
+      <div class="code-block">
+<span class="cmd">import</span> streamlit <span class="cmd">as</span> st
+<span class="cmd">from</span> aws_helpers <span class="cmd">import</span> extract_cv_text, analyze_cv
+<span class="cmd">from</span> matcher <span class="cmd">import</span> match_cv_to_job, suggest_improvements
+
+st.set_page_config(page_title=<span class="green">"DocSmart — AI CV Analyzer"</span>, page_icon=<span class="green">"📄"</span>, layout=<span class="green">"wide"</span>)
+
+st.title(<span class="green">"📄 DocSmart — AI CV Analyzer"</span>)
+st.markdown(<span class="green">"_Upload your CV. Paste a job description. Get matched, scored, and improved in 30 seconds._"</span>)
+
+col_left, col_right = st.columns([<span class="orange">1</span>, <span class="orange">1</span>])
+
+<span class="cmd">with</span> col_left:
+    st.subheader(<span class="green">"📁 Your CV"</span>)
+    cv_file = st.file_uploader(<span class="green">"Upload (PDF or image)"</span>, type=[<span class="green">"pdf"</span>, <span class="green">"png"</span>, <span class="green">"jpg"</span>, <span class="green">"jpeg"</span>])
+
+    st.subheader(<span class="green">"💼 The job you want"</span>)
+    job_desc = st.text_area(<span class="green">"Paste the full job description"</span>, height=<span class="orange">250</span>,
+                             placeholder=<span class="green">"e.g., 'We're hiring a Cloud Engineer with 2+ years experience in AWS, Python, Lambda, and CI/CD...'"</span>)
+
+    analyze_btn = st.button(<span class="green">"🔍 Analyze my match"</span>, use_container_width=<span class="cmd">True</span>, type=<span class="green">"primary"</span>)
+
+<span class="cmd">with</span> col_right:
+    <span class="cmd">if</span> analyze_btn <span class="cmd">and</span> cv_file <span class="cmd">and</span> job_desc:
+        <span class="cmd">with</span> st.spinner(<span class="green">"Reading your CV..."</span>):
+            cv_bytes = cv_file.read()
+            cv_text = extract_cv_text(cv_bytes, cv_file.type)
+            cv_analysis = analyze_cv(cv_text)
+
+        <span class="cmd">with</span> st.spinner(<span class="green">"Matching against the job..."</span>):
+            match_result = match_cv_to_job(cv_analysis, job_desc)
+            suggestions = suggest_improvements(cv_analysis, match_result)
+
+        <span class="comment"># Render results — score circle, matched/missing skill chips, suggestions</span>
+        score = match_result[<span class="green">'score'</span>]
+        color = <span class="green">'#2EA043'</span> <span class="cmd">if</span> score &gt;= <span class="orange">70</span> <span class="cmd">else</span> (<span class="green">'#F4B942'</span> <span class="cmd">if</span> score &gt;= <span class="orange">50</span> <span class="cmd">else</span> <span class="green">'#C62828'</span>)
+        st.markdown(<span class="cmd">f</span><span class="green">"""
+            &lt;div style="text-align:center; padding:20px; background:#0A1628; border-radius:12px;"&gt;
+              &lt;div style="font-size:80px; font-weight:800; color:{color};"&gt;{score}%&lt;/div&gt;
+              &lt;div style="color:#fff; font-size:14px;"&gt;Match Score&lt;/div&gt;
+            &lt;/div&gt;"""</span>, unsafe_allow_html=<span class="cmd">True</span>)
+
+        st.subheader(<span class="green">"✅ Skills you have"</span>)
+        st.markdown(<span class="green">" "</span>.join([<span class="cmd">f</span><span class="green">"`{s}`"</span> <span class="cmd">for</span> s <span class="cmd">in</span> match_result[<span class="green">'matched'</span>]]))
+
+        st.subheader(<span class="green">"⚠️ Missing from your CV"</span>)
+        st.markdown(<span class="green">" "</span>.join([<span class="cmd">f</span><span class="green">"`{s}`"</span> <span class="cmd">for</span> s <span class="cmd">in</span> match_result[<span class="green">'missing'</span>]]))
+
+        st.subheader(<span class="green">"📝 Improvements"</span>)
+        <span class="cmd">for</span> s <span class="cmd">in</span> suggestions:
+            st.info(s)
+    <span class="cmd">else</span>:
+        st.info(<span class="green">"👈 Upload a CV and paste a job description to see your match."</span>)
+      </div>
+
+      <p>Run with <code>streamlit run app.py</code>. The empty-state shows on the right until the user uploads + analyzes.</p>
+    </section>
+
+    <!-- STEP 5 — TEXTRACT & COMPREHEND -->
+    <section class="step" id="step5">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">Wire up Textract &amp; Comprehend</div>
+        <div class="step-time">3 hours</div>
+      </div>
+
+      <p>Create <code>aws_helpers.py</code>:</p>
+
+      <div class="code-block">
+<span class="cmd">import</span> boto3
+
+textract = boto3.client(<span class="green">'textract'</span>)
+comprehend = boto3.client(<span class="green">'comprehend'</span>)
+
+
+<span class="cmd">def</span> <span class="yellow">extract_cv_text</span>(file_bytes, mime_type):
+    <span class="green">"""Pull text from a PDF or image CV via Textract."""</span>
+    response = textract.detect_document_text(Document={<span class="green">'Bytes'</span>: file_bytes})
+
+    lines = []
+    <span class="cmd">for</span> block <span class="cmd">in</span> response[<span class="green">'Blocks'</span>]:
+        <span class="cmd">if</span> block[<span class="green">'BlockType'</span>] == <span class="green">'LINE'</span>:
+            lines.append(block[<span class="green">'Text'</span>])
+    <span class="cmd">return</span> <span class="green">'\n'</span>.join(lines)
+
+
+<span class="cmd">def</span> <span class="yellow">analyze_cv</span>(cv_text):
+    <span class="green">"""Run Comprehend to extract entities + key phrases."""</span>
+    <span class="comment"># Truncate to Comprehend's 5000-byte limit</span>
+    safe_text = cv_text[:<span class="orange">4900</span>]
+
+    entities = comprehend.detect_entities(Text=safe_text, LanguageCode=<span class="green">'en'</span>)
+    key_phrases = comprehend.detect_key_phrases(Text=safe_text, LanguageCode=<span class="green">'en'</span>)
+
+    <span class="cmd">return</span> {
+        <span class="green">'full_text'</span>: cv_text,
+        <span class="green">'entities'</span>: [
+            {<span class="green">'text'</span>: e[<span class="green">'Text'</span>], <span class="green">'type'</span>: e[<span class="green">'Type'</span>], <span class="green">'score'</span>: e[<span class="green">'Score'</span>]}
+            <span class="cmd">for</span> e <span class="cmd">in</span> entities[<span class="green">'Entities'</span>]
+        ],
+        <span class="green">'key_phrases'</span>: [
+            {<span class="green">'text'</span>: p[<span class="green">'Text'</span>], <span class="green">'score'</span>: p[<span class="green">'Score'</span>]}
+            <span class="cmd">for</span> p <span class="cmd">in</span> key_phrases[<span class="green">'KeyPhrases'</span>]
+        ]
+    }
+      </div>
+
+      <p>Test it locally with a sample PDF. Print the output to check what Textract extracts before moving on.</p>
+
+      <div class="callout warn">
+        <span class="label">Textract handles multi-page PDFs differently</span>
+        <p>For PDFs over 1 page, use the async <code>start_document_text_detection</code> API instead. For demo simplicity, accept single-page PDFs OR images only — that's what 95% of CVs are anyway. Mention this in your demo as a "v2 improvement".</p>
+      </div>
+    </section>
+
+    <!-- STEP 6 — MATCHING ENGINE -->
+    <section class="step" id="step6">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div class="step-title">The skill matching engine</div>
+        <div class="step-time">4 hours</div>
+      </div>
+
+      <p>This is the brain of the app. Create <code>skills.json</code> — your curated taxonomy:</p>
+
+      <div class="code-block">
+{
+  <span class="yellow">"languages"</span>: [<span class="green">"Python"</span>, <span class="green">"JavaScript"</span>, <span class="green">"TypeScript"</span>, <span class="green">"Java"</span>, <span class="green">"Go"</span>, <span class="green">"Rust"</span>, <span class="green">"C++"</span>, <span class="green">"C#"</span>, <span class="green">"PHP"</span>, <span class="green">"Ruby"</span>, <span class="green">"SQL"</span>, <span class="green">"Bash"</span>],
+  <span class="yellow">"cloud"</span>: [<span class="green">"AWS"</span>, <span class="green">"Azure"</span>, <span class="green">"GCP"</span>, <span class="green">"EC2"</span>, <span class="green">"S3"</span>, <span class="green">"Lambda"</span>, <span class="green">"VPC"</span>, <span class="green">"RDS"</span>, <span class="green">"DynamoDB"</span>, <span class="green">"CloudFront"</span>, <span class="green">"IAM"</span>, <span class="green">"CloudFormation"</span>, <span class="green">"Terraform"</span>],
+  <span class="yellow">"web"</span>: [<span class="green">"React"</span>, <span class="green">"Vue"</span>, <span class="green">"Angular"</span>, <span class="green">"Next.js"</span>, <span class="green">"Django"</span>, <span class="green">"Flask"</span>, <span class="green">"FastAPI"</span>, <span class="green">"Node.js"</span>, <span class="green">"Express"</span>, <span class="green">"HTML"</span>, <span class="green">"CSS"</span>, <span class="green">"Tailwind"</span>],
+  <span class="yellow">"data"</span>: [<span class="green">"Pandas"</span>, <span class="green">"NumPy"</span>, <span class="green">"PyTorch"</span>, <span class="green">"TensorFlow"</span>, <span class="green">"Scikit-learn"</span>, <span class="green">"Spark"</span>, <span class="green">"Airflow"</span>, <span class="green">"Tableau"</span>, <span class="green">"Power BI"</span>],
+  <span class="yellow">"devops"</span>: [<span class="green">"Docker"</span>, <span class="green">"Kubernetes"</span>, <span class="green">"CI/CD"</span>, <span class="green">"Jenkins"</span>, <span class="green">"GitHub Actions"</span>, <span class="green">"GitLab CI"</span>, <span class="green">"Linux"</span>, <span class="green">"Git"</span>, <span class="green">"Nginx"</span>],
+  <span class="yellow">"soft"</span>: [<span class="green">"Leadership"</span>, <span class="green">"Communication"</span>, <span class="green">"Project Management"</span>, <span class="green">"Agile"</span>, <span class="green">"Scrum"</span>, <span class="green">"Mentoring"</span>, <span class="green">"Public Speaking"</span>]
+}
+      </div>
+
+      <p>Now create <code>matcher.py</code>:</p>
+
+      <div class="code-block">
+<span class="cmd">import</span> json
+<span class="cmd">import</span> re
+
+<span class="cmd">with</span> <span class="cmd">open</span>(<span class="green">'skills.json'</span>) <span class="cmd">as</span> f:
+    SKILL_TAXONOMY = json.load(f)
+
+ALL_SKILLS = [skill <span class="cmd">for</span> category <span class="cmd">in</span> SKILL_TAXONOMY.values() <span class="cmd">for</span> skill <span class="cmd">in</span> category]
+
+
+<span class="cmd">def</span> <span class="yellow">extract_skills</span>(text):
+    <span class="green">"""Find which known skills appear in the given text."""</span>
+    text_lower = text.lower()
+    found = []
+    <span class="cmd">for</span> skill <span class="cmd">in</span> ALL_SKILLS:
+        <span class="comment"># Use word boundaries to avoid 'Java' matching 'JavaScript'</span>
+        pattern = <span class="cmd">r</span><span class="green">'\b'</span> + re.escape(skill.lower()) + <span class="cmd">r</span><span class="green">'\b'</span>
+        <span class="cmd">if</span> re.search(pattern, text_lower):
+            found.append(skill)
+    <span class="cmd">return</span> found
+
+
+<span class="cmd">def</span> <span class="yellow">match_cv_to_job</span>(cv_analysis, job_description):
+    <span class="green">"""Compare CV skills to job-description skills. Score 0-100."""</span>
+    cv_skills = <span class="cmd">set</span>(extract_skills(cv_analysis[<span class="green">'full_text'</span>]))
+    job_skills = <span class="cmd">set</span>(extract_skills(job_description))
+
+    <span class="cmd">if</span> <span class="cmd">not</span> job_skills:
+        <span class="cmd">return</span> {<span class="green">'score'</span>: <span class="orange">0</span>, <span class="green">'matched'</span>: [], <span class="green">'missing'</span>: [], <span class="green">'extra'</span>: <span class="cmd">list</span>(cv_skills)}
+
+    matched = cv_skills &amp; job_skills
+    missing = job_skills - cv_skills
+    extra   = cv_skills - job_skills
+
+    score = <span class="cmd">int</span>(<span class="cmd">round</span>(<span class="cmd">len</span>(matched) / <span class="cmd">len</span>(job_skills) * <span class="orange">100</span>))
+
+    <span class="cmd">return</span> {
+        <span class="green">'score'</span>: score,
+        <span class="green">'matched'</span>: <span class="cmd">sorted</span>(matched),
+        <span class="green">'missing'</span>: <span class="cmd">sorted</span>(missing),
+        <span class="green">'extra'</span>: <span class="cmd">sorted</span>(extra)
+    }
+
+
+<span class="cmd">def</span> <span class="yellow">suggest_improvements</span>(cv_analysis, match_result):
+    <span class="green">"""Generate 3-5 actionable suggestions based on the analysis."""</span>
+    suggestions = []
+
+    <span class="cmd">if</span> match_result[<span class="green">'missing'</span>]:
+        top_missing = match_result[<span class="green">'missing'</span>][:<span class="orange">3</span>]
+        suggestions.append(
+            <span class="cmd">f</span><span class="green">"📌 Add these missing skills if you have them: {', '.join(top_missing)}"</span>
+        )
+
+    <span class="cmd">if</span> match_result[<span class="green">'score'</span>] &lt; <span class="orange">50</span>:
+        suggestions.append(
+            <span class="green">"⚠️ Match is below 50%. Consider if this role is the right fit, or rewrite your CV around its key requirements."</span>
+        )
+
+    <span class="cmd">if</span> <span class="cmd">len</span>(cv_analysis[<span class="green">'full_text'</span>]) &lt; <span class="orange">500</span>:
+        suggestions.append(
+            <span class="green">"📝 Your CV seems short. Aim for 1-2 pages with quantified achievements."</span>
+        )
+
+    has_metrics = <span class="cmd">any</span>(c.isdigit() <span class="cmd">for</span> c <span class="cmd">in</span> cv_analysis[<span class="green">'full_text'</span>])
+    <span class="cmd">if</span> <span class="cmd">not</span> has_metrics:
+        suggestions.append(
+            <span class="green">"📊 Add numbers! 'Increased revenue by 30%' beats 'increased revenue'."</span>
+        )
+
+    <span class="cmd">if</span> match_result[<span class="green">'score'</span>] &gt;= <span class="orange">70</span>:
+        suggestions.append(
+            <span class="green">"🎯 Strong match — apply with confidence. Customize the cover letter using the matched skills."</span>
+        )
+
+    <span class="cmd">return</span> suggestions[:<span class="orange">5</span>]
+      </div>
+
+      <details class="hint-toggle">
+        <summary>Hint: making your skills.json richer (huge differentiator)</summary>
+        <div class="hint-body">
+          <p>The basic taxonomy above is a starting point. <strong>Real differentiators</strong>: add <strong>aliases</strong> (e.g., "JavaScript" ↔ "JS" ↔ "ECMAScript"), <strong>related skills</strong> ("Lambda" implies "AWS"), and <strong>seniority indicators</strong> ("Senior", "Lead", "Manager"). The team with the smartest taxonomy delivers the smartest results — and that's what wins Most Innovative.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- STEP 7 — DEPLOY & POLISH -->
+    <section class="step" id="step7">
+      <div class="step-header">
+        <div class="step-num">7</div>
+        <div class="step-title">Deploy &amp; polish</div>
+        <div class="step-time">4 hours</div>
+      </div>
+
+      <p>Same EC2 setup as Projects 1 &amp; 2: t2.micro, Amazon Linux 2023, port 8501 open, IAM role attached with <code>AmazonTextractFullAccess</code> + <code>ComprehendFullAccess</code> + <code>S3ReadOnly</code>.</p>
+
+      <p>Install on the server:</p>
+      <div class="code-block">
+<span class="cmd">sudo yum install -y</span> git python3-pip
+<span class="cmd">pip3 install</span> streamlit boto3 pandas plotly
+<span class="cmd">git clone</span> https://github.com/YOUR-TEAM/docsmart.git
+<span class="cmd">cd</span> docsmart
+<span class="cmd">streamlit run</span> app.py --server.port <span class="orange">8501</span> --server.address <span class="orange">0.0.0.0</span>
+      </div>
+
+      <h4 style="color: var(--navy); margin: 18px 0 8px;">Award-winning polish ideas</h4>
+      <ul>
+        <li><strong>Skill chip styling</strong> — use coloured "chips" instead of plain text. Matched = green, Missing = red, Extra = blue. Looks like Stack Overflow.</li>
+        <li><strong>Animated score circle</strong> — use Plotly's gauge chart for the match score</li>
+        <li><strong>"Try it on these sample CVs"</strong> — provide 3 ready-to-load sample CVs (anonymized teammates) so demo visitors don't have to upload their own</li>
+        <li><strong>"Try it on these sample jobs"</strong> — paste-ready job descriptions for common Ghana roles (cloud engineer, frontend dev, data analyst)</li>
+        <li><strong>Download report</strong> — generate a PDF report of the match results (uses Streamlit's <code>st.download_button</code> + reportlab)</li>
+        <li><strong>Privacy notice</strong> — "Your CV is processed in-memory and never stored. We delete uploads after analysis." Trust matters.</li>
+      </ul>
+
+      <div class="callout team">
+        <span class="label">UX detail that wins awards</span>
+        <p>Skip the upload+paste form for first-time visitors. Show a <strong>landing screen</strong> with: "Try DocSmart with one of our sample CVs →" + three big buttons. Lets judges test the app instantly without typing. Frictionless demo = memorable demo.</p>
+      </div>
+    </section>
+
+    <!-- STEP 8 — DEMO -->
+    <section class="step" id="step8">
+      <div class="step-header">
+        <div class="step-num">8</div>
+        <div class="step-title">Demo day — make them feel it</div>
+        <div class="step-time">2 hours rehearsal</div>
+      </div>
+
+      <div class="demo-card">
+        <h4>🎬 Your 5-minute demo flow</h4>
+        <ul>
+          <li><strong>00:00 — 00:30 · The pain.</strong> "Everyone in this room has been ghosted by a recruiter. Often, the reason isn't your skill — it's that your CV didn't pass the keyword filter." Make eye contact. People will nod.</li>
+          <li><strong>00:30 — 01:00 · The team.</strong> Quick intros — but mention that you used your OWN CVs as test data. Builds trust.</li>
+          <li><strong>01:00 — 02:00 · The live demo.</strong> Click "Try a sample CV". Paste a real Ghana cloud engineer job. Watch the score appear, skills get highlighted, suggestions populate. This is your headline moment.</li>
+          <li><strong>02:00 — 03:00 · A second demo — judge's CV (optional!).</strong> If a judge consents, run their CV through the app live. "Here's where YOU could improve." Bold move. Massive memorability.</li>
+          <li><strong>03:00 — 04:00 · The architecture.</strong> Show your diagram. "Textract reads the doc, Comprehend extracts entities, our matching engine compares to the job. EC2 hosts Streamlit, all under free tier."</li>
+          <li><strong>04:00 — 05:00 · Who uses this.</strong> "Every job seeker in Ghana. Every bootcamp cohort. Career services at universities. We've built v1 — v2 would add cover letter generation and salary suggestions." Vision sells.</li>
+        </ul>
+      </div>
+
+      <div class="callout success">
+        <span class="label">The killer move</span>
+        <p>After the demo, share the live URL in the cohort chat. <strong>"Try it with your own CV right now — we'll wait."</strong> 20 people will try it in 2 minutes. Word will spread. You'll likely win People's Choice this way alone.</p>
+      </div>
+    </section>
+
+    <!-- AWARDS -->
+    <section class="step" id="awards">
+      <div class="step-header">
+        <div class="step-num">🏆</div>
+        <div class="step-title">The 5 awards</div>
+      </div>
+
+      <div class="awards-grid">
+        <div class="award-card">
+          <div class="award-medal">🎨</div>
+          <h5>Most Polished</h5>
+          <p>Looks like a real product. Beautiful score circle, animated chips, professional fonts, "feels like a $20/month tool".</p>
+        </div>
+        <div class="award-card">
+          <div class="award-medal">💡</div>
+          <h5>Most Innovative</h5>
+          <p>The smartest taxonomy. Or AI-generated improvement suggestions (using Bedrock). Or PDF report generation. Something nobody else thought of.</p>
+        </div>
+        <div class="award-card">
+          <div class="award-medal">🎤</div>
+          <h5>Best Demo</h5>
+          <p>The team that ran a judge's CV through the app. Or the team that demoed with FIRE on the live narration. Pure showmanship.</p>
+        </div>
+        <div class="award-card">
+          <div class="award-medal">📚</div>
+          <h5>Best Documentation</h5>
+          <p>A README so good it could be a Medium article. Architecture diagram, setup steps, lessons learned, future roadmap.</p>
+        </div>
+        <div class="award-card">
+          <div class="award-medal">❤️</div>
+          <h5>People's Choice</h5>
+          <p>The app the cohort genuinely uses on their own CVs after demo day. The clearest signal — usage doesn't lie.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="completion">
+      <div class="completion-icon">📄</div>
+      <h2>You're solving your own problem.</h2>
+      <p>Every line of code you write here is dogfooded by your own team. By demo day, you'll have a tool you genuinely use yourselves — and that's the most powerful signal in startup-land.</p>
+      <p style="margin-top: 14px;"><strong>Build it. Run your own CV through it. Then watch the cohort do the same.</strong></p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function updateProgress() {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / docHeight) * 100;
+    document.getElementById('progressFill').style.width = Math.min(100, pct) + '%';
+  }
+  window.addEventListener('scroll', updateProgress);
+
+  const steps = document.querySelectorAll('.step');
+  const sidebarLinks = document.querySelectorAll('.sidebar-step');
+  function updateActiveStep() {
+    let activeIdx = 0;
+    steps.forEach((step, idx) => {
+      const rect = step.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.4) activeIdx = idx;
+    });
+    sidebarLinks.forEach((link, idx) => {
+      link.classList.remove('active');
+      if (idx < activeIdx) link.classList.add('done'); else link.classList.remove('done');
+      if (idx === activeIdx) link.classList.add('active');
+    });
+  }
+  window.addEventListener('scroll', updateActiveStep);
+  updateActiveStep();
+</script>
+
+</body>
+</html>

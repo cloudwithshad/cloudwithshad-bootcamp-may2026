@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 2 · Quiz — Build the Two-Tier Architecture | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --gray: #64748B;
+    --white: #FFFFFF;
+    --green-mid: #2E7D32;
+    --orange: #E65100;
+    --red: #C62828;
+    --gold: #FFC107;
+    --gold-warm: #F4B942;
+    --terracotta: #C8512A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+
+  .topnav { background: rgba(0,0,0,0.3); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .brand { font-size: 16px; }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-meta { font-size: 12px; color: var(--gray); }
+
+  .layout { max-width: 1200px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  @media(max-width: 900px) { .layout { grid-template-columns: 1fr; } .canvas-panel { position: static !important; min-height: 380px !important; } }
+
+  .quiz-panel { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 28px; }
+  @media (max-width: 600px) { .quiz-panel { padding: 22px 18px; } }
+  .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .quiz-progress { font-size: 12px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; }
+  .stats { display: flex; gap: 8px; align-items: center; }
+  .stat-pill { padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 700; border: 1px solid; }
+  .pill-score { background: rgba(0,180,216,0.15); border-color: var(--cyan); color: var(--cyan); }
+  .pill-streak { background: rgba(255,193,7,0.15); border-color: var(--gold); color: var(--gold); }
+  .pill-streak.flash { animation: flash 0.6s; }
+  @keyframes flash { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+  .progress-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--gold)); width: 0%; transition: width 0.5s; }
+
+  .question { font-size: 20px; font-weight: 600; line-height: 1.4; margin-bottom: 20px; min-height: 60px; }
+  @media (max-width: 600px) { .question { font-size: 17px; } }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 18px; cursor: pointer; transition: all 0.2s; font-size: 14px; color: var(--white); text-align: left; font-family: inherit; }
+  .option:hover:not(:disabled) { background: rgba(0,180,216,0.1); border-color: var(--cyan); transform: translateY(-1px); }
+  .option.correct { background: rgba(46,125,50,0.2); border-color: var(--green-mid); color: #A5D6A7; }
+  .option.wrong { background: rgba(198,40,40,0.2); border-color: var(--red); color: #EF9A9A; }
+  .option:disabled { cursor: not-allowed; }
+
+  .feedback { margin-top: 18px; min-height: 24px; font-size: 13px; color: var(--cyan); font-weight: 600; }
+  .feedback.wrong { color: #EF9A9A; }
+
+  .why-panel { margin-top: 16px; background: rgba(0,180,216,0.05); border: 1px solid rgba(0,180,216,0.25); border-radius: 10px; overflow: hidden; max-height: 0; transition: all 0.5s; opacity: 0; }
+  .why-panel.show { max-height: 600px; opacity: 1; }
+  .why-toggle { background: transparent; border: none; color: var(--cyan); font-size: 13px; font-weight: 600; padding: 12px 16px; cursor: pointer; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; font-family: inherit; }
+  .why-toggle:hover { background: rgba(0,180,216,0.05); }
+  .why-toggle .arr { transition: transform 0.3s; }
+  .why-panel.expanded .why-toggle .arr { transform: rotate(180deg); }
+  .why-content { padding: 0 16px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.7; max-height: 0; overflow: hidden; transition: max-height 0.4s; }
+  .why-panel.expanded .why-content { max-height: 500px; }
+  .why-content strong { color: var(--cyan); }
+  .why-content code { background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+
+  .next-btn { margin-top: 18px; background: var(--cyan); color: var(--navy); border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.3s; font-family: inherit; }
+  .next-btn.show { opacity: 1; pointer-events: auto; }
+  .next-btn:hover { background: #00C8F0; transform: translateY(-1px); }
+
+  .canvas-panel { background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2); border-radius: 14px; padding: 24px; min-height: 580px; position: sticky; top: 20px; }
+  .canvas-title { font-size: 11px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; text-align: center; }
+  .canvas-container { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+  .arch-piece { opacity: 0; transform: translateY(-12px) scale(0.85); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; min-width: 230px; text-align: center; border: 2px solid; }
+  .arch-piece.visible { opacity: 1; transform: translateY(0) scale(1); }
+  .arch-piece.pulse { animation: pulse 0.8s; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,216,0); } 50% { box-shadow: 0 0 0 12px rgba(0,180,216,0.3); } }
+  .arch-piece small { display: block; font-size: 10px; font-weight: 400; opacity: 0.85; margin-top: 4px; }
+
+  .piece-user { background: rgba(255,255,255,0.08); border-color: var(--white); }
+  .piece-vpc { background: rgba(0,180,216,0.1); border-color: var(--cyan); color: var(--cyan); }
+  .piece-igw { background: rgba(0,180,216,0.18); border-color: var(--cyan); color: var(--cyan); }
+  .piece-public { background: rgba(0,180,216,0.1); border-color: var(--cyan); color: #B3E5FC; }
+  .piece-ec2 { background: rgba(0,180,216,0.2); border-color: var(--cyan); color: var(--cyan); }
+  .piece-sg-web { background: rgba(255,193,7,0.12); border-color: var(--gold); color: var(--gold); font-size: 11px; }
+  .piece-private { background: rgba(244,185,66,0.1); border-color: var(--gold-warm); color: var(--gold-warm); }
+  .piece-rds { background: rgba(244,185,66,0.2); border-color: var(--gold-warm); color: var(--gold-warm); }
+  .piece-sg-db { background: rgba(255,193,7,0.12); border-color: var(--gold); color: var(--gold); font-size: 11px; }
+  .piece-lambda { background: rgba(200,81,42,0.15); border-color: var(--terracotta); color: #FFAB91; }
+  .piece-s3 { background: rgba(46,125,50,0.15); border-color: var(--green-mid); color: #A5D6A7; }
+
+  .connector { opacity: 0; height: 16px; width: 2px; background: var(--gray); transition: opacity 0.4s; position: relative; }
+  .connector.visible { opacity: 1; }
+  .connector::after { content: '↓'; position: absolute; top: -2px; left: -5px; color: var(--gray); font-size: 11px; }
+
+  .section-label { font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 2px; margin-top: 8px; }
+
+  .results-card { background: linear-gradient(135deg, rgba(46,125,50,0.15), rgba(0,180,216,0.1)); border: 2px solid var(--cyan); border-radius: 14px; padding: 32px; text-align: center; display: none; }
+  .results-card.show { display: block; }
+  .results-icon { font-size: 56px; margin-bottom: 12px; }
+  .results-card h2 { color: var(--cyan); font-size: 26px; margin-bottom: 8px; }
+  .results-card .score-big { font-size: 48px; font-weight: 800; color: var(--gold); margin: 14px 0; }
+  .results-card .score-message { font-size: 16px; color: rgba(255,255,255,0.9); line-height: 1.6; margin-bottom: 18px; }
+  .restart-btn { background: var(--gold); color: var(--navy); border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 10px; }
+
+  .canvas-complete { text-align: center; padding: 20px; }
+  .canvas-complete-icon { font-size: 36px; margin-bottom: 8px; }
+  .canvas-complete h4 { color: var(--gold); font-size: 16px; margin-bottom: 6px; }
+  .canvas-complete p { font-size: 12px; color: rgba(255,255,255,0.7); }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">cloud<span>withshad</span></div>
+  <div class="nav-meta">Week 2 · Quiz · Build the Architecture</div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: Quiz Panel -->
+  <div class="quiz-panel" id="quizPanel">
+    <div class="quiz-header">
+      <div class="quiz-progress">Question <span id="qNum">1</span> of <span id="qTotal">10</span></div>
+      <div class="stats">
+        <div class="stat-pill pill-score">SCORE <span id="scoreVal">0</span></div>
+        <div class="stat-pill pill-streak" id="streakPill">🔥 <span id="streakVal">0</span></div>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="question" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="feedback" id="feedbackText"></div>
+
+    <div class="why-panel" id="whyPanel">
+      <button class="why-toggle" id="whyToggle">
+        <span>Why this answer?</span>
+        <span class="arr">▾</span>
+      </button>
+      <div class="why-content" id="whyContent"></div>
+    </div>
+
+    <button class="next-btn" id="nextBtn">Next question →</button>
+  </div>
+
+  <!-- RIGHT: Results panel (hidden initially) -->
+  <div class="results-card" id="resultsCard">
+    <div class="results-icon">🎉</div>
+    <h2 id="resultsTitle">Week 2 Quiz Complete</h2>
+    <div class="score-big" id="finalScore">0 / 10</div>
+    <div class="score-message" id="resultsMessage"></div>
+    <button class="restart-btn" onclick="restartQuiz()">Try again</button>
+  </div>
+
+  <!-- RIGHT: Architecture Canvas -->
+  <div class="canvas-panel" id="canvasPanel">
+    <div class="canvas-title">YOUR LIVE ARCHITECTURE</div>
+    <div class="canvas-container" id="canvasContainer">
+      <div class="arch-piece piece-user" data-step="0">
+        👤 USER
+        <small>opens the app in their browser</small>
+      </div>
+      <div class="connector" data-step="0"></div>
+
+      <div class="arch-piece piece-vpc" data-step="1">
+        ☁️ VPC  ·  10.0.0.0/16
+        <small>your private network on AWS</small>
+      </div>
+      <div class="connector" data-step="1"></div>
+
+      <div class="arch-piece piece-igw" data-step="2">
+        🌍 INTERNET GATEWAY
+        <small>connects VPC to the public internet</small>
+      </div>
+      <div class="connector" data-step="2"></div>
+
+      <div class="arch-piece piece-public" data-step="3">
+        🌐 PUBLIC SUBNET  ·  10.0.1.0/24
+        <small>route to 0.0.0.0/0 via IGW</small>
+      </div>
+      <div class="connector" data-step="3"></div>
+
+      <div class="arch-piece piece-ec2" data-step="4">
+        🖥️ EC2 Web Server
+        <small>Nginx · public IP · port 80/443</small>
+      </div>
+      <div class="arch-piece piece-sg-web" data-step="5">
+        🛡️ web-sg: allow 80, 443 from world
+      </div>
+      <div class="connector" data-step="5"></div>
+
+      <div class="arch-piece piece-private" data-step="6">
+        🔒 PRIVATE SUBNET  ·  10.0.2.0/24
+        <small>no route to internet</small>
+      </div>
+      <div class="connector" data-step="6"></div>
+
+      <div class="arch-piece piece-rds" data-step="7">
+        🗄️ RDS MySQL  ·  Multi-AZ
+        <small>port 3306 · auto-failover</small>
+      </div>
+      <div class="arch-piece piece-sg-db" data-step="8">
+        🛡️ db-sg: allow 3306 from web-sg only
+      </div>
+
+      <div class="canvas-complete" id="canvasComplete" style="display:none;">
+        <div class="canvas-complete-icon">⚡</div>
+        <h4>+ Lambda · Serverless extension</h4>
+        <p>S3 → Lambda image resizer wired separately. No EC2, no servers.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "Your VPC has a CIDR of 10.0.0.0/16. What's the first thing this tells you about the network?",
+    options: [
+      "It can host exactly 16 servers",
+      "The first 16 bits are fixed, the rest are yours to subnet",
+      "It's automatically a public network",
+      "It supports a maximum of 16 subnets"
+    ],
+    correct: 1,
+    why: "The number after the slash (the <strong>prefix length</strong>) tells you how many bits are 'fixed' as the network portion. /16 means the first 16 bits stay the same — leaving 16 bits (2<sup>16</sup> = 65,536 IPs) free for your subnets to use. <code>/16</code> = big VPC, <code>/24</code> = typical subnet, <code>/28</code> = smallest AWS allows.",
+    unlocks: 1
+  },
+  {
+    q: "What is the SINGLE thing that makes a subnet 'public' vs 'private' in AWS?",
+    options: [
+      "Whether instances inside get public IPs",
+      "Its CIDR block size",
+      "A route to 0.0.0.0/0 via an Internet Gateway in its route table",
+      "The Availability Zone it lives in"
+    ],
+    correct: 2,
+    why: "A subnet is public <strong>only if its route table has a route to 0.0.0.0/0 pointing to an Internet Gateway</strong>. That single line is what 'opens the door' to the internet. Public IPs alone don't make a subnet public — without the route, traffic has nowhere to go.",
+    unlocks: 2
+  },
+  {
+    q: "You launched an EC2 instance in the public subnet but can't reach it from your laptop. Two settings to check first?",
+    options: [
+      "Is the instance running, and is it in the right region",
+      "Is the security group allowing your traffic, and does the instance have a public IP",
+      "Is the AMI free tier eligible, and is the key pair active",
+      "Is the VPC named correctly, and is billing enabled"
+    ],
+    correct: 1,
+    why: "Two checks fix 90% of 'can't reach my EC2' problems: (1) the <strong>security group</strong> must allow your protocol/port (e.g., 22 for SSH, 80 for HTTP) from your IP, and (2) the instance must have a <strong>public IP</strong> auto-assigned (or an Elastic IP attached). Without both, no traffic gets through.",
+    unlocks: 3
+  },
+  {
+    q: "What's the cleverest way to let your EC2 web server talk to your RDS database, but NOTHING else?",
+    options: [
+      "Open port 3306 to 0.0.0.0/0 on the RDS security group",
+      "Put RDS in the public subnet and use a password",
+      "Allow the web server's security group as the source on the RDS security group",
+      "Disable the RDS firewall entirely and rely on the VPC"
+    ],
+    correct: 2,
+    why: "This is the <strong>SG → SG reference pattern</strong>. Instead of allowing an IP (which changes when you scale), you allow another <strong>security group</strong> as the source. Now any instance carrying <code>web-sg</code> can talk to the DB — and nobody else. Scales to 100 web servers with zero firewall changes.",
+    unlocks: 4
+  },
+  {
+    q: "You want RDS Multi-AZ. AWS won't let you create the database. What's almost always the cause?",
+    options: [
+      "You haven't paid the free tier upgrade fee",
+      "Your DB subnet group needs subnets in at least 2 different AZs",
+      "You forgot to enable encryption",
+      "RDS Multi-AZ requires a NAT Gateway"
+    ],
+    correct: 1,
+    why: "Multi-AZ needs a <strong>place to put the standby</strong>. AWS enforces this by requiring your DB subnet group to span at least <strong>2 different AZs</strong>. If your VPC only has private subnets in one AZ (say <code>us-east-1a</code>), Multi-AZ is impossible. Always create private subnets in 2 AZs from day one.",
+    unlocks: 5
+  },
+  {
+    q: "Stateful vs stateless — which AWS firewall is which?",
+    options: [
+      "Security Groups are stateful, NACLs are stateless",
+      "Security Groups are stateless, NACLs are stateful",
+      "Both are stateful",
+      "Both are stateless"
+    ],
+    correct: 0,
+    why: "<strong>Security Groups are stateful</strong> — if you allow inbound HTTP, the return traffic is automatically allowed out. <strong>NACLs are stateless</strong> — you must explicitly allow BOTH directions for traffic to work. This trips up a LOT of beginners. Memory trick: <code>S</code>G = <code>S</code>tateful.",
+    unlocks: 6
+  },
+  {
+    q: "What is the MAIN problem RDS solves for you?",
+    options: [
+      "It makes databases faster than EC2 databases",
+      "It's free forever, unlike running your own database",
+      "AWS manages patching, backups, failover, and OS updates for you",
+      "It supports more SQL features than self-hosted MySQL"
+    ],
+    correct: 2,
+    why: "RDS isn't 'a better database' — it's a <strong>managed service</strong>. You stop being a DBA. AWS handles: automatic backups, OS updates, security patches, failover, and replication. You just pick the engine (MySQL/Postgres/etc.) and the size. Same MySQL, less work.",
+    unlocks: 7
+  },
+  {
+    q: "Your Lambda function should run every time someone uploads a photo to S3. What service connects S3 to Lambda?",
+    options: [
+      "You have to poll S3 from Lambda every few seconds",
+      "An S3 event notification triggers the Lambda directly",
+      "A CloudWatch alarm calls Lambda on schedule",
+      "You need Step Functions to coordinate them"
+    ],
+    correct: 1,
+    why: "S3 has <strong>event notifications</strong> built in. You configure the bucket to fire an event (e.g., <code>ObjectCreated:*</code>) whenever something happens, and choose Lambda as the target. No polling, no schedule, no servers — purely <strong>event-driven</strong>. This is the heart of serverless thinking.",
+    unlocks: 8
+  },
+  {
+    q: "What happens to your Lambda function when nobody is using it?",
+    options: [
+      "It keeps running and you pay for idle time",
+      "It crashes and you have to restart it manually",
+      "It scales to zero — you pay nothing when it's not invoked",
+      "It costs a small fixed monthly fee regardless"
+    ],
+    correct: 2,
+    why: "Lambda's killer feature: <strong>scale to zero</strong>. Your code only runs when triggered, and you only pay per millisecond of execution. Idle = $0. This makes Lambda incredible for spiky workloads (image uploads, webhooks, scheduled tasks) and terrible for constant traffic (where EC2 or Fargate are cheaper).",
+    unlocks: 8
+  },
+  {
+    q: "You finish the lab and want to avoid surprise bills. What's the #1 thing to delete first?",
+    options: [
+      "Your IAM user",
+      "The RDS database — it accrues hourly charges even when 'idle'",
+      "The CloudWatch logs",
+      "The VPC — everything else gets deleted automatically with it"
+    ],
+    correct: 1,
+    why: "RDS is the silent budget killer. Even with no traffic, it bills you per hour the instance is provisioned (~$15/month for db.t3.micro after free tier ends). EC2 and Lambda are cheaper to forget — but RDS adds up fast. <strong>Delete order: RDS → EC2 → VPC.</strong>",
+    unlocks: 8
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+
+function init() {
+  document.getElementById('qTotal').textContent = QUESTIONS.length;
+  loadQuestion();
+}
+
+function loadQuestion() {
+  if (currentQ >= QUESTIONS.length) {
+    showResults();
+    return;
+  }
+  const q = QUESTIONS[currentQ];
+  document.getElementById('qNum').textContent = currentQ + 1;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('progressFill').style.width = ((currentQ / QUESTIONS.length) * 100) + '%';
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(idx);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('feedbackText').textContent = '';
+  document.getElementById('feedbackText').className = 'feedback';
+  document.getElementById('whyPanel').classList.remove('show', 'expanded');
+  document.getElementById('nextBtn').classList.remove('show');
+  answered = false;
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[currentQ];
+  const options = document.querySelectorAll('.option');
+  options.forEach(o => o.disabled = true);
+
+  if (idx === q.correct) {
+    options[idx].classList.add('correct');
+    score++;
+    streak++;
+    document.getElementById('feedbackText').textContent = '✓ Correct! ' + (streak >= 3 ? '🔥 You\'re on fire!' : 'Nice one.');
+    document.getElementById('feedbackText').className = 'feedback';
+    document.getElementById('streakPill').classList.add('flash');
+    setTimeout(() => document.getElementById('streakPill').classList.remove('flash'), 600);
+    // Unlock architecture piece
+    revealArchPiece(q.unlocks);
+  } else {
+    options[idx].classList.add('wrong');
+    options[q.correct].classList.add('correct');
+    streak = 0;
+    document.getElementById('feedbackText').textContent = '✗ Not quite. The correct answer is highlighted.';
+    document.getElementById('feedbackText').className = 'feedback wrong';
+  }
+
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('streakVal').textContent = streak;
+
+  // Show explanation
+  document.getElementById('whyContent').innerHTML = q.why;
+  document.getElementById('whyPanel').classList.add('show');
+
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function revealArchPiece(stepNum) {
+  const pieces = document.querySelectorAll(`[data-step="${stepNum}"]`);
+  pieces.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.add('visible');
+      if (el.classList.contains('arch-piece')) {
+        el.classList.add('pulse');
+        setTimeout(() => el.classList.remove('pulse'), 800);
+      }
+    }, i * 120);
+  });
+  // Step 0 always shown initially
+  if (stepNum === 8 || score === QUESTIONS.length) {
+    setTimeout(() => {
+      const complete = document.getElementById('canvasComplete');
+      if (complete) complete.style.display = 'block';
+    }, 600);
+  }
+}
+
+document.getElementById('nextBtn').onclick = () => {
+  currentQ++;
+  loadQuestion();
+};
+
+document.getElementById('whyToggle').onclick = () => {
+  document.getElementById('whyPanel').classList.toggle('expanded');
+};
+
+function showResults() {
+  document.getElementById('quizPanel').style.display = 'none';
+  document.getElementById('canvasPanel').style.minHeight = 'auto';
+  document.getElementById('progressFill').style.width = '100%';
+  const card = document.getElementById('resultsCard');
+  document.getElementById('finalScore').textContent = score + ' / ' + QUESTIONS.length;
+  let msg;
+  if (score === QUESTIONS.length) {
+    msg = '🏆 Perfect score! You\'ve mastered Week 2. Ready for Week 3 — Scaling & DevOps.';
+  } else if (score >= 8) {
+    msg = '🎯 Excellent! You know your way around a VPC. A quick re-read of any missed topics and you\'re cert-ready on this section.';
+  } else if (score >= 6) {
+    msg = '💪 Solid effort. Re-watch the Security Groups vs NACLs slide and the RDS subnet group bit — those are the trickiest.';
+  } else {
+    msg = '📚 Time for a re-run. Re-watch the Week 2 session, redo Lab 3 from memory, then take this quiz again. Repetition wins.';
+  }
+  document.getElementById('resultsMessage').textContent = msg;
+  card.classList.add('show');
+}
+
+function restartQuiz() {
+  currentQ = 0;
+  score = 0;
+  streak = 0;
+  document.getElementById('scoreVal').textContent = 0;
+  document.getElementById('streakVal').textContent = 0;
+  document.getElementById('quizPanel').style.display = 'block';
+  document.getElementById('resultsCard').classList.remove('show');
+  document.querySelectorAll('.arch-piece, .connector').forEach(el => el.classList.remove('visible'));
+  document.querySelector('.piece-user').classList.add('visible');
+  const cc = document.getElementById('canvasComplete');
+  if (cc) cc.style.display = 'none';
+  loadQuestion();
+}
+
+// Initial state — user piece always visible
+document.querySelector('.piece-user').classList.add('visible');
+init();
+</script>
+
+</body>
+</html>

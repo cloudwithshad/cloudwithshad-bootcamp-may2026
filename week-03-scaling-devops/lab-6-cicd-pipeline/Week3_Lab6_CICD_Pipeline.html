@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 3 · Lab 6 — CI/CD Pipeline (GitHub → AWS) | cloudwithshad</title>
+<style>
+  :root {
+    --navy: #0A1628;
+    --blue: #1565C0;
+    --cyan: #00B4D8;
+    --light: #E8F4FD;
+    --lgray: #F1F5F9;
+    --gray: #64748B;
+    --dark: #1E293B;
+    --white: #FFFFFF;
+    --green: #1B5E20;
+    --green-light: #E8F5E9;
+    --green-mid: #2E7D32;
+    --yellow: #FFF9C4;
+    --yellow-border: #F9A825;
+    --red: #FFEBEE;
+    --red-border: #C62828;
+    --orange: #FFF3E0;
+    --orange-border: #E65100;
+    --purple: #F3E5F5;
+    --purple-border: #6A1B9A;
+    --code-bg: #1A237E;
+    --code-text: #E8EAF6;
+    --github-bg: #0D1117;
+    --github-green: #2EA043;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: var(--dark); line-height: 1.6; }
+
+  .topnav { background: var(--navy); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; max-width: 1100px; margin: 0 auto; }
+  .brand { font-size: 16px; font-weight: 400; color: var(--white); }
+  .brand span { font-weight: 700; color: var(--cyan); }
+  .nav-week { font-size: 12px; color: var(--gray); }
+  .progress-bar-wrap { height: 3px; background: rgba(255,255,255,0.1); }
+  .progress-bar-fill { height: 3px; background: #F4B942; width: 0%; transition: width 0.4s ease; }
+
+  .hero { background: var(--navy); padding: 48px 24px 40px; text-align: center; border-bottom: 3px solid #F4B942; }
+  .hero-badge { display: inline-block; background: #F4B942; color: var(--navy); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 16px; }
+  .hero h1 { font-size: 32px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+  .hero h1 span { color: #F4B942; }
+  .hero-sub { font-size: 15px; color: #FFD580; margin-bottom: 24px; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .hero-meta { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 20px; text-align: center; }
+  .hero-meta-item .val { font-size: 18px; font-weight: 700; color: #F4B942; }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+  .independent-banner { background: linear-gradient(135deg, #FFF9C4, #FFF3E0); border: 2px solid #F9A825; border-radius: 12px; padding: 20px 24px; margin-bottom: 28px; display: flex; gap: 16px; align-items: flex-start; }
+  .independent-banner-icon { font-size: 32px; flex-shrink: 0; }
+  .independent-banner h3 { color: #BF360C; font-size: 18px; margin-bottom: 6px; }
+  .independent-banner p { color: #5D4037; font-size: 14px; margin: 0; }
+
+  .content { background: var(--white); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 36px 40px; }
+  @media(max-width: 600px) { .content { padding: 24px 18px; } }
+
+  .section-block { padding-bottom: 32px; border-bottom: 1px solid #E2E8F0; margin-bottom: 32px; }
+  .section-block:last-of-type { border-bottom: none; margin-bottom: 0; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .section-num { width: 38px; height: 38px; background: #F4B942; color: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .section-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+
+  .section-block p { margin: 12px 0; color: var(--dark); font-size: 15px; }
+  .section-block ul, .section-block ol { margin: 12px 0 12px 20px; }
+  .section-block li { margin-bottom: 8px; font-size: 15px; color: var(--dark); }
+  .section-block strong { color: var(--navy); }
+
+  .code-block { background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 14px 0; white-space: pre; }
+  .code-block .cmd { color: #82B1FF; }
+  .code-block .comment { color: #B0BEC5; font-style: italic; }
+  .code-block .green { color: #69F0AE; }
+  .code-block .yellow { color: #FFD54F; }
+  .code-block .pink { color: #FF80AB; }
+  .code-block .orange { color: #FFAB91; }
+
+  /* GitHub-style YAML viewer */
+  .yaml-block { background: var(--github-bg); color: #E6EDF3; padding: 16px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 14px 0; white-space: pre; border: 1px solid #30363D; }
+  .yaml-block .key { color: #FF7B72; }
+  .yaml-block .val { color: #A5D6FF; }
+  .yaml-block .comment { color: #8B949E; font-style: italic; }
+  .yaml-block .step-name { color: #D2A8FF; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 18px 0; border-left: 5px solid; font-size: 14px; }
+  .callout.tip { background: var(--yellow); border-color: var(--yellow-border); color: #5D4037; }
+  .callout.warn { background: var(--red); border-color: var(--red-border); color: #B71C1C; }
+  .callout.info { background: var(--light); border-color: var(--blue); color: #0D47A1; }
+  .callout.exam { background: var(--purple); border-color: var(--purple-border); color: #4A148C; }
+  .callout.success { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .callout .label { font-weight: 700; display: inline-block; margin-right: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  .callout p { margin: 4px 0; font-size: 14px; }
+
+  .checklist { background: var(--lgray); border-radius: 10px; padding: 20px 24px; margin: 16px 0; }
+  .checklist-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #E2E8F0; align-items: flex-start; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-num { background: #F4B942; color: var(--navy); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .checklist-content { font-size: 14px; }
+  .checklist-content strong { color: var(--navy); }
+
+  .arch-diagram { background: var(--lgray); border: 2px dashed #CBD5E1; border-radius: 12px; padding: 28px 20px; margin: 18px 0; text-align: center; }
+  .arch-diagram svg { max-width: 100%; height: auto; }
+  .arch-caption { font-size: 12px; color: var(--gray); margin-top: 10px; font-style: italic; }
+
+  .hint-toggle { background: var(--light); border: 1px solid var(--blue); border-radius: 10px; margin: 14px 0; overflow: hidden; }
+  .hint-toggle summary { padding: 12px 18px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--blue); list-style: none; display: flex; align-items: center; gap: 8px; }
+  .hint-toggle summary::-webkit-details-marker { display: none; }
+  .hint-toggle summary::before { content: '💡'; font-size: 16px; }
+  .hint-toggle[open] summary { border-bottom: 1px solid #BBDEFB; }
+  .hint-toggle .hint-body { padding: 14px 18px; background: var(--white); }
+  .hint-toggle .hint-body p { font-size: 14px; margin: 6px 0; }
+
+  .bonus-banner { background: linear-gradient(135deg, var(--purple), #E1BEE7); border: 2px solid var(--purple-border); border-radius: 12px; padding: 20px 24px; margin: 24px 0; }
+  .bonus-banner h4 { color: var(--purple-border); margin-bottom: 8px; font-size: 17px; }
+  .bonus-banner p { color: #4A148C; font-size: 14px; margin: 0; }
+
+  .completion { background: linear-gradient(135deg, var(--green-light), #F1F8E9); border: 2px solid var(--green-mid); border-radius: 14px; padding: 28px; text-align: center; margin-top: 28px; }
+  .completion-icon { font-size: 48px; margin-bottom: 12px; }
+  .completion h2 { font-size: 24px; color: var(--green); margin-bottom: 8px; }
+  .completion p { color: #2E7D32; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">cloud<span>withshad</span></div>
+    <div class="nav-week">Week 3 · Lab 6 · CI/CD Pipeline (GitHub → AWS)</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">BUILD-ON-YOUR-OWN · ~75 MINUTES</div>
+  <h1>Build a <span>CI/CD pipeline</span> — GitHub → AWS</h1>
+  <p class="hero-sub">Push code to GitHub. GitHub Actions builds it. AWS deploys it. All in 90 seconds — automatically, every time. The same workflow used by every dev team in the world.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="val">5</div><div class="lbl">PHASES</div></div>
+    <div class="hero-meta-item"><div class="val">75 min</div><div class="lbl">DURATION</div></div>
+    <div class="hero-meta-item"><div class="val">FREE</div><div class="lbl">TIER OK</div></div>
+    <div class="hero-meta-item"><div class="val">GitHub + S3</div><div class="lbl">SERVICES</div></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="independent-banner">
+    <div class="independent-banner-icon">🛠️</div>
+    <div>
+      <h3>This one's on you</h3>
+      <p>Lab 6 is a <strong>build-on-your-own</strong> challenge. We give you the goal, the YAML, and the IAM setup — you wire it together. By the end, you'll have a portfolio-grade pipeline you can show employers. Stuck? Expand the hints (💡).</p>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <!-- THE GOAL -->
+    <section class="section-block" id="goal">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title">The goal</div>
+      </div>
+      <p>By the end of this lab, every <code>git push</code> to your main branch will automatically deploy your website to AWS S3. <strong>No manual upload. No "let me redeploy". Pure automation.</strong></p>
+
+      <div class="arch-diagram">
+        <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg">
+          <!-- You -->
+          <circle cx="50" cy="120" r="22" fill="#00B4D8"/>
+          <text x="50" y="170" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="#00B4D8">You</text>
+          <line x1="74" y1="120" x2="120" y2="120" stroke="#64748B" stroke-width="2" stroke-dasharray="3,3"/>
+          <text x="97" y="110" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#64748B">git push</text>
+
+          <!-- GitHub -->
+          <rect x="125" y="90" width="115" height="60" rx="8" fill="#0D1117" stroke="#30363D" stroke-width="1"/>
+          <text x="182" y="115" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">GitHub</text>
+          <text x="182" y="132" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="#8B949E">your-repo</text>
+
+          <!-- Webhook -->
+          <line x1="240" y1="120" x2="290" y2="120" stroke="#F4B942" stroke-width="2"/>
+          <polygon points="290,120 283,116 283,124" fill="#F4B942"/>
+          <text x="265" y="110" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#F4B942" font-weight="700">webhook</text>
+
+          <!-- GitHub Actions -->
+          <rect x="295" y="80" width="130" height="80" rx="8" fill="#2EA043" stroke="#1B5E20"/>
+          <text x="360" y="105" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">GitHub Actions</text>
+          <text x="360" y="123" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">build · test ·</text>
+          <text x="360" y="138" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="white">deploy</text>
+
+          <!-- AWS arrow -->
+          <line x1="425" y1="120" x2="475" y2="120" stroke="#FF9900" stroke-width="2"/>
+          <polygon points="475,120 468,116 468,124" fill="#FF9900"/>
+          <text x="450" y="110" text-anchor="middle" font-family="Segoe UI" font-size="9" fill="#FF9900" font-weight="700">aws sync</text>
+
+          <!-- S3 -->
+          <rect x="480" y="90" width="115" height="60" rx="8" fill="#1B5E20" stroke="#1B5E20"/>
+          <text x="537" y="115" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="white">S3 Bucket</text>
+          <text x="537" y="132" text-anchor="middle" font-family="Segoe UI" font-size="10" fill="white">static hosting</text>
+
+          <!-- Live arrow -->
+          <line x1="595" y1="120" x2="645" y2="120" stroke="#00B4D8" stroke-width="2"/>
+          <polygon points="645,120 638,116 638,124" fill="#00B4D8"/>
+
+          <!-- World -->
+          <circle cx="675" cy="120" r="22" fill="#00B4D8"/>
+          <text x="675" y="125" text-anchor="middle" font-family="Segoe UI" font-size="16" fill="white">🌍</text>
+          <text x="675" y="170" text-anchor="middle" font-family="Segoe UI" font-size="12" font-weight="700" fill="#00B4D8">Live</text>
+        </svg>
+        <div class="arch-caption">Push to GitHub → Actions runs → AWS S3 updates → world sees it. 90 seconds total.</div>
+      </div>
+
+      <p><strong>What you'll build:</strong></p>
+      <ul>
+        <li>A GitHub repo containing a simple HTML/CSS site (or use your Week 1 portfolio)</li>
+        <li>An S3 bucket configured for static website hosting</li>
+        <li>An IAM user with limited permissions for GitHub to use</li>
+        <li>A <code>.github/workflows/deploy.yml</code> file that auto-deploys on every push</li>
+        <li>Bonus: a CloudFront distribution for a real custom domain feel</li>
+      </ul>
+    </section>
+
+    <!-- PHASE 1: GitHub Repo -->
+    <section class="section-block" id="phase1">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title">Phase 1 — Create the GitHub repo</div>
+      </div>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content">Sign in to GitHub. Click the <strong>+</strong> in the top-right → <strong>New repository</strong>.</div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content">Repository name: <code>cloudwithshad-week3-site</code> (or whatever you prefer)</div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content">Visibility: <strong>Public</strong> (so employers can see your work)</div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content">Tick <strong>Add a README file</strong>. Click <strong>Create repository</strong>.</div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">Clone the repo locally: <code>git clone https://github.com/YOUR-USERNAME/cloudwithshad-week3-site.git</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">6</div><div class="checklist-content">Add an <code>index.html</code> file with simple content (or copy your Week 1 portfolio in)</div></div>
+      </div>
+
+      <p>Here's a minimal <code>index.html</code> to get started:</p>
+
+      <div class="code-block">
+<span class="comment">&lt;!-- index.html --&gt;</span>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;cloudwithshad CI/CD demo&lt;/title&gt;&lt;/head&gt;
+&lt;body style=<span class="green">"font-family: sans-serif; background: #0A1628; color: #fff; text-align: center; padding: 80px;"</span>&gt;
+  &lt;h1&gt;Deployed by GitHub Actions ☁️&lt;/h1&gt;
+  &lt;p&gt;Last updated: &lt;strong&gt;Day 1&lt;/strong&gt;&lt;/p&gt;
+  &lt;p style=<span class="green">"opacity:0.7"</span>&gt;cloudwithshad · Week 3 Lab 6&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+      </div>
+
+      <p>Commit and push:</p>
+
+      <div class="code-block">
+<span class="cmd">git add .</span>
+<span class="cmd">git commit -m "Initial site"</span>
+<span class="cmd">git push origin main</span>
+      </div>
+    </section>
+
+    <!-- PHASE 2: S3 Bucket -->
+    <section class="section-block" id="phase2">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title">Phase 2 — Create an S3 bucket for hosting</div>
+      </div>
+
+      <p>This is similar to Week 1 Lab 1 — but quicker, because you've done it before.</p>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content">Go to <strong>S3 → Create bucket</strong></div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content">Bucket name: <code>cloudwithshad-week3-yourname-12345</code> (must be globally unique)</div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content"><strong>Uncheck</strong> "Block all public access" (we're hosting a public site)</div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content">Acknowledge the warning. Click <strong>Create bucket</strong>.</div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">Open the bucket → <strong>Properties</strong> → scroll to <strong>Static website hosting</strong> → Edit → Enable → Index document: <code>index.html</code> → Save</div></div>
+        <div class="checklist-item"><div class="checklist-num">6</div><div class="checklist-content">Switch to the <strong>Permissions</strong> tab → Bucket policy → paste the policy below (replace BUCKET-NAME)</div></div>
+      </div>
+
+      <div class="code-block">
+{
+  <span class="yellow">"Version"</span>: <span class="green">"2012-10-17"</span>,
+  <span class="yellow">"Statement"</span>: [{
+    <span class="yellow">"Sid"</span>: <span class="green">"PublicReadGetObject"</span>,
+    <span class="yellow">"Effect"</span>: <span class="green">"Allow"</span>,
+    <span class="yellow">"Principal"</span>: <span class="green">"*"</span>,
+    <span class="yellow">"Action"</span>: <span class="green">"s3:GetObject"</span>,
+    <span class="yellow">"Resource"</span>: <span class="green">"arn:aws:s3:::BUCKET-NAME/*"</span>
+  }]
+}
+      </div>
+
+      <p>Save the policy. Copy the <strong>Bucket website endpoint</strong> (from the Properties tab) — looks like <code>http://YOUR-BUCKET.s3-website-region.amazonaws.com</code>. Save it.</p>
+    </section>
+
+    <!-- PHASE 3: IAM User -->
+    <section class="section-block" id="phase3">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title">Phase 3 — Create an IAM user for GitHub Actions</div>
+      </div>
+
+      <p>GitHub Actions needs AWS credentials to deploy your site. We'll create a <strong>dedicated IAM user</strong> with the minimum permissions needed — never share your personal AWS credentials!</p>
+
+      <div class="checklist">
+        <div class="checklist-item"><div class="checklist-num">1</div><div class="checklist-content"><strong>IAM → Users → Create user</strong></div></div>
+        <div class="checklist-item"><div class="checklist-num">2</div><div class="checklist-content">User name: <code>github-actions-deploy</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">3</div><div class="checklist-content">Do <strong>NOT</strong> tick "Provide user access to the AWS Management Console" (we only need API access)</div></div>
+        <div class="checklist-item"><div class="checklist-num">4</div><div class="checklist-content">Permissions: <strong>Attach policies directly</strong> → search for and tick <code>AmazonS3FullAccess</code></div></div>
+        <div class="checklist-item"><div class="checklist-num">5</div><div class="checklist-content">Click through to <strong>Create user</strong></div></div>
+        <div class="checklist-item"><div class="checklist-num">6</div><div class="checklist-content">Open the user → <strong>Security credentials</strong> tab → <strong>Create access key</strong></div></div>
+        <div class="checklist-item"><div class="checklist-num">7</div><div class="checklist-content">Use case: <strong>Third-party service</strong> → Next → Create</div></div>
+        <div class="checklist-item"><div class="checklist-num">8</div><div class="checklist-content"><strong>CRITICAL:</strong> Copy both the <code>Access key ID</code> and <code>Secret access key</code>. The secret is shown ONCE only.</div></div>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">DANGER ZONE</span>
+        <p>NEVER commit these AWS keys to git. NEVER share them publicly. If they leak, attackers can spin up servers on your account and bill you thousands. If you accidentally expose them, <strong>delete them immediately</strong> from IAM and create new ones.</p>
+      </div>
+
+      <div class="callout exam">
+        <span class="label">Production best practice</span>
+        <p>In production, you'd use <strong>OIDC (OpenID Connect)</strong> to let GitHub assume an IAM role <strong>without storing keys</strong>. For learning, access keys are fine. We'll cover OIDC in the advanced course.</p>
+      </div>
+    </section>
+
+    <!-- PHASE 4: GitHub Secrets + Workflow -->
+    <section class="section-block" id="phase4">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title">Phase 4 — Add secrets &amp; create the workflow</div>
+      </div>
+
+      <p>Now we tell GitHub about the AWS keys (securely!) and write the workflow file that runs on every push.</p>
+
+      <h4 style="color: var(--navy); margin: 18px 0 8px;">Step 4a — Add the AWS keys as GitHub Secrets</h4>
+
+      <ol>
+        <li>Open your GitHub repo</li>
+        <li>Click <strong>Settings</strong> tab → <strong>Secrets and variables</strong> → <strong>Actions</strong></li>
+        <li>Click <strong>New repository secret</strong></li>
+        <li>Add three secrets, one at a time:
+          <ul>
+            <li><code>AWS_ACCESS_KEY_ID</code> → paste your access key ID</li>
+            <li><code>AWS_SECRET_ACCESS_KEY</code> → paste your secret key</li>
+            <li><code>S3_BUCKET</code> → paste your bucket name (just the name, no <code>s3://</code>)</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h4 style="color: var(--navy); margin: 18px 0 8px;">Step 4b — Create the workflow file</h4>
+
+      <p>In your local repo, create the file <code>.github/workflows/deploy.yml</code> (you'll need to create the <code>.github/workflows/</code> folders first):</p>
+
+      <div class="yaml-block">
+<span class="comment"># .github/workflows/deploy.yml</span>
+<span class="key">name</span>: <span class="val">Deploy to S3</span>
+
+<span class="key">on</span>:
+  <span class="key">push</span>:
+    <span class="key">branches</span>: [ <span class="val">main</span> ]
+
+<span class="key">jobs</span>:
+  <span class="step-name">deploy</span>:
+    <span class="key">runs-on</span>: <span class="val">ubuntu-latest</span>
+    <span class="key">steps</span>:
+      - <span class="key">name</span>: <span class="val">Checkout repo</span>
+        <span class="key">uses</span>: <span class="val">actions/checkout@v4</span>
+
+      - <span class="key">name</span>: <span class="val">Configure AWS credentials</span>
+        <span class="key">uses</span>: <span class="val">aws-actions/configure-aws-credentials@v4</span>
+        <span class="key">with</span>:
+          <span class="key">aws-access-key-id</span>: <span class="val">${{ secrets.AWS_ACCESS_KEY_ID }}</span>
+          <span class="key">aws-secret-access-key</span>: <span class="val">${{ secrets.AWS_SECRET_ACCESS_KEY }}</span>
+          <span class="key">aws-region</span>: <span class="val">af-south-1</span>  <span class="comment"># change to your region</span>
+
+      - <span class="key">name</span>: <span class="val">Deploy to S3</span>
+        <span class="key">run</span>: <span class="val">aws s3 sync . s3://${{ secrets.S3_BUCKET }} --delete --exclude ".git/*" --exclude ".github/*" --exclude "*.md"</span>
+      </div>
+
+      <p>Save the file, then commit + push:</p>
+
+      <div class="code-block">
+<span class="cmd">git add .github/workflows/deploy.yml</span>
+<span class="cmd">git commit -m "Add CI/CD pipeline"</span>
+<span class="cmd">git push origin main</span>
+      </div>
+
+      <div class="callout info">
+        <span class="label">What the YAML says, in English</span>
+        <p>"When someone pushes to the <code>main</code> branch, spin up an Ubuntu runner. Check out the code. Configure AWS using the secrets I gave you. Then sync all the files to my S3 bucket — except the .git folder, the workflow files, and any markdown files."</p>
+      </div>
+    </section>
+
+    <!-- PHASE 5: Test -->
+    <section class="section-block" id="phase5">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title">Phase 5 — Watch it deploy</div>
+      </div>
+
+      <p>The moment of truth.</p>
+
+      <ol>
+        <li>Open your GitHub repo in the browser</li>
+        <li>Click the <strong>Actions</strong> tab</li>
+        <li>You should see your "Deploy to S3" workflow running (yellow circle) or completed (green check)</li>
+        <li>Click into it to see live logs</li>
+        <li>Once green, open the <strong>S3 bucket website URL</strong> from Phase 2 — your site is live!</li>
+      </ol>
+
+      <p>Now the magic test — <strong>change something and push again</strong>:</p>
+
+      <div class="code-block">
+<span class="comment"># Edit index.html, change "Day 1" to "Day 2" or anything else</span>
+<span class="cmd">git add index.html</span>
+<span class="cmd">git commit -m "Update homepage"</span>
+<span class="cmd">git push origin main</span>
+      </div>
+
+      <p>Watch the Actions tab — within 90 seconds, the workflow runs again. Refresh your S3 URL. <strong>The site updates automatically</strong>. No SSH. No FTP. No clicking "deploy" in any console.</p>
+
+      <div class="callout success">
+        <span class="label">Submission</span>
+        <p>Take a screenshot of: (1) the green checkmark in GitHub Actions, AND (2) the live S3 URL showing your updated content. Post both in the cohort WhatsApp group. Your shareable GitHub repo URL is your portfolio piece — drop it on LinkedIn too. 🚀</p>
+      </div>
+
+      <details class="hint-toggle">
+        <summary>Hint: what to do when the workflow fails</summary>
+        <div class="hint-body">
+          <p>Click into the failed run in the Actions tab. The error is at the bottom of the logs. Most common issues:</p>
+          <ul style="margin-left: 20px; font-size: 14px;">
+            <li><strong>Access Denied:</strong> Bucket policy not set, or IAM user missing S3 permissions</li>
+            <li><strong>Invalid credentials:</strong> Secret was pasted with extra spaces. Re-add it carefully.</li>
+            <li><strong>Bucket not found:</strong> Region in workflow YAML doesn't match where the bucket lives</li>
+            <li><strong>Workflow didn't run at all:</strong> Wrong path — must be <code>.github/workflows/</code>, all lowercase, no typos</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- BONUS -->
+    <div class="bonus-banner">
+      <h4>🚀 Bonus challenges</h4>
+      <p>Want to take it further? Try one of these — each is portfolio gold:</p>
+      <ul style="margin-top: 10px; margin-left: 20px;">
+        <li><strong>CloudFront in front:</strong> Add a CloudFront distribution pointing to your S3 bucket. Now you have HTTPS, a CDN, and a real-looking URL.</li>
+        <li><strong>Invalidate cache on deploy:</strong> Add an <code>aws cloudfront create-invalidation</code> step so users see new content immediately.</li>
+        <li><strong>Run tests before deploy:</strong> Add a <code>npm test</code> step (or any test runner). If tests fail, the deploy is skipped — this is true CI.</li>
+        <li><strong>Environments:</strong> Make pushes to <code>develop</code> deploy to a staging bucket, pushes to <code>main</code> deploy to production.</li>
+        <li><strong>Slack/Discord notification:</strong> Add a step that posts to your team channel after a successful deploy.</li>
+      </ul>
+    </div>
+
+    <!-- CLEANUP -->
+    <section class="section-block" id="cleanup">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div class="section-title">Clean up</div>
+      </div>
+      <p>S3 buckets in the free tier cost almost nothing, but it's good hygiene. Also: <strong>rotate your access keys</strong>.</p>
+
+      <ol>
+        <li><strong>Empty</strong> the S3 bucket, then <strong>Delete</strong> the bucket</li>
+        <li><strong>Delete the IAM user</strong> (IAM → Users → github-actions-deploy → Delete)</li>
+        <li><strong>OR rotate the keys:</strong> if you want to keep the pipeline working, just delete the old access key and create a new one — update the GitHub Secret</li>
+        <li><strong>Keep the GitHub repo!</strong> — it's a portfolio piece</li>
+      </ol>
+
+      <div class="callout info">
+        <span class="label">Why keep the repo</span>
+        <p>This is genuinely employer-impressive. Add it to your LinkedIn under Projects with the line: "Built a CI/CD pipeline that auto-deploys to AWS using GitHub Actions and S3." Employers love seeing this.</p>
+      </div>
+    </section>
+
+    <div class="completion">
+      <div class="completion-icon">🔄</div>
+      <h2>Lab 6 complete!</h2>
+      <p>You just built the same CI/CD pattern used by Fortune 500 companies. Every push to main = automatic deploy. This is what makes "ship fast" possible.</p>
+      <p style="margin-top: 12px; font-size: 13px;"><strong>Next week:</strong> AI services + capstone — Textract, Comprehend, and your final project</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function updateProgress() {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / docHeight) * 100;
+    document.getElementById('progressFill').style.width = Math.min(100, pct) + '%';
+  }
+  window.addEventListener('scroll', updateProgress);
+</script>
+
+</body>
+</html>

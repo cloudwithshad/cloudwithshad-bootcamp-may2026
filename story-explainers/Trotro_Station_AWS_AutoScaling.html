@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Trotro Station — AWS Auto Scaling &amp; Load Balancers, the Ghana Way</title>
+<style>
+  :root {
+    --asphalt: #2C2520;
+    --road: #5A4A3E;
+    --yellow: #F5C518;
+    --yellow-deep: #D9A800;
+    --orange: #E8743C;
+    --orange-deep: #C8512A;
+    --red: #C0392B;
+    --green: #2A9D5F;
+    --green-deep: #1E7A47;
+    --blue: #2E86C1;
+    --blue-deep: #1F608E;
+    --cream: #FFF8EA;
+    --sand: #F5D6A1;
+    --sand-deep: #E8B968;
+    --ink: #2A1A0E;
+    --ink-soft: #5A4636;
+    --shadow: rgba(42, 26, 14, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Georgia', 'Lora', serif;
+    background: radial-gradient(ellipse at top, #FCE7BD 0%, var(--sand) 30%, var(--sand-deep) 65%, #D9A067 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .progress-rail { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: rgba(42, 26, 14, 0.1); z-index: 200; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), var(--orange)); width: 0%; transition: width 0.4s ease; }
+
+  .chapter-nav { position: fixed; right: 24px; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+  .chapter-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(42, 26, 14, 0.25); border: 2px solid var(--cream); cursor: pointer; transition: all 0.3s ease; position: relative; }
+  .chapter-dot:hover { transform: scale(1.4); background: var(--yellow); }
+  .chapter-dot.active { background: var(--orange); transform: scale(1.4); box-shadow: 0 0 0 4px rgba(232, 116, 60, 0.25); }
+  .chapter-dot::after { content: attr(data-label); position: absolute; right: 22px; top: 50%; transform: translateY(-50%); background: var(--ink); color: var(--cream); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: 'Inter', system-ui, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .chapter-dot:hover::after { opacity: 1; }
+  @media (max-width: 700px) { .chapter-nav { display: none; } }
+
+  .scene { min-height: 100vh; width: 100%; padding: 80px 20px 60px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .scene-inner { max-width: 1100px; width: 100%; display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+  @media (max-width: 900px) { .scene-inner { grid-template-columns: 1fr; gap: 28px; } }
+
+  .scene-text { opacity: 0; transform: translateY(40px); transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  .scene.in-view .scene-text { opacity: 1; transform: translateY(0); }
+  .scene-visual { opacity: 0; transform: translateY(40px) scale(0.96); transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s, transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s; }
+  .scene.in-view .scene-visual { opacity: 1; transform: translateY(0) scale(1); }
+
+  .chapter-tag { display: inline-block; padding: 6px 14px; background: rgba(232, 116, 60, 0.15); border: 1.5px solid var(--orange); color: var(--orange-deep); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 30px; margin-bottom: 18px; }
+  .scene h2 { font-family: 'Georgia', serif; font-size: clamp(28px, 4vw, 44px); color: var(--ink); line-height: 1.15; margin-bottom: 18px; font-weight: 700; }
+  .scene h2 em { color: var(--orange-deep); font-style: italic; }
+  .scene-text p { font-size: 17px; color: var(--ink-soft); line-height: 1.75; margin-bottom: 14px; }
+  .scene-text p strong { color: var(--ink); background: rgba(245, 197, 24, 0.4); padding: 1px 6px; border-radius: 3px; }
+
+  .aws-pill { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; padding: 10px 18px; background: var(--ink); color: var(--yellow); border-radius: 30px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 6px 18px var(--shadow); }
+  .aws-pill::before { content: '☁'; font-size: 16px; color: var(--orange); }
+
+  .term { background: rgba(245, 197, 24, 0.4); color: var(--ink); border-bottom: 2px dotted var(--yellow-deep); cursor: help; position: relative; padding: 0 3px; font-weight: 600; }
+  .term:hover .tooltip { opacity: 1; transform: translate(-50%, -2px); pointer-events: auto; }
+  .tooltip { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, 6px); background: var(--ink); color: var(--cream); padding: 10px 14px; border-radius: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 400; line-height: 1.5; width: max-content; max-width: 240px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 50; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+  .tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--ink); }
+
+  .stage { width: 100%; aspect-ratio: 1 / 1; max-width: 540px; margin: 0 auto; background: linear-gradient(180deg, #FCE7BD 0%, #F0BD7C 60%, #C28447 100%); border-radius: 20px; box-shadow: 0 20px 50px var(--shadow), inset 0 0 0 3px rgba(255,255,255,0.4); position: relative; overflow: hidden; }
+  .stage svg { width: 100%; height: 100%; display: block; }
+
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes bobble { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-2px); } 75% { transform: translateY(1px); } }
+
+  .float { animation: float 3s ease-in-out infinite; }
+  .bobble { animation: bobble 0.4s ease-in-out infinite; }
+
+  .intro { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; position: relative; overflow: hidden; }
+  .intro-content { max-width: 800px; z-index: 2; }
+  .intro .badge { display: inline-block; padding: 6px 16px; background: rgba(232, 116, 60, 0.15); border: 1.5px solid var(--orange); color: var(--orange-deep); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border-radius: 30px; margin-bottom: 24px; animation: float 4s ease-in-out infinite; }
+  .intro h1 { font-family: 'Georgia', serif; font-size: clamp(40px, 7vw, 76px); color: var(--ink); line-height: 1.05; margin-bottom: 18px; font-weight: 700; }
+  .intro h1 em { color: var(--orange-deep); font-style: italic; display: block; }
+  .intro p { font-size: 19px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  .start-btn, .next-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: linear-gradient(180deg, var(--orange), var(--orange-deep)); color: var(--cream); border: none; border-radius: 50px; font-family: 'Georgia', serif; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(232, 116, 60, 0.4); transition: all 0.3s ease; text-decoration: none; }
+  .start-btn:hover, .next-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(232, 116, 60, 0.5); }
+  .start-btn::after, .next-btn::after { content: '→'; font-size: 18px; transition: transform 0.3s; }
+  .start-btn:hover::after, .next-btn:hover::after { transform: translateX(4px); }
+
+  .scroll-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: var(--ink-soft); font-family: 'Inter', system-ui, sans-serif; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7; animation: float 2s ease-in-out infinite; }
+  .scroll-hint::after { content: ''; display: block; width: 1px; height: 30px; background: var(--ink-soft); margin: 8px auto 0; }
+
+  .float-element { position: absolute; font-size: 60px; opacity: 0.18; pointer-events: none; }
+
+  .scene-action { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .replay-btn { padding: 10px 18px; background: transparent; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 30px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .replay-btn:hover { background: var(--ink); color: var(--cream); }
+  .replay-btn::before { content: '↻ '; }
+
+  .scene-label { position: absolute; background: var(--ink); color: var(--cream); padding: 4px 12px; border-radius: 14px; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 5; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+  .scene-label.visible { opacity: 1; }
+  .scene-label.busy { background: var(--red); }
+  .scene-label.calm { background: var(--green); }
+  .scene-label.scaling { background: var(--orange); }
+
+  .demo-controls { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .demo-btn { padding: 8px 14px; background: var(--ink); color: var(--cream); border: none; border-radius: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .demo-btn:hover { background: var(--orange); transform: translateY(-2px); }
+  .demo-btn.active { background: var(--orange); }
+  .demo-status { margin-top: 12px; padding: 10px 14px; background: rgba(255,255,255,0.5); border-radius: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 13px; color: var(--ink); border-left: 3px solid var(--orange); }
+  .demo-status strong { color: var(--orange-deep); }
+
+  .summary { background: linear-gradient(180deg, rgba(255,248,234,0.4) 0%, rgba(245,197,24,0.4) 100%); }
+  .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 30px; }
+  @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  .summary-card { background: var(--cream); border-radius: 14px; padding: 18px 20px; border-left: 5px solid var(--orange); box-shadow: 0 6px 18px var(--shadow); transition: transform 0.3s, box-shadow 0.3s; }
+  .summary-card:hover { transform: translateY(-4px); box-shadow: 0 12px 26px var(--shadow); }
+  .summary-card .icon { font-size: 28px; margin-bottom: 6px; }
+  .summary-card .farm-side { font-family: 'Georgia', serif; font-size: 16px; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+  .summary-card .arrow { color: var(--orange-deep); font-size: 18px; margin: 4px 0; }
+  .summary-card .aws-side { font-family: 'Courier New', monospace; font-size: 14px; color: var(--ink); font-weight: 700; background: var(--yellow); padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .summary-card p { font-size: 13px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
+  .summary-card.c1 { border-left-color: var(--green); }
+  .summary-card.c2 { border-left-color: var(--blue); }
+  .summary-card.c3 { border-left-color: var(--orange); }
+  .summary-card.c4 { border-left-color: var(--red); }
+
+  .end-cta { text-align: center; margin-top: 40px; }
+  .end-cta p { margin-bottom: 20px; font-style: italic; color: var(--ink); }
+
+  .footer { text-align: center; padding: 30px 20px; color: var(--ink-soft); font-size: 13px; font-family: 'Inter', system-ui, sans-serif; background: rgba(42, 26, 14, 0.06); }
+  .footer strong { color: var(--orange-deep); }
+</style>
+</head>
+<body>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="chapter-nav" id="chapterNav">
+  <div class="chapter-dot" data-target="intro" data-label="Welcome"></div>
+  <div class="chapter-dot" data-target="scene-station" data-label="The Station"></div>
+  <div class="chapter-dot" data-target="scene-conductor" data-label="The Conductor"></div>
+  <div class="chapter-dot" data-target="scene-rush" data-label="Rush Hour"></div>
+  <div class="chapter-dot" data-target="scene-policy" data-label="The Policy"></div>
+  <div class="chapter-dot" data-target="scene-health" data-label="Health Checks"></div>
+  <div class="chapter-dot" data-target="scene-types" data-label="ALB vs NLB"></div>
+  <div class="chapter-dot" data-target="scene-summary" data-label="Summary"></div>
+</nav>
+
+<section class="intro" id="intro">
+  <div class="float-element" style="top: 12%; left: 8%; animation: float 5s ease-in-out infinite;">🚐</div>
+  <div class="float-element" style="top: 22%; right: 12%; animation: float 6s ease-in-out infinite 1s;">🛣️</div>
+  <div class="float-element" style="bottom: 18%; left: 15%; animation: float 4s ease-in-out infinite 0.5s;">👥</div>
+  <div class="float-element" style="bottom: 28%; right: 20%; animation: float 5s ease-in-out infinite 1.5s;">🚏</div>
+  <div class="intro-content">
+    <span class="badge">An AWS Auto Scaling Story</span>
+    <h1>The Trotro Station<br>at <em>Circle</em></h1>
+    <p>Every Ghanaian knows the trotro station. Vehicles fill up and leave. New ones pull in. A conductor calls out destinations and packs passengers. At rush hour, more trotros appear. At noon, they vanish. That's not chaos — that's <strong>auto scaling</strong>.</p>
+    <a href="#scene-station" class="start-btn">Catch the next trotro</a>
+  </div>
+  <div class="scroll-hint">SCROLL TO BOARD</div>
+</section>
+
+<section class="scene" id="scene-station">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 1 · The Setup</span>
+      <h2>One station. <em>Many trotros.</em></h2>
+      <p>Picture Circle Station at 7am. Three trotros parked, all going to <strong>Madina</strong>. They look identical. They do the exact same job — pick passengers up, drop them off, come back.</p>
+      <p>It doesn't matter to a passenger which trotro they board. As long as it's going to Madina and has a seat, they're good. The trotros are <strong>interchangeable workers</strong> doing the same task in parallel.</p>
+      <p>That's how AWS thinks about your servers too. You don't have ONE precious server. You have a <strong>fleet</strong> of identical ones.</p>
+      <div class="aws-pill">EC2 Instances — A Fleet of Workers</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <circle cx="430" cy="80" r="35" fill="#F5C518" opacity="0.6"/>
+          <ellipse cx="100" cy="60" rx="35" ry="14" fill="#fff" opacity="0.7"/>
+          <ellipse cx="130" cy="55" rx="22" ry="12" fill="#fff" opacity="0.7"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A4A3E"/>
+          <g stroke="#F5C518" stroke-width="2" stroke-dasharray="6,4">
+            <line x1="60" y1="200" x2="60" y2="500"/>
+            <line x1="190" y1="200" x2="190" y2="500"/>
+            <line x1="320" y1="200" x2="320" y2="500"/>
+            <line x1="450" y1="200" x2="450" y2="500"/>
+          </g>
+          <g transform="translate(250, 130)">
+            <rect x="-3" y="0" width="6" height="60" fill="#3E1F08"/>
+            <rect x="-70" y="-30" width="140" height="35" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="2"/>
+            <text x="0" y="-15" text-anchor="middle" font-family="Georgia" font-size="13" font-weight="bold" fill="#3E1F08">CIRCLE STATION</text>
+            <text x="0" y="0" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08">→ Madina</text>
+          </g>
+          <g class="bobble" style="animation-delay: 0s">
+            <g transform="translate(125, 320)">
+              <rect x="-40" y="-30" width="80" height="40" rx="4" fill="#F5C518" stroke="#3E1F08" stroke-width="2"/>
+              <rect x="-35" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <rect x="-12" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <rect x="11" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <line x1="-35" y1="-25" x2="-35" y2="10" stroke="#3E1F08" stroke-width="1"/>
+              <circle cx="-25" cy="14" r="8" fill="#1A1A1A"/>
+              <circle cx="-25" cy="14" r="3" fill="#666"/>
+              <circle cx="25" cy="14" r="8" fill="#1A1A1A"/>
+              <circle cx="25" cy="14" r="3" fill="#666"/>
+              <rect x="-15" y="-38" width="30" height="8" fill="#fff" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-32" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3E1F08">MADINA</text>
+            </g>
+          </g>
+          <g class="bobble" style="animation-delay: 0.15s">
+            <g transform="translate(255, 320)">
+              <rect x="-40" y="-30" width="80" height="40" rx="4" fill="#F5C518" stroke="#3E1F08" stroke-width="2"/>
+              <rect x="-35" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <rect x="-12" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <rect x="11" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <line x1="-35" y1="-25" x2="-35" y2="10" stroke="#3E1F08" stroke-width="1"/>
+              <circle cx="-25" cy="14" r="8" fill="#1A1A1A"/>
+              <circle cx="-25" cy="14" r="3" fill="#666"/>
+              <circle cx="25" cy="14" r="8" fill="#1A1A1A"/>
+              <circle cx="25" cy="14" r="3" fill="#666"/>
+              <rect x="-15" y="-38" width="30" height="8" fill="#fff" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-32" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3E1F08">MADINA</text>
+            </g>
+          </g>
+          <g class="bobble" style="animation-delay: 0.3s">
+            <g transform="translate(385, 320)">
+              <rect x="-40" y="-30" width="80" height="40" rx="4" fill="#F5C518" stroke="#3E1F08" stroke-width="2"/>
+              <rect x="-35" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <rect x="-12" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <rect x="11" y="-25" width="20" height="14" fill="#A0CFE8"/>
+              <line x1="-35" y1="-25" x2="-35" y2="10" stroke="#3E1F08" stroke-width="1"/>
+              <circle cx="-25" cy="14" r="8" fill="#1A1A1A"/>
+              <circle cx="-25" cy="14" r="3" fill="#666"/>
+              <circle cx="25" cy="14" r="8" fill="#1A1A1A"/>
+              <circle cx="25" cy="14" r="3" fill="#666"/>
+              <rect x="-15" y="-38" width="30" height="8" fill="#fff" stroke="#3E1F08" stroke-width="0.8"/>
+              <text x="0" y="-32" text-anchor="middle" font-family="Inter" font-size="6" font-weight="bold" fill="#3E1F08">MADINA</text>
+            </g>
+          </g>
+          <g font-family="Inter" font-size="9" fill="#fff" font-weight="bold">
+            <text x="125" y="380" text-anchor="middle">Trotro #1</text>
+            <text x="255" y="380" text-anchor="middle">Trotro #2</text>
+            <text x="385" y="380" text-anchor="middle">Trotro #3</text>
+          </g>
+          <g transform="translate(250, 460)">
+            <rect x="-110" y="-15" width="220" height="22" rx="11" fill="#fff" opacity="0.85"/>
+            <text x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#3E1F08" font-weight="bold">Identical · Interchangeable · Parallel</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-conductor">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 2 · The Conductor</span>
+      <h2>The conductor <em>calls the shots</em></h2>
+      <p>Passengers don't choose which trotro to board. They walk up to the station, and <strong>the conductor</strong> directs them: "Madina! Madina! Enter that one!"</p>
+      <p>The conductor watches every trotro. He knows which one has 2 free seats vs 8 free seats. He sends new arrivals to the emptiest one — keeping all trotros equally loaded.</p>
+      <p>Without him, everyone would crowd onto the first trotro and ignore the others. Chaos. With him, the load is balanced.</p>
+      <p>That's exactly what a <span class="term">load balancer<span class="tooltip">A load balancer sits in front of multiple servers and distributes incoming traffic across them — preventing any single server from being overwhelmed.</span></span> does in AWS. It stands at the entrance of your fleet and decides which server handles each request.</p>
+      <div class="aws-pill">Elastic Load Balancer (ELB)</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayConductor()">Replay the boarding</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="conductorSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A4A3E"/>
+          <g id="trotro1" transform="translate(110, 280)">
+            <rect x="-32" y="-22" width="64" height="32" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">T1</text>
+            <g id="seats1">
+              <circle cx="-22" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-15" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-8" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-1" cy="-13" r="2" class="seat" fill="#27AE60"/>
+            </g>
+          </g>
+          <g id="trotro2" transform="translate(250, 280)">
+            <rect x="-32" y="-22" width="64" height="32" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">T2</text>
+            <g id="seats2">
+              <circle cx="-22" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-15" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-8" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-1" cy="-13" r="2" class="seat" fill="#27AE60"/>
+            </g>
+          </g>
+          <g id="trotro3" transform="translate(390, 280)">
+            <rect x="-32" y="-22" width="64" height="32" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">T3</text>
+            <g id="seats3">
+              <circle cx="-22" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-15" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-8" cy="-13" r="2" class="seat" fill="#27AE60"/>
+              <circle cx="-1" cy="-13" r="2" class="seat" fill="#27AE60"/>
+            </g>
+          </g>
+          <g transform="translate(250, 410)">
+            <ellipse cx="0" cy="14" rx="12" ry="20" fill="#2E86C1"/>
+            <circle cx="0" cy="-8" r="10" fill="#6B3410"/>
+            <ellipse cx="0" cy="-15" rx="14" ry="3" fill="#1F608E"/>
+            <ellipse cx="0" cy="-19" rx="9" ry="6" fill="#1F608E"/>
+            <line x1="-12" y1="6" x2="-22" y2="-2" stroke="#6B3410" stroke-width="3" stroke-linecap="round"/>
+            <line x1="12" y1="6" x2="22" y2="-2" stroke="#6B3410" stroke-width="3" stroke-linecap="round"/>
+            <rect x="-5" y="32" width="4" height="14" fill="#3E1F08"/>
+            <rect x="1" y="32" width="4" height="14" fill="#3E1F08"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="10" fill="#3E1F08" font-weight="bold">CONDUCTOR</text>
+          </g>
+          <circle cx="250" cy="410" r="20" fill="none" stroke="#E8743C" stroke-width="2" opacity="0">
+            <animate attributeName="r" values="20;50" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.7;0" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <g id="passenger1" transform="translate(50, 470)">
+            <circle cx="0" cy="0" r="7" fill="#6B3410"/>
+            <ellipse cx="0" cy="14" rx="6" ry="10" fill="#C8512A"/>
+          </g>
+          <g id="passenger2" transform="translate(50, 470)" style="opacity:0">
+            <circle cx="0" cy="0" r="7" fill="#6B3410"/>
+            <ellipse cx="0" cy="14" rx="6" ry="10" fill="#356228"/>
+          </g>
+          <g id="passenger3" transform="translate(50, 470)" style="opacity:0">
+            <circle cx="0" cy="0" r="7" fill="#6B3410"/>
+            <ellipse cx="0" cy="14" rx="6" ry="10" fill="#1565C0"/>
+          </g>
+        </svg>
+        <div class="scene-label" id="conductorLabel" style="top: 10%; right: 10%;">Watching the boarding</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-rush">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 3 · Rush Hour Magic</span>
+      <h2>Demand spikes — <em>more trotros appear</em></h2>
+      <p>It's 7am. Workers, students, traders — everyone needs to get somewhere. The crowd at the station triples. Three trotros aren't enough.</p>
+      <p>So the station master radios the depot: <strong>"Send 3 more trotros, NOW."</strong> Ten minutes later, six trotros are running the route instead of three.</p>
+      <p>By 11am, the rush is over. The crowd thins. The station master radios again: <strong>"Pull 3 trotros back to the depot."</strong> Why pay drivers to sit idle?</p>
+      <p>This is the entire idea behind <span class="term">auto scaling<span class="tooltip">Auto Scaling automatically adjusts the number of running EC2 instances based on demand — adding more when traffic increases, removing them when traffic drops, all without human intervention.</span></span>: more workers when demand is high, fewer when it's low. Automatic. <strong>Just the rules you set in advance.</strong></p>
+      <div class="aws-pill">Auto Scaling Group (ASG)</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayRush()">Replay rush hour</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="rushSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A4A3E"/>
+          <g transform="translate(250, 50)">
+            <rect x="-90" y="-15" width="180" height="22" rx="11" fill="#3E1F08"/>
+            <text id="timeLabel" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#F5C518" font-weight="bold">7:00 AM · MORNING RUSH</text>
+          </g>
+          <g transform="translate(80, 95)">
+            <text font-family="Inter" font-size="9" fill="#3E1F08" font-weight="bold">Passengers waiting:</text>
+            <text id="crowdNumber" x="120" y="0" font-family="Georgia" font-size="14" fill="#C0392B" font-weight="bold">120</text>
+          </g>
+          <g class="trotro-rush" id="rushT1" transform="translate(110, 270)">
+            <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+            <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+          </g>
+          <g class="trotro-rush" id="rushT2" transform="translate(250, 270)">
+            <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+            <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+          </g>
+          <g class="trotro-rush" id="rushT3" transform="translate(390, 270)">
+            <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+            <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+            <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+          </g>
+          <g class="trotro-rush scaled" id="rushT4" style="opacity:0;">
+            <g transform="translate(110, 380)">
+              <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#E8743C" stroke="#3E1F08" stroke-width="1.5"/>
+              <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+              <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+              <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="7" fill="#fff" font-weight="bold">+NEW</text>
+            </g>
+          </g>
+          <g class="trotro-rush scaled" id="rushT5" style="opacity:0;">
+            <g transform="translate(250, 380)">
+              <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#E8743C" stroke="#3E1F08" stroke-width="1.5"/>
+              <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+              <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+              <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="7" fill="#fff" font-weight="bold">+NEW</text>
+            </g>
+          </g>
+          <g class="trotro-rush scaled" id="rushT6" style="opacity:0;">
+            <g transform="translate(390, 380)">
+              <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#E8743C" stroke="#3E1F08" stroke-width="1.5"/>
+              <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+              <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+              <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+              <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="7" fill="#fff" font-weight="bold">+NEW</text>
+            </g>
+          </g>
+          <g transform="translate(250, 460)">
+            <rect x="-150" y="-15" width="300" height="22" rx="11" fill="#fff" opacity="0.85"/>
+            <text id="rushStatus" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="11" fill="#3E1F08" font-weight="bold">Min: 3 · Desired: 3 · Max: 6</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="rushLabel" style="top: 12%; right: 10%;">Watching demand</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-policy">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 4 · The Rules</span>
+      <h2>How the station <em>knows when to scale</em></h2>
+      <p>The station master doesn't randomly decide. He has a printed rule:</p>
+      <p style="background: var(--cream); border-left: 4px solid var(--orange); padding: 12px 16px; border-radius: 6px; font-style: italic; color: var(--ink);">"If average wait time exceeds 5 minutes for 3 minutes straight → add a trotro. If wait time stays under 1 minute for 10 minutes → remove a trotro."</p>
+      <p>That's a <strong>scaling policy</strong>. AWS uses the same idea — but instead of wait time, the trigger is something measurable on your servers: CPU usage, request count, network traffic.</p>
+      <p>Try it yourself — change the demand and watch what happens:</p>
+      <div class="demo-controls">
+        <button class="demo-btn" onclick="setDemand('low', this)">😴 Low demand</button>
+        <button class="demo-btn" onclick="setDemand('normal', this)">🚶 Normal</button>
+        <button class="demo-btn" onclick="setDemand('rush', this)">🏃 Rush hour</button>
+        <button class="demo-btn" onclick="setDemand('chaos', this)">🔥 Festival day</button>
+      </div>
+      <div class="demo-status" id="policyStatus">
+        Click a button above to simulate different demand levels →
+      </div>
+      <div class="aws-pill">CloudWatch Alarms → Scaling Policies</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="policySvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A4A3E"/>
+          <g transform="translate(250, 50)">
+            <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="10" fill="#3E1F08" font-weight="bold">DEMAND METER</text>
+            <rect x="-100" y="-15" width="200" height="22" rx="11" fill="#fff" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect id="demandFill" x="-98" y="-13" width="40" height="18" rx="9" fill="#27AE60" style="transition: width 0.8s, fill 0.8s;"/>
+            <text id="demandText" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="10" fill="#3E1F08" font-weight="bold">20%</text>
+          </g>
+          <g id="policyTrotros"></g>
+          <g transform="translate(250, 460)">
+            <rect x="-160" y="-15" width="320" height="22" rx="11" fill="#fff" opacity="0.9"/>
+            <text id="policyStatusSvg" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="11" fill="#3E1F08" font-weight="bold">2 trotros running · waiting for demand signal</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-health">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 5 · The Mechanic</span>
+      <h2>What if a trotro <em>breaks down?</em></h2>
+      <p>Imagine T2 has engine trouble. It's still parked at the station, but it can't actually take passengers anywhere. If the conductor doesn't notice, he'll keep loading people into a broken trotro.</p>
+      <p>So the conductor does a quick check on each trotro every minute: "Engine running? Doors working? Brakes OK?" If a trotro fails the check, the conductor stops sending passengers there. He might even radio the depot to send a replacement.</p>
+      <p>AWS does the exact same thing with <strong>health checks</strong>. The load balancer pings each server every few seconds. If a server stops responding, the load balancer removes it from rotation — and the Auto Scaling Group launches a replacement.</p>
+      <p>This is why AWS apps don't go down when one server crashes. <strong>The fleet self-heals.</strong></p>
+      <div class="aws-pill">Health Checks · Self-Healing Fleet</div>
+      <div class="scene-action">
+        <button class="replay-btn" onclick="replayHealth()">Replay the breakdown</button>
+      </div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="healthSvg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A4A3E"/>
+          <g transform="translate(250, 50)">
+            <rect x="-110" y="-15" width="220" height="22" rx="11" fill="#3E1F08"/>
+            <text x="0" y="0" text-anchor="middle" font-family="Inter" font-size="11" fill="#F5C518" font-weight="bold">CONDUCTOR'S HEALTH CHECK</text>
+          </g>
+          <g id="healthT1" transform="translate(110, 280)">
+            <rect x="-32" y="-22" width="64" height="32" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">T1</text>
+            <circle id="health1Status" cx="38" cy="-22" r="6" fill="#27AE60"/>
+            <text x="38" y="-19" text-anchor="middle" font-family="Inter" font-size="9" fill="#fff" font-weight="bold">✓</text>
+          </g>
+          <g id="healthT2" transform="translate(250, 280)">
+            <rect id="t2body" x="-32" y="-22" width="64" height="32" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">T2</text>
+            <circle id="health2Status" cx="38" cy="-22" r="6" fill="#27AE60"/>
+            <text id="health2Check" x="38" y="-19" text-anchor="middle" font-family="Inter" font-size="9" fill="#fff" font-weight="bold">✓</text>
+            <g id="t2smoke" style="opacity:0">
+              <circle cx="-30" cy="-25" r="4" fill="#666" opacity="0.6"/>
+              <circle cx="-35" cy="-30" r="5" fill="#888" opacity="0.5"/>
+              <circle cx="-28" cy="-32" r="3" fill="#aaa" opacity="0.4"/>
+            </g>
+          </g>
+          <g id="healthT3" transform="translate(390, 280)">
+            <rect x="-32" y="-22" width="64" height="32" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#3E1F08" font-weight="bold">T3</text>
+            <circle cx="38" cy="-22" r="6" fill="#27AE60"/>
+            <text x="38" y="-19" text-anchor="middle" font-family="Inter" font-size="9" fill="#fff" font-weight="bold">✓</text>
+          </g>
+          <g id="healthT2new" transform="translate(250, 400)" style="opacity:0">
+            <rect x="-32" y="-22" width="64" height="32" rx="3" fill="#27AE60" stroke="#3E1F08" stroke-width="1.5"/>
+            <rect x="-28" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="-10" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <rect x="8" y="-18" width="14" height="10" fill="#A0CFE8"/>
+            <circle cx="-20" cy="13" r="6" fill="#1A1A1A"/>
+            <circle cx="20" cy="13" r="6" fill="#1A1A1A"/>
+            <text x="0" y="-30" text-anchor="middle" font-family="Inter" font-size="8" fill="#fff" font-weight="bold">T2-NEW</text>
+            <circle cx="38" cy="-22" r="6" fill="#27AE60"/>
+            <text x="38" y="-19" text-anchor="middle" font-family="Inter" font-size="9" fill="#fff" font-weight="bold">✓</text>
+          </g>
+          <g id="conductorMessage" transform="translate(250, 110)" style="opacity:0">
+            <rect x="-110" y="-20" width="220" height="32" rx="6" fill="#fff" stroke="#C0392B" stroke-width="2"/>
+            <text id="conductorMsg" x="0" y="-5" text-anchor="middle" font-family="Inter" font-size="10" fill="#C0392B" font-weight="bold">"T2 not responding!"</text>
+            <text x="0" y="6" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08">Removing from rotation...</text>
+          </g>
+          <g transform="translate(250, 460)">
+            <rect x="-130" y="-15" width="260" height="22" rx="11" fill="#fff" opacity="0.9"/>
+            <text id="healthStatus" x="0" y="0" text-anchor="middle" font-family="Inter" font-size="11" fill="#3E1F08" font-weight="bold">All trotros healthy</text>
+          </g>
+        </svg>
+        <div class="scene-label" id="healthLabel" style="top: 12%; right: 10%;">Monitoring health</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="scene-types">
+  <div class="scene-inner">
+    <div class="scene-text">
+      <span class="chapter-tag">Chapter 6 · Two Conductors</span>
+      <h2>The smart vs the <em>fast</em> conductor</h2>
+      <p>Some conductors just count: "1, 2, 3 — that trotro, next trotro, next." Doesn't ask questions. Doesn't care where you're going. Pure speed, no decisions. Perfect for a station with one route to one destination.</p>
+      <p>Other conductors are smarter. They ask: "Where are you headed? Madina? That's the yellow trotro. Kasoa? Get on the green one." They route based on the <em>content</em> of the question.</p>
+      <p>AWS gives you both:</p>
+      <p>• <strong>Application Load Balancer (ALB)</strong> — the smart one. Reads HTTP requests, routes by URL path or hostname.</p>
+      <p>• <strong>Network Load Balancer (NLB)</strong> — the fast one. Just forwards traffic. Millions of requests per second.</p>
+      <div class="aws-pill">ALB · NLB · GLB</div>
+    </div>
+    <div class="scene-visual">
+      <div class="stage">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="500" height="200" fill="#FCE7BD"/>
+          <rect x="0" y="200" width="500" height="300" fill="#5A4A3E"/>
+          <line x1="250" y1="0" x2="250" y2="500" stroke="#3E1F08" stroke-width="2" stroke-dasharray="4,4"/>
+          <text x="125" y="35" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#3E1F08">SMART CONDUCTOR</text>
+          <text x="125" y="55" text-anchor="middle" font-family="Inter" font-size="10" fill="#2E86C1" font-weight="bold">"Where to?"</text>
+          <g transform="translate(125, 130)">
+            <ellipse cx="0" cy="14" rx="11" ry="18" fill="#2E86C1"/>
+            <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+            <ellipse cx="0" cy="-13" rx="13" ry="3" fill="#1F608E"/>
+            <ellipse cx="0" cy="-17" rx="8" ry="5" fill="#1F608E"/>
+            <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+            <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+          </g>
+          <g transform="translate(50, 280)">
+            <rect x="-25" y="-18" width="50" height="26" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <circle cx="-15" cy="11" r="5" fill="#1A1A1A"/>
+            <circle cx="15" cy="11" r="5" fill="#1A1A1A"/>
+            <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="7" fill="#3E1F08" font-weight="bold">/api/*</text>
+          </g>
+          <g transform="translate(125, 280)">
+            <rect x="-25" y="-18" width="50" height="26" rx="3" fill="#27AE60" stroke="#3E1F08" stroke-width="1.5"/>
+            <circle cx="-15" cy="11" r="5" fill="#1A1A1A"/>
+            <circle cx="15" cy="11" r="5" fill="#1A1A1A"/>
+            <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="7" fill="#3E1F08" font-weight="bold">/images/*</text>
+          </g>
+          <g transform="translate(200, 280)">
+            <rect x="-25" y="-18" width="50" height="26" rx="3" fill="#C8512A" stroke="#3E1F08" stroke-width="1.5"/>
+            <circle cx="-15" cy="11" r="5" fill="#1A1A1A"/>
+            <circle cx="15" cy="11" r="5" fill="#1A1A1A"/>
+            <text x="0" y="-25" text-anchor="middle" font-family="Inter" font-size="7" fill="#3E1F08" font-weight="bold">/*</text>
+          </g>
+          <g stroke="#2E86C1" stroke-width="1.5" fill="none" opacity="0.6">
+            <line x1="115" y1="180" x2="60" y2="262"/>
+            <line x1="125" y1="180" x2="125" y2="262"/>
+            <line x1="135" y1="180" x2="190" y2="262"/>
+          </g>
+          <g transform="translate(125, 380)">
+            <rect x="-50" y="-10" width="100" height="22" rx="11" fill="#2E86C1"/>
+            <text x="0" y="5" text-anchor="middle" font-family="Courier New" font-size="11" fill="#fff" font-weight="bold">ALB · Layer 7</text>
+          </g>
+          <text x="125" y="430" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-style="italic">Routes by URL path / host</text>
+          <text x="125" y="445" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-style="italic">Best for HTTP &amp; APIs</text>
+
+          <text x="375" y="35" text-anchor="middle" font-family="Georgia" font-size="14" font-weight="bold" fill="#3E1F08">FAST CONDUCTOR</text>
+          <text x="375" y="55" text-anchor="middle" font-family="Inter" font-size="10" fill="#C0392B" font-weight="bold">"NEXT! NEXT! NEXT!"</text>
+          <g transform="translate(375, 130)" class="bobble">
+            <ellipse cx="0" cy="14" rx="11" ry="18" fill="#C0392B"/>
+            <circle cx="0" cy="-7" r="9" fill="#6B3410"/>
+            <ellipse cx="0" cy="-13" rx="13" ry="3" fill="#8B0000"/>
+            <ellipse cx="0" cy="-17" rx="8" ry="5" fill="#8B0000"/>
+            <rect x="-4" y="30" width="3" height="12" fill="#3E1F08"/>
+            <rect x="1" y="30" width="3" height="12" fill="#3E1F08"/>
+          </g>
+          <g transform="translate(300, 280)">
+            <rect x="-25" y="-18" width="50" height="26" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <circle cx="-15" cy="11" r="5" fill="#1A1A1A"/>
+            <circle cx="15" cy="11" r="5" fill="#1A1A1A"/>
+          </g>
+          <g transform="translate(375, 280)">
+            <rect x="-25" y="-18" width="50" height="26" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <circle cx="-15" cy="11" r="5" fill="#1A1A1A"/>
+            <circle cx="15" cy="11" r="5" fill="#1A1A1A"/>
+          </g>
+          <g transform="translate(450, 280)">
+            <rect x="-25" y="-18" width="50" height="26" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+            <circle cx="-15" cy="11" r="5" fill="#1A1A1A"/>
+            <circle cx="15" cy="11" r="5" fill="#1A1A1A"/>
+          </g>
+          <g stroke="#C0392B" stroke-width="2" fill="none" opacity="0.6">
+            <line x1="365" y1="180" x2="305" y2="262"/>
+            <line x1="375" y1="180" x2="375" y2="262"/>
+            <line x1="385" y1="180" x2="445" y2="262"/>
+          </g>
+          <g transform="translate(375, 380)">
+            <rect x="-50" y="-10" width="100" height="22" rx="11" fill="#C0392B"/>
+            <text x="0" y="5" text-anchor="middle" font-family="Courier New" font-size="11" fill="#fff" font-weight="bold">NLB · Layer 4</text>
+          </g>
+          <text x="375" y="430" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-style="italic">Just forwards by IP/port</text>
+          <text x="375" y="445" text-anchor="middle" font-family="Inter" font-size="9" fill="#3E1F08" font-style="italic">Millions of req/sec</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene summary" id="scene-summary">
+  <div class="scene-inner" style="grid-template-columns: 1fr;">
+    <div class="scene-text" style="text-align:center;">
+      <span class="chapter-tag">The Map</span>
+      <h2>The whole station, in <em>AWS terms</em></h2>
+      <p style="max-width: 640px; margin: 0 auto 0;">Next time you see a load balancer and an Auto Scaling group in an AWS diagram, picture Circle Station. The conductor. The trotros. The depot sending more vehicles when the crowd grows. It's all there.</p>
+      <div class="summary-grid">
+        <div class="summary-card c1">
+          <div class="icon">🚐</div>
+          <div class="farm-side">A Trotro</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">EC2 Instance</div>
+          <p>One identical worker in your fleet.</p>
+        </div>
+        <div class="summary-card c2">
+          <div class="icon">🎫</div>
+          <div class="farm-side">The Conductor</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Load Balancer</div>
+          <p>Distributes incoming passengers across all available trotros.</p>
+        </div>
+        <div class="summary-card c3">
+          <div class="icon">📡</div>
+          <div class="farm-side">Station Master + Depot</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">Auto Scaling Group</div>
+          <p>Adds trotros at rush hour, removes them when quiet.</p>
+        </div>
+        <div class="summary-card c4">
+          <div class="icon">🔧</div>
+          <div class="farm-side">The Health Check</div>
+          <div class="arrow">↓</div>
+          <div class="aws-side">ELB Health Check</div>
+          <p>Broken trotros get pulled out. Replacements get sent in.</p>
+        </div>
+      </div>
+      <div class="end-cta">
+        <p>"AWS isn't magic. It's a really well-organised trotro station."</p>
+        <a href="#intro" class="next-btn">Read the story again</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <strong>The Trotro Station at Circle</strong> · A Ghanaian story for understanding AWS Auto Scaling &amp; Load Balancers · cloudwithshad
+</div>
+
+<script>
+  const progressFill = document.getElementById('progressFill');
+  const dots = document.querySelectorAll('.chapter-dot');
+  const sections = ['intro', 'scene-station', 'scene-conductor', 'scene-rush', 'scene-policy', 'scene-health', 'scene-types', 'scene-summary'];
+
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressFill.style.width = (scrollPos / docHeight * 100) + '%';
+    let activeIdx = 0;
+    sections.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && scrollPos + window.innerHeight * 0.5 >= el.offsetTop) activeIdx = i;
+    });
+    dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+  });
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(dot.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        triggerSceneAnimations(entry.target.id);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.scene').forEach(s => observer.observe(s));
+
+  const triggered = new Set();
+  function triggerSceneAnimations(id) {
+    if (triggered.has(id)) return;
+    triggered.add(id);
+    if (id === 'scene-conductor') setTimeout(replayConductor, 400);
+    if (id === 'scene-rush') setTimeout(replayRush, 400);
+    if (id === 'scene-health') setTimeout(replayHealth, 400);
+    if (id === 'scene-policy') initPolicyDemo();
+  }
+
+  function replayConductor() {
+    const p1 = document.getElementById('passenger1');
+    const p2 = document.getElementById('passenger2');
+    const p3 = document.getElementById('passenger3');
+    const label = document.getElementById('conductorLabel');
+    if (!p1) return;
+    [p1, p2, p3].forEach(p => {
+      p.style.transition = 'none';
+      p.setAttribute('transform', 'translate(50, 470)');
+      p.style.opacity = '0';
+    });
+    p1.style.opacity = '1';
+    document.querySelectorAll('.seat').forEach(s => s.setAttribute('fill', '#27AE60'));
+    label.textContent = 'Passenger 1 arrives';
+    label.classList.add('visible');
+    setTimeout(() => {
+      p1.style.transition = 'transform 1.6s ease-in-out';
+      p1.setAttribute('transform', 'translate(110, 290)');
+      setTimeout(() => {
+        label.textContent = 'Conductor: → T1';
+        document.querySelectorAll('#seats1 .seat')[0].setAttribute('fill', '#C0392B');
+        p1.style.opacity = '0';
+        p2.style.opacity = '1';
+        setTimeout(() => {
+          label.textContent = 'Passenger 2 arrives';
+          p2.style.transition = 'transform 1.6s ease-in-out';
+          p2.setAttribute('transform', 'translate(250, 290)');
+          setTimeout(() => {
+            label.textContent = 'Conductor: → T2 (balance!)';
+            document.querySelectorAll('#seats2 .seat')[0].setAttribute('fill', '#C0392B');
+            p2.style.opacity = '0';
+            p3.style.opacity = '1';
+            setTimeout(() => {
+              label.textContent = 'Passenger 3 arrives';
+              p3.style.transition = 'transform 1.6s ease-in-out';
+              p3.setAttribute('transform', 'translate(390, 290)');
+              setTimeout(() => {
+                label.textContent = 'Conductor: → T3 (balance!)';
+                document.querySelectorAll('#seats3 .seat')[0].setAttribute('fill', '#C0392B');
+                p3.style.opacity = '0';
+                setTimeout(() => label.classList.remove('visible'), 2000);
+              }, 1700);
+            }, 700);
+          }, 1700);
+        }, 700);
+      }, 1700);
+    }, 600);
+  }
+
+  function replayRush() {
+    const t4 = document.getElementById('rushT4');
+    const t5 = document.getElementById('rushT5');
+    const t6 = document.getElementById('rushT6');
+    const timeLabel = document.getElementById('timeLabel');
+    const crowdNum = document.getElementById('crowdNumber');
+    const status = document.getElementById('rushStatus');
+    const label = document.getElementById('rushLabel');
+    if (!t4) return;
+
+    timeLabel.textContent = '6:00 AM · CALM';
+    crowdNum.textContent = '12';
+    crowdNum.setAttribute('fill', '#27AE60');
+    status.textContent = 'Min: 3 · Desired: 3 · Max: 6';
+    [t4, t5, t6].forEach(t => { t.style.transition = 'none'; t.style.opacity = '0'; });
+    label.classList.remove('visible', 'busy', 'calm', 'scaling');
+
+    setTimeout(() => {
+      label.textContent = '7:00 AM — crowd surges';
+      label.classList.add('visible', 'busy');
+      timeLabel.textContent = '7:00 AM · MORNING RUSH';
+      crowdNum.textContent = '120';
+      crowdNum.setAttribute('fill', '#C0392B');
+      setTimeout(() => {
+        label.textContent = 'CPU > 70% — scaling out!';
+        label.classList.remove('busy');
+        label.classList.add('scaling');
+        status.textContent = 'Auto Scaling: launching 3 more trotros...';
+        setTimeout(() => { t4.style.transition = 'opacity 0.6s'; t4.style.opacity = '1'; }, 200);
+        setTimeout(() => { t5.style.transition = 'opacity 0.6s'; t5.style.opacity = '1'; }, 600);
+        setTimeout(() => { t6.style.transition = 'opacity 0.6s'; t6.style.opacity = '1'; }, 1000);
+        setTimeout(() => {
+          status.textContent = 'Min: 3 · Desired: 6 · Max: 6 · ALL ACTIVE';
+          label.textContent = '6 trotros running';
+          label.classList.remove('scaling');
+          label.classList.add('busy');
+          setTimeout(() => {
+            timeLabel.textContent = '11:00 AM · QUIET';
+            crowdNum.textContent = '15';
+            crowdNum.setAttribute('fill', '#27AE60');
+            label.textContent = 'Demand drops...';
+            label.classList.remove('busy');
+            setTimeout(() => {
+              label.textContent = 'Scaling IN — pulling trotros';
+              label.classList.add('scaling');
+              status.textContent = 'Auto Scaling: terminating 3 trotros...';
+              [t6, t5, t4].forEach((t, i) => {
+                setTimeout(() => { t.style.transition = 'opacity 0.5s'; t.style.opacity = '0'; }, i * 400);
+              });
+              setTimeout(() => {
+                status.textContent = 'Min: 3 · Desired: 3 · Max: 6 (calm)';
+                label.textContent = 'Back to 3 trotros';
+                label.classList.remove('scaling');
+                label.classList.add('calm');
+                setTimeout(() => label.classList.remove('visible'), 3000);
+              }, 1800);
+            }, 1500);
+          }, 2500);
+        }, 1700);
+      }, 1500);
+    }, 600);
+  }
+
+  function initPolicyDemo() {
+    const container = document.getElementById('policyTrotros');
+    if (container.children.length > 0) return;
+    const positions = [
+      [80, 200], [180, 200], [280, 200], [380, 200],
+      [80, 320], [180, 320], [280, 320], [380, 320]
+    ];
+    positions.forEach((pos, i) => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.id = `polTrotro${i}`;
+      g.setAttribute('transform', `translate(${pos[0]}, ${pos[1]})`);
+      g.style.transition = 'opacity 0.6s';
+      g.innerHTML = `
+        <rect x="-30" y="-20" width="60" height="30" rx="3" fill="#F5C518" stroke="#3E1F08" stroke-width="1.5"/>
+        <rect x="-25" y="-16" width="14" height="9" fill="#A0CFE8"/>
+        <rect x="-8" y="-16" width="14" height="9" fill="#A0CFE8"/>
+        <rect x="9" y="-16" width="14" height="9" fill="#A0CFE8"/>
+        <circle cx="-18" cy="12" r="5" fill="#1A1A1A"/>
+        <circle cx="18" cy="12" r="5" fill="#1A1A1A"/>
+      `;
+      container.appendChild(g);
+      if (i >= 2) g.style.opacity = '0';
+    });
+  }
+
+  function setDemand(level, btn) {
+    initPolicyDemo();
+    document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const demandFill = document.getElementById('demandFill');
+    const demandText = document.getElementById('demandText');
+    const status = document.getElementById('policyStatus');
+    const statusSvg = document.getElementById('policyStatusSvg');
+    let pct, color, count, message;
+    if (level === 'low') { pct = 15; color = '#27AE60'; count = 2; message = '<strong>Low demand (15%)</strong> — Auto Scaling keeps minimum of 2 trotros. No need for more.'; }
+    else if (level === 'normal') { pct = 45; color = '#F5C518'; count = 4; message = '<strong>Normal demand (45%)</strong> — 4 trotros active. Comfortable headroom.'; }
+    else if (level === 'rush') { pct = 75; color = '#E8743C'; count = 6; message = '<strong>Rush hour (75%)</strong> — CPU alarm fires! Scaling out to 6 trotros.'; }
+    else { pct = 95; color = '#C0392B'; count = 8; message = '<strong>FESTIVAL DAY (95%)</strong> — Maxed out! 8 trotros running. Beyond this, requests start queuing.'; }
+    demandFill.setAttribute('width', pct * 1.96);
+    demandFill.setAttribute('fill', color);
+    demandText.textContent = pct + '%';
+    status.innerHTML = message;
+    statusSvg.textContent = `${count} trotros running · ${pct}% demand`;
+    for (let i = 0; i < 8; i++) {
+      const t = document.getElementById(`polTrotro${i}`);
+      if (!t) continue;
+      t.style.opacity = (i < count) ? '1' : '0';
+    }
+  }
+  window.setDemand = setDemand;
+
+  function replayHealth() {
+    const t2body = document.getElementById('t2body');
+    const t2smoke = document.getElementById('t2smoke');
+    const status2 = document.getElementById('health2Status');
+    const check2 = document.getElementById('health2Check');
+    const message = document.getElementById('conductorMessage');
+    const conductorMsg = document.getElementById('conductorMsg');
+    const t2new = document.getElementById('healthT2new');
+    const status = document.getElementById('healthStatus');
+    const label = document.getElementById('healthLabel');
+    if (!t2body) return;
+    t2body.setAttribute('fill', '#F5C518');
+    t2smoke.style.opacity = '0';
+    status2.setAttribute('fill', '#27AE60');
+    check2.textContent = '✓';
+    message.style.opacity = '0';
+    t2new.style.transition = 'none';
+    t2new.style.opacity = '0';
+    t2new.setAttribute('transform', 'translate(250, 400)');
+    document.getElementById('healthT2').style.opacity = '1';
+    status.textContent = 'All trotros healthy';
+    label.classList.remove('visible', 'busy', 'calm');
+    setTimeout(() => {
+      label.textContent = 'Health check passing...';
+      label.classList.add('visible', 'calm');
+      setTimeout(() => {
+        label.textContent = 'T2 breaking down!';
+        label.classList.remove('calm');
+        label.classList.add('busy');
+        t2body.setAttribute('fill', '#888');
+        t2smoke.style.transition = 'opacity 0.6s';
+        t2smoke.style.opacity = '1';
+        status2.setAttribute('fill', '#C0392B');
+        check2.textContent = '✗';
+        setTimeout(() => {
+          message.style.transition = 'opacity 0.5s';
+          message.style.opacity = '1';
+          status.textContent = 'T2 unhealthy — removing from rotation';
+          setTimeout(() => {
+            conductorMsg.textContent = '"Send replacement!"';
+            status.textContent = 'Auto Scaling: launching new trotro...';
+            setTimeout(() => {
+              t2new.style.transition = 'opacity 1s, transform 1s';
+              t2new.style.opacity = '1';
+              t2new.setAttribute('transform', 'translate(250, 280)');
+              setTimeout(() => {
+                document.getElementById('healthT2').style.transition = 'opacity 0.8s';
+                document.getElementById('healthT2').style.opacity = '0';
+              }, 600);
+              setTimeout(() => {
+                message.style.opacity = '0';
+                status.textContent = 'Replacement healthy · fleet self-healed';
+                label.textContent = '✓ Self-healed!';
+                label.classList.remove('busy');
+                label.classList.add('calm');
+                setTimeout(() => label.classList.remove('visible'), 2500);
+              }, 1500);
+            }, 1200);
+          }, 1500);
+        }, 1500);
+      }, 1500);
+    }, 500);
+  }
+
+  window.replayConductor = replayConductor;
+  window.replayRush = replayRush;
+  window.replayHealth = replayHealth;
+</script>
+</body>
+</html>
