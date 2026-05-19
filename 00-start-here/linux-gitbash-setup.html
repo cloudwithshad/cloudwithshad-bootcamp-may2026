@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux with Git Bash on Windows — cloudwithshad Bootcamp</title>
+<meta name="description" content="Learn the essential Linux commands you'll use throughout the bootcamp. Animated walkthrough showing the terminal and the desktop reacting together.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&family=JetBrains+Mono:wght@400;500;600&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --navy: #0A1628; --navy-2: #13243A; --navy-3: #1A2F4A;
+    --cyan: #00B4D8; --gold: #F4B942; --red: #FF4444;
+    --white: #FFFFFF; --gray: #94A3B8;
+    --term-green: #4FC25C;
+    --term-green-glow: #6FE26F;
+    --term-dark: #0C1810;
+    --win-blue: #0078D4;
+    --win-taskbar: #1F1F1F;
+    --win-desktop: #006FCB;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─────────────────── NAV ─────────────────── */
+  nav.topbar {
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-inner {
+    max-width: 1400px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand { font-size: 17px; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back {
+    color: var(--gray); text-decoration: none; font-size: 13px;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: var(--cyan); }
+
+  /* ─────────────────── HERO ─────────────────── */
+  .hero {
+    max-width: 1100px; margin: 0 auto;
+    padding: 56px 24px 16px; text-align: center;
+  }
+  .hero .platform-logo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 92px; height: 92px;
+    background: var(--term-dark);
+    border: 2px solid var(--term-green);
+    border-radius: 18px; margin-bottom: 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--term-green);
+    box-shadow: 0 0 40px rgba(79,194,92,0.25);
+  }
+  .hero .platform-logo .blink {
+    animation: blink 1s infinite;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  .hero .kicker {
+    font-size: 11px; color: var(--term-green);
+    letter-spacing: 3px; margin-bottom: 14px; font-weight: 700;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 50px; font-weight: 800;
+    line-height: 1.1; margin-bottom: 14px;
+    color: var(--white);
+  }
+  .hero h1 .accent { color: var(--term-green); }
+  @media (max-width: 720px) { .hero h1 { font-size: 32px; } }
+  .hero .lede {
+    font-size: 18px; color: var(--gray);
+    max-width: 680px; margin: 0 auto 22px;
+  }
+  .hero-meta {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .meta-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 7px 14px; border-radius: 16px;
+    font-size: 12px; color: #CBD5E1;
+  }
+  .mac-note {
+    background: rgba(79,194,92,0.06);
+    border: 1px solid rgba(79,194,92,0.25);
+    border-radius: 10px;
+    padding: 12px 18px;
+    max-width: 680px;
+    margin: 0 auto;
+    font-size: 13px;
+    color: #BFE9C5;
+  }
+  .mac-note strong { color: var(--term-green); }
+
+  /* ─────────────────── MAIN LAYOUT ─────────────────── */
+  main {
+    max-width: 1400px; margin: 0 auto;
+    padding: 30px 24px 80px;
+    position: relative;
+  }
+  .layout {
+    display: grid; grid-template-columns: 60px 1fr;
+    gap: 24px; align-items: start;
+  }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ─────────────────── PROGRESS RAIL ─────────────────── */
+  .progress-rail { position: sticky; top: 100px; height: max-content; padding-top: 20px; }
+  @media (max-width: 900px) { .progress-rail { display: none; } }
+  .progress-line {
+    position: relative; width: 2px;
+    background: rgba(255,255,255,0.08);
+    margin-left: 14px; height: 720px;
+  }
+  .progress-fill {
+    position: absolute; top: 0; left: 0; width: 100%; height: 0%;
+    background: linear-gradient(to bottom, var(--term-green), var(--gold));
+    transition: height 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  .progress-dots {
+    position: absolute; top: 0; left: -10px; width: 22px; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center;
+  }
+  .progress-dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--navy);
+    border: 2px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--gray);
+    cursor: pointer; transition: all 0.3s;
+  }
+  .progress-dot.active {
+    background: var(--term-green); border-color: var(--term-green);
+    color: var(--term-dark); transform: scale(1.15);
+  }
+  .progress-dot.completed {
+    background: var(--term-green); border-color: var(--term-green); color: var(--white);
+    opacity: 0.6;
+  }
+
+  /* ─────────────────── STEPS ─────────────────── */
+  .steps-column { min-width: 0; }
+  .step {
+    margin-bottom: 90px; opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1), transform 0.7s cubic-bezier(0.4,0,0.2,1);
+  }
+  .step.in-view { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .step { transition: none; opacity: 1; transform: none; }
+  }
+  .step-header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+  .step-number {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--term-green), #6FE26F);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 800; color: var(--term-dark); flex-shrink: 0;
+  }
+  .step-title h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px; font-weight: 800;
+    color: var(--white); line-height: 1.2;
+  }
+  @media (max-width: 600px) { .step-title h2 { font-size: 22px; } }
+  .step-title .subtitle {
+    font-size: 14px; color: var(--gray); margin-top: 4px;
+  }
+
+  /* ─────────────────── STEP BODY — single column for full-width steps ─────────────────── */
+  .step-body-single { display: block; }
+  .step-body-single .step-content { max-width: 700px; margin: 0 auto 22px; }
+
+  /* ─────────────────── STEP BODY — dual mockup ─────────────────── */
+  .dual-mockup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 760px) { .dual-mockup { grid-template-columns: 1fr; } }
+
+  /* ─────────────────── TERMINAL MOCKUP ─────────────────── */
+  .terminal-mockup {
+    background: var(--term-dark);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(79,194,92,0.2);
+    position: relative;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+  }
+  .terminal-chrome {
+    background: #1A2A1F;
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid #243024;
+  }
+  .traffic-lights { display: flex; gap: 6px; }
+  .traffic-lights span { width: 11px; height: 11px; border-radius: 50%; }
+  .traffic-lights .red { background: #FF5F57; }
+  .traffic-lights .yellow { background: #FFBD2E; }
+  .traffic-lights .green { background: #28C940; }
+  .terminal-title {
+    flex: 1; color: #99B89E; font-size: 11px; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .terminal-content {
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; color: #D4F2D7;
+    line-height: 1.7;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .terminal-content .prompt { color: var(--term-green-glow); font-weight: 500; }
+  .terminal-content .path { color: #5FB8E8; }
+  .terminal-content .cmd { color: #FAFAFA; }
+  .terminal-content .output { color: #9FAF9F; }
+  .terminal-content .comment { color: #6B8B6B; font-style: italic; }
+  .terminal-content .highlight { color: var(--gold); }
+  .terminal-line { display: block; }
+  .terminal-line.typing::after {
+    content: '▊'; color: var(--term-green);
+    animation: cursor-blink 0.8s infinite;
+    margin-left: 1px;
+  }
+  @keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  .terminal-cursor-idle {
+    color: var(--term-green);
+    animation: cursor-blink 0.8s infinite;
+  }
+
+  /* ─────────────────── DESKTOP MOCKUP (Windows-style) ─────────────────── */
+  .desktop-mockup {
+    background: var(--win-desktop);
+    background-image:
+      radial-gradient(ellipse at top, rgba(255,255,255,0.1), transparent),
+      linear-gradient(135deg, #0066B5 0%, #003F70 100%);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+  }
+  .desktop-titlebar {
+    background: rgba(0,0,0,0.3);
+    padding: 6px 12px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 1px;
+  }
+  .desktop-titlebar .live-dot {
+    width: 7px; height: 7px;
+    background: var(--term-green);
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(79,194,92,0.6); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(79,194,92,0); }
+  }
+  .desktop-area {
+    flex: 1;
+    position: relative;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .desktop-icons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 72px);
+    gap: 10px;
+    align-content: start;
+  }
+  .desk-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+    border-radius: 4px;
+    cursor: default;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .desk-icon:hover { background: rgba(255,255,255,0.08); }
+  .desk-icon .icon-img {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+  .desk-icon .icon-label {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 10.5px;
+    color: white;
+    text-align: center;
+    line-height: 1.2;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    max-width: 70px;
+    word-wrap: break-word;
+  }
+  /* Sparkle animation for new items */
+  .desk-icon.new-item {
+    animation: pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .desk-icon.new-item::after {
+    content: '✨';
+    position: absolute;
+    top: -6px; right: -2px;
+    font-size: 16px;
+    animation: sparkle-fade 1.4s ease-out;
+  }
+  @keyframes sparkle-fade {
+    0% { opacity: 1; transform: scale(0.5) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.4) rotate(20deg); }
+    100% { opacity: 0; transform: scale(1) rotate(40deg); }
+  }
+  .desk-icon.removing {
+    animation: pop-out 0.5s ease-in forwards;
+  }
+  @keyframes pop-out {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2) rotate(10deg); opacity: 0.5; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  /* "Zoom into folder" effect */
+  .folder-zoom {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.95);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.5s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+  }
+  .folder-zoom.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .folder-zoom-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 10px;
+    border-bottom: 1px solid #E5E7EB;
+    margin-bottom: 10px;
+  }
+  .folder-zoom-header .back-arrow {
+    color: #6B7280;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .folder-zoom-header .path {
+    flex: 1;
+    background: #F3F4F6;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #1F2937;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .folder-zoom-content {
+    flex: 1;
+    overflow: auto;
+  }
+  .folder-zoom-content .desk-icon .icon-label {
+    color: #1F2937;
+    text-shadow: none;
+  }
+
+  /* Taskbar */
+  .desktop-taskbar {
+    background: rgba(31,31,31,0.95);
+    backdrop-filter: blur(10px);
+    padding: 5px 12px;
+    display: flex; align-items: center; gap: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    min-height: 30px;
+  }
+  .taskbar-start {
+    color: rgba(255,255,255,0.85);
+    font-size: 16px;
+    width: 26px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .taskbar-start:hover { background: rgba(255,255,255,0.1); }
+  .taskbar-app {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .taskbar-time {
+    margin-left: auto;
+    color: rgba(255,255,255,0.85);
+    font-size: 11px;
+    font-family: 'Segoe UI', sans-serif;
+    text-align: right;
+  }
+  .taskbar-time .date { font-size: 10px; opacity: 0.75; }
+
+  /* ─────────────────── STEP CONTENT (bullets) ─────────────────── */
+  .step-content { min-width: 0; }
+  .step-content h3 {
+    font-size: 14px; font-weight: 700; color: var(--term-green);
+    margin-bottom: 14px; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .step-bullets { list-style: none; padding: 0; margin-bottom: 18px; }
+  .step-bullets li {
+    padding: 9px 0 9px 30px; position: relative;
+    color: #CBD5E1; font-size: 14.5px; line-height: 1.6;
+    opacity: 0; transform: translateX(-10px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .step.in-view .step-bullets li { opacity: 1; transform: translateX(0); }
+  .step.in-view .step-bullets li:nth-child(1) { transition-delay: 0.15s; }
+  .step.in-view .step-bullets li:nth-child(2) { transition-delay: 0.30s; }
+  .step.in-view .step-bullets li:nth-child(3) { transition-delay: 0.45s; }
+  .step.in-view .step-bullets li:nth-child(4) { transition-delay: 0.60s; }
+  .step.in-view .step-bullets li:nth-child(5) { transition-delay: 0.75s; }
+  .step-bullets li::before {
+    content: ''; position: absolute;
+    left: 6px; top: 17px;
+    width: 7px; height: 7px;
+    background: var(--term-green); border-radius: 50%;
+  }
+  .step-bullets li strong { color: var(--white); }
+  .step-bullets li code {
+    background: rgba(79,194,92,0.1);
+    color: var(--term-green-glow);
+    padding: 2px 7px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    border: 1px solid rgba(79,194,92,0.15);
+  }
+
+  /* Callouts */
+  .callout {
+    background: rgba(244,185,66,0.08);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px; padding: 12px 16px;
+    margin: 14px 0; font-size: 13.5px;
+    color: #FCE7B5; line-height: 1.55;
+  }
+  .callout strong { color: var(--gold); }
+  .callout.warn {
+    background: rgba(255,68,68,0.08);
+    border-left-color: var(--red); color: #FFC9C9;
+  }
+  .callout.warn strong { color: var(--red); }
+  .callout.tip {
+    background: rgba(79,194,92,0.06);
+    border-left-color: var(--term-green); color: #BFE9C5;
+  }
+  .callout.tip strong { color: var(--term-green); }
+
+  /* Replay */
+  .replay-btn {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(255,255,255,0.1);
+    color: #CBD5E1;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 4px 10px; border-radius: 4px;
+    font-size: 10px; cursor: pointer; font-family: inherit;
+    z-index: 5;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .terminal-mockup:hover .replay-btn,
+  .desktop-mockup:hover .replay-btn,
+  .dual-mockup:hover .replay-btn { opacity: 1; }
+  .replay-btn:hover { background: rgba(255,255,255,0.18); color: var(--term-green); }
+
+  /* ─────────────────── SPLIT-SCREEN ILLUSTRATION ─────────────────── */
+  .split-illustration {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .split-screen-demo {
+    background: #2a2a2a;
+    border-radius: 8px;
+    aspect-ratio: 16/9;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    position: relative;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .split-pane {
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .split-pane.left {
+    background: var(--term-dark);
+    color: var(--term-green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .split-pane.right {
+    background: var(--win-desktop);
+    background-image: linear-gradient(135deg, #0066B5, #003F70);
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+  .split-pane.right .desktop-emoji {
+    font-size: 38px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  }
+  .keyboard-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--white);
+    margin: 14px 0;
+  }
+  .kbd-key {
+    background: linear-gradient(180deg, #383838, #2a2a2a);
+    border: 1px solid #555;
+    border-bottom: 2px solid #1a1a1a;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+  }
+
+  /* ─────────────────── COMPLETION ─────────────────── */
+  .completion {
+    background: linear-gradient(135deg, rgba(79,194,92,0.12), rgba(244,185,66,0.06));
+    border: 1px solid rgba(79,194,92,0.35);
+    border-radius: 18px;
+    padding: 44px 32px;
+    text-align: center;
+    margin-top: 40px;
+  }
+  .completion .ico { font-size: 56px; margin-bottom: 14px; }
+  .completion h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 34px; font-weight: 800;
+    color: var(--white); margin-bottom: 12px;
+  }
+  .completion h2 .accent { color: var(--term-green); }
+  .completion p {
+    font-size: 16px; color: var(--gray);
+    max-width: 580px; margin: 0 auto 26px;
+  }
+  .completion-actions {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 10px;
+    font-size: 14px; font-weight: 700;
+    text-decoration: none; transition: all 0.2s;
+    border: none; font-family: inherit;
+  }
+  .btn-primary { background: var(--cyan); color: var(--navy); }
+  .btn-primary:hover {
+    background: #00C8F0; transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,180,216,0.35);
+  }
+  .btn-secondary {
+    background: transparent; color: var(--white);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.06); border-color: var(--cyan);
+  }
+
+  .footer-nav {
+    display: flex; justify-content: space-between; gap: 12px;
+    margin-top: 30px; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer-nav a {
+    color: var(--gray); text-decoration: none;
+    font-size: 13px; transition: color 0.2s;
+  }
+  .footer-nav a:hover { color: var(--term-green); }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html#start" class="nav-back">← Back to setup</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="platform-logo">$<span class="blink">_</span></div>
+  <div class="kicker">STEP 4 OF 4 · SETUP</div>
+  <h1>Master the <span class="accent">terminal</span></h1>
+  <p class="lede">The 8 Linux commands you'll actually use in the bootcamp. Demonstrated with Git Bash on Windows — but watch the desktop react to each command.</p>
+  <div class="hero-meta">
+    <span class="meta-pill">⏱️ 25 minutes</span>
+    <span class="meta-pill">💻 Windows + Git Bash</span>
+    <span class="meta-pill">🆓 No prior CLI experience needed</span>
+  </div>
+  <div class="mac-note">
+    🍎🐧 <strong>Mac &amp; Linux users:</strong> you don't need Git Bash — your built-in <strong>Terminal</strong> already speaks bash. Every command on this page works identically. Read along and try them in your native terminal.
+  </div>
+</div>
+
+<main>
+<div class="layout">
+
+  <!-- Progress rail -->
+  <div class="progress-rail">
+    <div class="progress-line">
+      <div class="progress-fill" id="progressFill"></div>
+      <div class="progress-dots">
+        <div class="progress-dot active" data-step="1">1</div>
+        <div class="progress-dot" data-step="2">2</div>
+        <div class="progress-dot" data-step="3">3</div>
+        <div class="progress-dot" data-step="4">4</div>
+        <div class="progress-dot" data-step="5">5</div>
+        <div class="progress-dot" data-step="6">6</div>
+        <div class="progress-dot" data-step="7">7</div>
+        <div class="progress-dot" data-step="8">8</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps-column">
+
+    <!-- ═══════════════ STEP 1: Install Git Bash ═══════════════ -->
+    <section class="step" id="step-1" data-step="1">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title">
+          <h2>Install Git Bash</h2>
+          <div class="subtitle">Get a real Linux-style terminal on Windows</div>
+        </div>
+      </div>
+
+      <div class="step-body-single">
+        <div class="step-content">
+          <h3>The 30-second download</h3>
+          <ul class="step-bullets">
+            <li>Go to <code>git-scm.com/downloads</code> and click the Windows download.</li>
+            <li>Run the installer with <strong>default settings</strong>. Just click Next, Next, Next.</li>
+            <li>After install, search for <strong>"Git Bash"</strong> in the Start menu. Pin it to your taskbar.</li>
+            <li>Git Bash gives you Linux commands on Windows — the same ones used on every cloud server you'll ever touch.</li>
+          </ul>
+          <div class="callout tip">
+            <strong>💡 Why not PowerShell or CMD?</strong> Both work, but they use different commands. Linux commands (which Git Bash gives you) are what AWS servers run — and what every tutorial online assumes. Learn it once, use it everywhere.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 2: Split screen ═══════════════ -->
+    <section class="step" id="step-2" data-step="2">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title">
+          <h2>Split your screen</h2>
+          <div class="subtitle">Terminal on one side, Desktop on the other</div>
+        </div>
+      </div>
+
+      <div class="step-body-single">
+        <div class="split-illustration">
+          <div class="split-screen-demo">
+            <div class="split-pane left">
+              <div style="color:#6FE26F;">$ </div>
+              <div style="color:#FAFAFA;">git bash</div>
+              <div style="margin-top:auto;color:#5A7A5C;font-size:9px;">Win + ←</div>
+            </div>
+            <div class="split-pane right">
+              <div class="desktop-emoji">🖥️</div>
+              <div style="position:absolute;bottom:8px;right:10px;font-size:9px;color:rgba(255,255,255,0.6);">Win + →</div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 20px;">
+            <span class="keyboard-shortcut">
+              <span class="kbd-key">Win</span> <span style="opacity:0.5;">+</span> <span class="kbd-key">←</span> <span style="opacity:0.5;">for terminal,</span> <span class="kbd-key">Win</span> <span style="opacity:0.5;">+</span> <span class="kbd-key">→</span> <span style="opacity:0.5;">for desktop</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="step-content">
+          <h3>Why this matters</h3>
+          <ul class="step-bullets">
+            <li>You'll type commands on the left. The right side shows what happens — files appearing, folders opening.</li>
+            <li><strong>Open Git Bash</strong>, press <strong>Win + ←</strong> to snap it to the left half.</li>
+            <li><strong>Open File Explorer</strong> (Win + E), navigate to your Desktop, press <strong>Win + →</strong> to snap right.</li>
+            <li>Every command you run from now on will have a visible effect on the desktop side.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 3: pwd — where am I ═══════════════ -->
+    <section class="step" id="step-3" data-step="3">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title">
+          <h2>Where am I? <code style="font-family:'JetBrains Mono',monospace; font-size:24px; background:rgba(79,194,92,0.1); padding:2px 10px; border-radius:6px; color:var(--term-green);">pwd</code></h2>
+          <div class="subtitle">Print Working Directory — your current location</div>
+        </div>
+      </div>
+
+      <div class="dual-mockup" data-step-anim="3">
+        <!-- Terminal -->
+        <div class="terminal-mockup">
+          <div class="terminal-chrome">
+            <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+            <div class="terminal-title">MINGW64 — Git Bash</div>
+          </div>
+          <div class="terminal-content" id="term-3">
+            <span class="terminal-line"><span class="comment"># Ask the terminal: where am I?</span></span>
+            <span class="terminal-line"><span class="prompt">shad@laptop</span> <span class="path">~</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-3"></span></span>
+            <span class="terminal-line" id="out-3-1" style="display:none;"><span class="output">/c/Users/Shad</span></span>
+            <span class="terminal-line" id="out-3-2" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~</span><br><span class="prompt">$</span> <span class="terminal-cursor-idle">▊</span></span>
+          </div>
+        </div>
+        <!-- Desktop -->
+        <div class="desktop-mockup">
+          <div class="desktop-titlebar">
+            <span class="live-dot"></span> WINDOWS — DESKTOP VIEW
+          </div>
+          <div class="desktop-area">
+            <div class="desktop-icons" id="desktop-3">
+              <div class="desk-icon">
+                <div class="icon-img">🗑️</div>
+                <div class="icon-label">Recycle Bin</div>
+              </div>
+              <div class="desk-icon">
+                <div class="icon-img">💻</div>
+                <div class="icon-label">This PC</div>
+              </div>
+            </div>
+            <div style="position:absolute; bottom:48px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#6FE26F; padding:6px 14px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0; transition:opacity 0.4s;" id="banner-3">
+              📍 You are here: <strong>C:\Users\Shad</strong>
+            </div>
+          </div>
+          <div class="desktop-taskbar">
+            <div class="taskbar-start">⊞</div>
+            <div class="taskbar-app">📁</div>
+            <div class="taskbar-app" style="background:rgba(79,194,92,0.2);color:#6FE26F;">$_</div>
+            <div class="taskbar-time">3:47 PM<br><span class="date">22 May 2026</span></div>
+          </div>
+        </div>
+        <button class="replay-btn" onclick="playStep(3)">↻ Replay</button>
+      </div>
+
+      <div class="step-content">
+        <h3>What just happened</h3>
+        <ul class="step-bullets">
+          <li><code>pwd</code> means <strong>"print working directory"</strong> — show me where I am right now.</li>
+          <li>Output: <code>/c/Users/Shad</code> — this is your Windows user folder (where Documents, Desktop, Downloads all live).</li>
+          <li>The <code>~</code> in the prompt is a shortcut for "your home folder" — same thing as <code>/c/Users/Shad</code>.</li>
+          <li>When you're lost, type <code>pwd</code>. It's your "where am I?" button.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 4: ls — what's here ═══════════════ -->
+    <section class="step" id="step-4" data-step="4">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title">
+          <h2>What's here? <code style="font-family:'JetBrains Mono',monospace; font-size:24px; background:rgba(79,194,92,0.1); padding:2px 10px; border-radius:6px; color:var(--term-green);">ls</code></h2>
+          <div class="subtitle">List — see everything in the current folder</div>
+        </div>
+      </div>
+
+      <div class="dual-mockup" data-step-anim="4">
+        <div class="terminal-mockup">
+          <div class="terminal-chrome">
+            <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+            <div class="terminal-title">MINGW64 — Git Bash</div>
+          </div>
+          <div class="terminal-content" id="term-4">
+            <span class="terminal-line"><span class="comment"># Show me what's in this folder</span></span>
+            <span class="terminal-line"><span class="prompt">shad@laptop</span> <span class="path">~</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-4"></span></span>
+            <span class="terminal-line" id="out-4-1" style="display:none;"><span style="color:#5FB8E8;">Desktop/</span>  <span style="color:#5FB8E8;">Documents/</span>  <span style="color:#5FB8E8;">Downloads/</span>  <span style="color:#5FB8E8;">Pictures/</span></span>
+            <span class="terminal-line" id="out-4-2" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~</span><br><span class="prompt">$</span> <span class="terminal-cursor-idle">▊</span></span>
+          </div>
+        </div>
+        <div class="desktop-mockup">
+          <div class="desktop-titlebar">
+            <span class="live-dot"></span> FILE EXPLORER — C:\Users\Shad
+          </div>
+          <div class="desktop-area">
+            <div class="desktop-icons" id="desktop-4">
+              <div class="desk-icon"><div class="icon-img">📁</div><div class="icon-label">Desktop</div></div>
+              <div class="desk-icon"><div class="icon-img">📁</div><div class="icon-label">Documents</div></div>
+              <div class="desk-icon"><div class="icon-img">📁</div><div class="icon-label">Downloads</div></div>
+              <div class="desk-icon"><div class="icon-img">📁</div><div class="icon-label">Pictures</div></div>
+            </div>
+            <div style="position:absolute; bottom:48px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#6FE26F; padding:6px 14px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0; transition:opacity 0.4s;" id="banner-4">
+              4 items — terminal matches reality ✓
+            </div>
+          </div>
+          <div class="desktop-taskbar">
+            <div class="taskbar-start">⊞</div>
+            <div class="taskbar-app">📁</div>
+            <div class="taskbar-app" style="background:rgba(79,194,92,0.2);color:#6FE26F;">$_</div>
+            <div class="taskbar-time">3:47 PM<br><span class="date">22 May 2026</span></div>
+          </div>
+        </div>
+        <button class="replay-btn" onclick="playStep(4)">↻ Replay</button>
+      </div>
+
+      <div class="step-content">
+        <h3>What just happened</h3>
+        <ul class="step-bullets">
+          <li><code>ls</code> lists everything in the current folder — same items you'd see in File Explorer.</li>
+          <li>The blue items with <code>/</code> are <strong>folders</strong>. Plain text items are files.</li>
+          <li>Variations: <code>ls -l</code> (long format with sizes/dates), <code>ls -a</code> (show hidden files like <code>.gitignore</code>).</li>
+          <li>Pro: <code>ls -la</code> = long format + hidden files. The combo you'll use 1000 times.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 5: mkdir — create a folder ═══════════════ -->
+    <section class="step" id="step-5" data-step="5">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title">
+          <h2>Make a folder <code style="font-family:'JetBrains Mono',monospace; font-size:24px; background:rgba(79,194,92,0.1); padding:2px 10px; border-radius:6px; color:var(--term-green);">mkdir</code></h2>
+          <div class="subtitle">Make Directory — watch the desktop react!</div>
+        </div>
+      </div>
+
+      <div class="dual-mockup" data-step-anim="5">
+        <div class="terminal-mockup">
+          <div class="terminal-chrome">
+            <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+            <div class="terminal-title">MINGW64 — Git Bash</div>
+          </div>
+          <div class="terminal-content" id="term-5">
+            <span class="terminal-line"><span class="comment"># Go to Desktop first</span></span>
+            <span class="terminal-line"><span class="prompt">shad@laptop</span> <span class="path">~</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-5-1"></span></span>
+            <span class="terminal-line" id="out-5-1" style="display:none;"><span class="comment"># Now make a new folder</span></span>
+            <span class="terminal-line" id="out-5-2" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-5-2"></span></span>
+            <span class="terminal-line" id="out-5-3" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop</span><br><span class="prompt">$</span> <span class="terminal-cursor-idle">▊</span></span>
+          </div>
+        </div>
+        <div class="desktop-mockup">
+          <div class="desktop-titlebar">
+            <span class="live-dot"></span> DESKTOP — watch the new folder appear ✨
+          </div>
+          <div class="desktop-area">
+            <div class="desktop-icons" id="desktop-5">
+              <div class="desk-icon"><div class="icon-img">🗑️</div><div class="icon-label">Recycle Bin</div></div>
+              <div class="desk-icon"><div class="icon-img">💻</div><div class="icon-label">This PC</div></div>
+            </div>
+          </div>
+          <div class="desktop-taskbar">
+            <div class="taskbar-start">⊞</div>
+            <div class="taskbar-app">📁</div>
+            <div class="taskbar-app" style="background:rgba(79,194,92,0.2);color:#6FE26F;">$_</div>
+            <div class="taskbar-time">3:48 PM<br><span class="date">22 May 2026</span></div>
+          </div>
+        </div>
+        <button class="replay-btn" onclick="playStep(5)">↻ Replay</button>
+      </div>
+
+      <div class="step-content">
+        <h3>What just happened</h3>
+        <ul class="step-bullets">
+          <li>First we navigated to Desktop: <code>cd ~/Desktop</code> (the <code>~</code> means home).</li>
+          <li>Then <code>mkdir my-bootcamp</code> created a folder called <strong>my-bootcamp</strong> right on your desktop.</li>
+          <li><strong>The desktop reacted in real-time</strong> — that's because the terminal and File Explorer are looking at the same files.</li>
+          <li>Naming tip: avoid spaces. Use <code>my-bootcamp</code> not <code>my bootcamp</code>. Saves grief later.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 6: cd — step inside ═══════════════ -->
+    <section class="step" id="step-6" data-step="6">
+      <div class="step-header">
+        <div class="step-number">6</div>
+        <div class="step-title">
+          <h2>Step inside <code style="font-family:'JetBrains Mono',monospace; font-size:24px; background:rgba(79,194,92,0.1); padding:2px 10px; border-radius:6px; color:var(--term-green);">cd</code></h2>
+          <div class="subtitle">Change Directory — and watch the folder zoom open</div>
+        </div>
+      </div>
+
+      <div class="dual-mockup" data-step-anim="6">
+        <div class="terminal-mockup">
+          <div class="terminal-chrome">
+            <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+            <div class="terminal-title">MINGW64 — Git Bash</div>
+          </div>
+          <div class="terminal-content" id="term-6">
+            <span class="terminal-line"><span class="comment"># Go into the new folder</span></span>
+            <span class="terminal-line"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-6"></span></span>
+            <span class="terminal-line" id="out-6-1" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop/my-bootcamp</span><br><span class="prompt">$</span> <span class="terminal-cursor-idle">▊</span></span>
+          </div>
+        </div>
+        <div class="desktop-mockup">
+          <div class="desktop-titlebar">
+            <span class="live-dot"></span> DESKTOP — zoom into the folder
+          </div>
+          <div class="desktop-area">
+            <div class="desktop-icons" id="desktop-6">
+              <div class="desk-icon"><div class="icon-img">🗑️</div><div class="icon-label">Recycle Bin</div></div>
+              <div class="desk-icon"><div class="icon-img">💻</div><div class="icon-label">This PC</div></div>
+              <div class="desk-icon" style="position:relative;"><div class="icon-img">📁</div><div class="icon-label">my-bootcamp</div></div>
+            </div>
+            <!-- Zoom-in view -->
+            <div class="folder-zoom" id="zoom-6">
+              <div class="folder-zoom-header">
+                <span class="back-arrow">←</span>
+                <span class="path">Desktop &gt; my-bootcamp</span>
+              </div>
+              <div class="folder-zoom-content">
+                <div style="text-align:center; color:#6B7280; font-size:12px; padding:30px; font-family:'Segoe UI',sans-serif;">
+                  This folder is empty.<br>
+                  <span style="font-size:10px; color:#9CA3AF;">Items you create will appear here.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="desktop-taskbar">
+            <div class="taskbar-start">⊞</div>
+            <div class="taskbar-app">📁</div>
+            <div class="taskbar-app" style="background:rgba(79,194,92,0.2);color:#6FE26F;">$_</div>
+            <div class="taskbar-time">3:48 PM<br><span class="date">22 May 2026</span></div>
+          </div>
+        </div>
+        <button class="replay-btn" onclick="playStep(6)">↻ Replay</button>
+      </div>
+
+      <div class="step-content">
+        <h3>What just happened</h3>
+        <ul class="step-bullets">
+          <li><code>cd my-bootcamp</code> stepped <strong>into</strong> the folder. Notice the prompt changed to <code>~/Desktop/my-bootcamp</code>.</li>
+          <li>The desktop side now shows the inside of the folder — currently empty, ready to fill.</li>
+          <li>To go back up one level: <code>cd ..</code> (two dots = parent folder).</li>
+          <li>To go all the way home: <code>cd</code> with nothing after it, or <code>cd ~</code>.</li>
+        </ul>
+        <div class="callout tip">
+          <strong>💡 Tab is your best friend.</strong> Type <code>cd my-</code> then press <kbd>Tab</kbd> — the terminal autocompletes <code>my-bootcamp</code>. Saves typos and time.
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 7: touch — create files ═══════════════ -->
+    <section class="step" id="step-7" data-step="7">
+      <div class="step-header">
+        <div class="step-number">7</div>
+        <div class="step-title">
+          <h2>Create files <code style="font-family:'JetBrains Mono',monospace; font-size:24px; background:rgba(79,194,92,0.1); padding:2px 10px; border-radius:6px; color:var(--term-green);">touch</code></h2>
+          <div class="subtitle">Create empty files — watch them pop into existence</div>
+        </div>
+      </div>
+
+      <div class="dual-mockup" data-step-anim="7">
+        <div class="terminal-mockup">
+          <div class="terminal-chrome">
+            <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+            <div class="terminal-title">MINGW64 — Git Bash</div>
+          </div>
+          <div class="terminal-content" id="term-7">
+            <span class="terminal-line"><span class="comment"># Create two files in this folder</span></span>
+            <span class="terminal-line"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop/my-bootcamp</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-7-1"></span></span>
+            <span class="terminal-line" id="out-7-1" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop/my-bootcamp</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-7-2"></span></span>
+            <span class="terminal-line" id="out-7-2" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop/my-bootcamp</span><br><span class="prompt">$</span> <span class="cmd" id="cmd-7-3"></span></span>
+            <span class="terminal-line" id="out-7-3" style="display:none;"><span style="color:#FAFAFA;">notes.txt  readme.md</span></span>
+            <span class="terminal-line" id="out-7-4" style="display:none;"><span class="prompt">shad@laptop</span> <span class="path">~/Desktop/my-bootcamp</span><br><span class="prompt">$</span> <span class="terminal-cursor-idle">▊</span></span>
+          </div>
+        </div>
+        <div class="desktop-mockup">
+          <div class="desktop-titlebar">
+            <span class="live-dot"></span> INSIDE my-bootcamp — files appear as you create them ✨
+          </div>
+          <div class="desktop-area">
+            <!-- Permanent zoom view for this step -->
+            <div class="folder-zoom visible" id="zoom-7">
+              <div class="folder-zoom-header">
+                <span class="back-arrow">←</span>
+                <span class="path">Desktop &gt; my-bootcamp</span>
+              </div>
+              <div class="folder-zoom-content">
+                <div class="desktop-icons" id="folder-files-7"></div>
+              </div>
+            </div>
+          </div>
+          <div class="desktop-taskbar">
+            <div class="taskbar-start">⊞</div>
+            <div class="taskbar-app">📁</div>
+            <div class="taskbar-app" style="background:rgba(79,194,92,0.2);color:#6FE26F;">$_</div>
+            <div class="taskbar-time">3:49 PM<br><span class="date">22 May 2026</span></div>
+          </div>
+        </div>
+        <button class="replay-btn" onclick="playStep(7)">↻ Replay</button>
+      </div>
+
+      <div class="step-content">
+        <h3>What just happened</h3>
+        <ul class="step-bullets">
+          <li><code>touch notes.txt</code> created an empty text file called <strong>notes.txt</strong>.</li>
+          <li><code>touch readme.md</code> created an empty markdown file.</li>
+          <li>Then <code>ls</code> confirmed both exist. The desktop side shows them appear in real-time.</li>
+          <li>To open a file in VS Code instead: <code>code notes.txt</code> (works after you install VS Code with PATH).</li>
+        </ul>
+        <div class="callout">
+          <strong>📌 The big idea:</strong> the terminal and File Explorer are <strong>two views of the same files</strong>. Commands on the left, file system on the right. They're inseparable.
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ STEP 8: The lifesaver commands ═══════════════ -->
+    <section class="step" id="step-8" data-step="8">
+      <div class="step-header">
+        <div class="step-number">8</div>
+        <div class="step-title">
+          <h2>The lifesaver commands</h2>
+          <div class="subtitle">Shortcuts that save 90% of your typing</div>
+        </div>
+      </div>
+
+      <div class="step-body-single">
+        <div class="terminal-mockup" style="margin-bottom: 20px; min-height: auto;">
+          <div class="terminal-chrome">
+            <div class="traffic-lights"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+            <div class="terminal-title">MINGW64 — survival kit</div>
+          </div>
+          <div class="terminal-content" id="term-8" style="min-height: auto;">
+            <span class="terminal-line"><span class="comment"># Clear the screen when it's cluttered</span></span>
+            <span class="terminal-line"><span class="prompt">$</span> <span class="cmd" id="cmd-8-1"></span></span>
+            <span class="terminal-line" id="out-8-1" style="display:none;"><span class="comment"># ↑ arrow = recall the previous command</span></span>
+            <span class="terminal-line" id="out-8-2" style="display:none;"><span class="prompt">$</span> <span style="color:#FAFAFA;">mkdir new-folder</span> <span class="highlight">  ← recalled with ↑</span></span>
+            <span class="terminal-line" id="out-8-3" style="display:none;"><span class="comment"># Tab = autocomplete file/folder names</span></span>
+            <span class="terminal-line" id="out-8-4" style="display:none;"><span class="prompt">$</span> <span style="color:#FAFAFA;">cd my-boot</span><span class="highlight">[TAB]</span> <span style="color:#FAFAFA;">→ cd my-bootcamp/</span></span>
+            <span class="terminal-line" id="out-8-5" style="display:none;"><span class="comment"># Ctrl+C = stop a stuck command, Ctrl+L = clear (alt)</span></span>
+            <span class="terminal-line" id="out-8-6" style="display:none;"><span class="prompt">$</span> <span class="terminal-cursor-idle">▊</span></span>
+          </div>
+        </div>
+
+        <div class="step-content">
+          <h3>The shortcuts that save your sanity</h3>
+          <ul class="step-bullets">
+            <li><kbd>↑</kbd> <strong>arrow:</strong> recalls the last command. Press again for the one before. Saves retyping long commands.</li>
+            <li><kbd>Tab</kbd> <strong>key:</strong> autocompletes filenames and folder names. Type <code>cd Doc</code> + Tab → <code>cd Documents/</code></li>
+            <li><kbd>Ctrl</kbd>+<kbd>C</kbd>: stop a running command. Use this when something is stuck or you want to cancel.</li>
+            <li><code>clear</code> or <kbd>Ctrl</kbd>+<kbd>L</kbd>: wipe the terminal clean. No data lost, just a fresh screen.</li>
+            <li><code>history</code>: shows every command you've run. Useful for "what did I do yesterday?"</li>
+          </ul>
+
+          <div class="callout warn">
+            <strong>🚨 The one command to fear: <code>rm -rf</code></strong><br>
+            <code>rm filename</code> deletes a file <strong>permanently</strong>. It does NOT go to the Recycle Bin. Once gone, it's gone. <code>rm -rf foldername</code> deletes an entire folder + everything inside it. Triple-check before you press Enter — this command has wrecked careers.
+          </div>
+
+          <div class="callout tip">
+            <strong>💡 The 5 commands you'll use every single day:</strong> <code>pwd</code>, <code>ls</code>, <code>cd</code>, <code>mkdir</code>, <code>touch</code>. Master these and 80% of cloud engineer work becomes natural.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Completion -->
+<div class="completion">
+  <div class="ico">🎯</div>
+  <h2>You speak <span class="accent">terminal</span> now</h2>
+  <p>You can navigate, create folders, make files, and use Git Bash like a real engineer. Week 1's labs will feel natural now — every AWS lab uses these same commands.</p>
+  <div class="completion-actions">
+    <a href="../index.html#weeks" class="btn btn-primary">View the curriculum →</a>
+    <a href="../index.html" class="btn btn-secondary">← Back to bootcamp</a>
+  </div>
+</div>
+
+<div class="footer-nav">
+  <a href="python-vscode-setup.html">← Python &amp; VS Code</a>
+  <a href="../index.html#start">Back to setup overview →</a>
+</div>
+
+</main>
+
+<script>
+  /* ════════════════════════════════════════════════════════════
+     ANIMATION ENGINE — Linux/Git Bash walkthrough
+     Each step plays a typed terminal command, then triggers
+     a synchronized reaction on the desktop side.
+  ════════════════════════════════════════════════════════════ */
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const playedSteps = new Set();
+
+  /* ─── typing into a <span> terminal line ─── */
+  function typeIntoSpan(spanEl, text, speed, callback) {
+    if (!spanEl) { callback && callback(); return; }
+    spanEl.textContent = '';
+    spanEl.classList.add('typing');
+    let i = 0;
+    const interval = setInterval(() => {
+      spanEl.textContent = text.slice(0, ++i);
+      if (i >= text.length) {
+        clearInterval(interval);
+        spanEl.classList.remove('typing');
+        setTimeout(() => callback && callback(), 300);
+      }
+    }, speed);
+  }
+
+  /* ─── reveal a single line ─── */
+  function revealLine(id, delay, callback) {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'block';
+      callback && callback();
+    }, delay);
+  }
+
+  /* ─── show a "banner" overlay temporarily ─── */
+  function flashBanner(id, ms) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, ms || 3000);
+  }
+
+  /* ─── add a new desktop icon with pop-in animation ─── */
+  function addDesktopIcon(containerId, emoji, label) {
+    const container = document.getElementById(containerId);
+    if (!container) return null;
+    const div = document.createElement('div');
+    div.className = 'desk-icon new-item';
+    div.style.position = 'relative';
+    div.innerHTML = `<div class="icon-img">${emoji}</div><div class="icon-label">${label}</div>`;
+    container.appendChild(div);
+    return div;
+  }
+
+  /* ─── show the folder-zoom overlay ─── */
+  function showFolderZoom(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('visible');
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     STEP ANIMATIONS
+  ════════════════════════════════════════════════════════════ */
+
+  function playStep(num) {
+    if (reducedMotion) return;
+    const step = document.getElementById(`step-${num}`);
+    if (!step) return;
+
+    /* Step 3 — pwd */
+    if (num === 3) {
+      const cmd = document.getElementById('cmd-3');
+      typeIntoSpan(cmd, 'pwd', 80, () => {
+        revealLine('out-3-1', 200, () => {
+          revealLine('out-3-2', 300);
+          flashBanner('banner-3', 3000);
+        });
+      });
+    }
+
+    /* Step 4 — ls */
+    else if (num === 4) {
+      const cmd = document.getElementById('cmd-4');
+      typeIntoSpan(cmd, 'ls', 100, () => {
+        revealLine('out-4-1', 200, () => {
+          revealLine('out-4-2', 250);
+          flashBanner('banner-4', 3000);
+        });
+      });
+    }
+
+    /* Step 5 — cd ~/Desktop, mkdir my-bootcamp (with folder appearing!) */
+    else if (num === 5) {
+      const cmd1 = document.getElementById('cmd-5-1');
+      const cmd2 = document.getElementById('cmd-5-2');
+      typeIntoSpan(cmd1, 'cd ~/Desktop', 60, () => {
+        revealLine('out-5-1', 300, () => {
+          revealLine('out-5-2', 200, () => {
+            typeIntoSpan(cmd2, 'mkdir my-bootcamp', 55, () => {
+              // The reveal: folder appears on the desktop with pop-in
+              setTimeout(() => {
+                addDesktopIcon('desktop-5', '📁', 'my-bootcamp');
+              }, 200);
+              revealLine('out-5-3', 600);
+            });
+          });
+        });
+      });
+    }
+
+    /* Step 6 — cd my-bootcamp (with zoom into folder!) */
+    else if (num === 6) {
+      const cmd = document.getElementById('cmd-6');
+      typeIntoSpan(cmd, 'cd my-bootcamp', 60, () => {
+        // Zoom into folder on desktop side
+        setTimeout(() => {
+          showFolderZoom('zoom-6');
+        }, 300);
+        revealLine('out-6-1', 600);
+      });
+    }
+
+    /* Step 7 — touch + ls inside the folder (with files appearing!) */
+    else if (num === 7) {
+      const cmd1 = document.getElementById('cmd-7-1');
+      const cmd2 = document.getElementById('cmd-7-2');
+      const cmd3 = document.getElementById('cmd-7-3');
+      typeIntoSpan(cmd1, 'touch notes.txt', 55, () => {
+        // First file appears
+        setTimeout(() => {
+          addDesktopIcon('folder-files-7', '📄', 'notes.txt');
+        }, 200);
+        revealLine('out-7-1', 700, () => {
+          typeIntoSpan(cmd2, 'touch readme.md', 55, () => {
+            // Second file appears
+            setTimeout(() => {
+              addDesktopIcon('folder-files-7', '📝', 'readme.md');
+            }, 200);
+            revealLine('out-7-2', 700, () => {
+              typeIntoSpan(cmd3, 'ls', 100, () => {
+                revealLine('out-7-3', 300, () => {
+                  revealLine('out-7-4', 250);
+                });
+              });
+            });
+          });
+        });
+      });
+    }
+
+    /* Step 8 — survival shortcuts */
+    else if (num === 8) {
+      const cmd = document.getElementById('cmd-8-1');
+      typeIntoSpan(cmd, 'clear', 80, () => {
+        revealLine('out-8-1', 600, () => {
+          revealLine('out-8-2', 300, () => {
+            revealLine('out-8-3', 800, () => {
+              revealLine('out-8-4', 300, () => {
+                revealLine('out-8-5', 800, () => {
+                  revealLine('out-8-6', 300);
+                });
+              });
+            });
+          });
+        });
+      });
+    }
+
+    playedSteps.add(num);
+  }
+
+  /* ═══ IntersectionObserver to trigger animations on scroll ═══ */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const stepNum = parseInt(entry.target.dataset.step);
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        if (!playedSteps.has(stepNum)) {
+          setTimeout(() => playStep(stepNum), 500);
+        }
+        updateProgress(stepNum);
+      }
+    });
+  }, { threshold: 0.35 });
+
+  document.querySelectorAll('.step').forEach(step => observer.observe(step));
+
+  /* ═══ Progress rail ═══ */
+  function updateProgress(currentStep) {
+    const total = 8;
+    const fill = document.getElementById('progressFill');
+    fill.style.height = `${((currentStep - 0.5) / total) * 100}%`;
+    document.querySelectorAll('.progress-dot').forEach(dot => {
+      const stepNum = parseInt(dot.dataset.step);
+      dot.classList.remove('active', 'completed');
+      if (stepNum < currentStep) dot.classList.add('completed');
+      else if (stepNum === currentStep) dot.classList.add('active');
+    });
+  }
+
+  document.querySelectorAll('.progress-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      const stepNum = parseInt(dot.dataset.step);
+      const step = document.getElementById(`step-${stepNum}`);
+      if (step) step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>

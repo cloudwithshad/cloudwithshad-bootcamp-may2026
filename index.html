@@ -122,7 +122,8 @@
   .start-card::before { content: ''; position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: radial-gradient(circle, rgba(244,185,66,0.18), transparent 70%); }
   .start-card h3 { font-size: 24px; color: var(--gold); margin-bottom: 12px; font-weight: 800; position: relative; }
   .start-card p { color: #CBD5E1; margin-bottom: 22px; position: relative; }
-  .start-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px; position: relative; }
+  .start-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; position: relative; }
+  @media (max-width: 900px) { .start-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 600px) { .start-grid { grid-template-columns: 1fr; } }
   .start-item { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 18px; color: white; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; gap: 12px; font-size: 14px; }
   .start-item:hover { background: rgba(0,180,216,0.1); border-color: var(--cyan); transform: translateX(4px); }
@@ -483,6 +484,11 @@
       <a href="00-start-here/python-vscode-setup.html" class="start-item">
         <span class="ico">🐍</span>
         <div><strong>3. Python &amp; VS Code</strong><br><span style="color:var(--gray);font-size:12px">Python 3 · venv · AWS CLI · extensions</span></div>
+        <span class="arr">→</span>
+      </a>
+      <a href="00-start-here/linux-gitbash-setup.html" class="start-item">
+        <span class="ico">💻</span>
+        <div><strong>4. Master the terminal</strong><br><span style="color:var(--gray);font-size:12px">Linux commands · Git Bash on Windows · animated</span></div>
         <span class="arr">→</span>
       </a>
     </div>
