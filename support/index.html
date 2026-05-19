@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support cloudwithshad — Keep the bootcamp free</title>
+<meta name="description" content="Support the cloudwithshad free AWS bootcamp. Pay with card, MoMo, bank, or USSD from GHS 50 upwards. Anonymous donations welcome.">
+
+<meta property="og:title" content="Support cloudwithshad — Keep the bootcamp free">
+<meta property="og:description" content="Every cedi keeps cloudwithshad free for the next person who wants to learn.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --navy: #0A1628; --navy-2: #13243A; --navy-3: #1A2F4A;
+    --cyan: #00B4D8; --gold: #F4B942; --green: #2EA043;
+    --white: #FFFFFF; --gray: #94A3B8; --gray-2: #64748B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(rgba(0,180,216,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,180,216,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: -100px; right: -100px;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: var(--cyan);
+    filter: blur(150px);
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  nav.topbar {
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand { font-size: 17px; font-weight: 500; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back {
+    color: var(--gray); text-decoration: none; font-size: 13px;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: var(--cyan); }
+
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 50px 20px 70px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .kicker {
+    display: inline-block;
+    background: rgba(244,185,66,0.1);
+    border: 1px solid rgba(244,185,66,0.3);
+    color: var(--gold);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    color: var(--white);
+  }
+  h1 .accent { color: var(--gold); }
+  @media (max-width: 480px) { h1 { font-size: 32px; } }
+  .lede {
+    font-size: 16px;
+    color: var(--gray);
+    margin: 0 auto;
+    max-width: 420px;
+  }
+
+  /* Payment card */
+  .pay-card {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(0,180,216,0.18);
+    border-radius: 18px;
+    padding: 32px 28px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  @media (max-width: 480px) { .pay-card { padding: 24px 20px; } }
+
+  /* Amount selector */
+  .amount-label {
+    font-size: 12px;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .amount-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .amount-btn {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 16px 8px;
+    color: var(--white);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .amount-btn:hover {
+    border-color: rgba(0,180,216,0.3);
+    background: rgba(0,180,216,0.05);
+  }
+  .amount-btn.selected {
+    background: rgba(0,180,216,0.12);
+    border-color: var(--cyan);
+  }
+  .amount-btn .amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1;
+  }
+  .amount-btn.selected .amount { color: var(--cyan); }
+  .amount-btn .currency {
+    font-size: 10px;
+    color: var(--gray);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  /* Custom amount input */
+  .custom-amount {
+    position: relative;
+    margin-bottom: 22px;
+    display: none;
+  }
+  .custom-amount.visible { display: block; }
+  .custom-amount .prefix {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .custom-amount input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 14px 14px 14px 60px;
+    color: var(--white);
+    font-size: 16px;
+    font-family: inherit;
+  }
+  .custom-amount input:focus {
+    outline: none;
+    border-color: var(--cyan);
+  }
+  .min-note {
+    font-size: 11px;
+    color: var(--gray);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  /* Toggle for custom */
+  .custom-toggle {
+    background: none;
+    border: 1px dashed rgba(255,255,255,0.15);
+    color: var(--gray);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 22px;
+    width: 100%;
+  }
+  .custom-toggle:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .custom-toggle.active {
+    display: none;
+  }
+
+  /* Form */
+  .form-group {
+    margin-bottom: 14px;
+  }
+  .form-group label {
+    display: block;
+    color: var(--gray);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .form-group label .optional {
+    color: var(--gray-2);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .form-group input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--white);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--cyan);
+  }
+  .form-group input::placeholder {
+    color: var(--gray-2);
+  }
+  .form-group textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--white);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 70px;
+    transition: border-color 0.2s;
+  }
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--cyan);
+  }
+  .form-group textarea::placeholder {
+    color: var(--gray-2);
+  }
+
+  /* Submit button */
+  .pay-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--cyan), #0095B7);
+    color: var(--navy);
+    border: none;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,180,216,0.25);
+  }
+  .pay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,180,216,0.35);
+  }
+  .pay-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Payment methods + secure note */
+  .pay-methods {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .pay-method {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--gray);
+  }
+  .pay-secure {
+    text-align: center;
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--gray-2);
+  }
+  .pay-secure .lock { color: var(--green); }
+
+  /* Bottom alternatives */
+  .alternatives {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray);
+  }
+  .alternatives a {
+    color: var(--cyan);
+    text-decoration: none;
+    margin: 0 8px;
+  }
+  .alternatives a:hover { color: var(--gold); }
+
+  /* Success modal */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    backdrop-filter: blur(6px);
+  }
+  .modal.active { display: flex; }
+  .modal-content {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(46,160,67,0.4);
+    border-radius: 18px;
+    padding: 38px 30px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal-icon {
+    font-size: 56px;
+    margin-bottom: 14px;
+  }
+  .modal-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--white);
+    margin-bottom: 10px;
+  }
+  .modal-content h2 .accent { color: var(--green); }
+  .modal-content p {
+    color: #CBD5E1;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .modal-ref {
+    color: var(--gray-2);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 22px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    word-break: break-all;
+  }
+  .modal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+  .modal-btn.whatsapp {
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    margin-bottom: 10px;
+  }
+  .modal-btn.whatsapp:hover { transform: translateY(-2px); }
+  .modal-btn.secondary {
+    background: transparent;
+    color: var(--gray);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .modal-btn.secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html" class="nav-back">← Back to bootcamp</a>
+  </div>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <span class="kicker">SUPPORT CLOUDWITHSHAD</span>
+    <h1>Keep the bootcamp <span class="accent">free</span></h1>
+    <p class="lede">If cloudwithshad helped you, your support keeps it open for the next person who wants to learn.</p>
+  </div>
+
+  <div class="pay-card">
+    <form id="payForm" onsubmit="initiatePayment(event)">
+
+      <div class="amount-label">Choose an amount</div>
+      <div class="amount-grid">
+        <button type="button" class="amount-btn" data-amount="50">
+          <div class="currency">GHS</div>
+          <div class="amount">50</div>
+        </button>
+        <button type="button" class="amount-btn selected" data-amount="100">
+          <div class="currency">GHS</div>
+          <div class="amount">100</div>
+        </button>
+        <button type="button" class="amount-btn" data-amount="250">
+          <div class="currency">GHS</div>
+          <div class="amount">250</div>
+        </button>
+      </div>
+
+      <button type="button" class="custom-toggle" id="customToggle" onclick="showCustomAmount()">
+        + Enter a custom amount
+      </button>
+
+      <div class="custom-amount" id="customAmountWrap">
+        <span class="prefix">GHS</span>
+        <input type="number" id="customAmount" min="50" step="1" placeholder="100" oninput="onCustomAmountChange()">
+        <div class="min-note">Minimum: GHS 50</div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email <span class="optional">(required — for receipt)</span></label>
+        <input type="email" id="email" placeholder="your@email.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="fullName">Full Name <span class="optional">(optional — leave blank to give anonymously)</span></label>
+        <input type="text" id="fullName" placeholder="Or leave blank for anonymous">
+      </div>
+
+      <div class="form-group">
+        <label for="message">A short message <span class="optional">(optional)</span></label>
+        <textarea id="message" placeholder="Anything you'd like to say? A story, a thank-you, a request..."></textarea>
+      </div>
+
+      <button type="submit" class="pay-btn" id="payBtn">
+        🔒 <span id="payBtnText">Pay GHS 100 securely</span>
+      </button>
+
+      <div class="pay-methods">
+        <span class="pay-method">📱 MoMo</span>
+        <span class="pay-method">💳 Card</span>
+        <span class="pay-method">🏦 Bank</span>
+        <span class="pay-method">📞 USSD</span>
+      </div>
+
+      <p class="pay-secure"><span class="lock">🔒</span> Secured by Paystack · No card data touches this page</p>
+    </form>
+
+    <div class="alternatives">
+      Prefer another way?
+      <a href="../index.html#support">View other options</a> · <a href="mailto:cloudwithshad@gmail.com">Email Shadrack</a>
+    </div>
+  </div>
+
+</main>
+
+<!-- Success modal -->
+<div class="modal" id="successModal">
+  <div class="modal-content">
+    <div class="modal-icon">🙏🏿</div>
+    <h2>Thank you<span class="accent">.</span></h2>
+    <p id="thankYouMessage">Your support keeps cloudwithshad free for the next person who wants to learn.</p>
+    <div class="modal-ref" id="thankYouRef"></div>
+    <a href="#" id="waBtn" class="modal-btn whatsapp" target="_blank" rel="noopener">
+      💬 Share with Shadrack on WhatsApp
+    </a>
+    <button onclick="closeModal()" class="modal-btn secondary">Close</button>
+  </div>
+</div>
+
+<!-- Paystack inline -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+  /* ════════════════════════════════════════════════
+     Paystack configuration
+  ════════════════════════════════════════════════ */
+  const PAYSTACK_PUBLIC_KEY = 'pk_live_9c79a17e05f06dc4c16f23f9d4d7099be5851731';
+  const WHATSAPP_NUMBER = '233544260206';  // Shadrack's MoMo number, also used for support DMs
+  let selectedAmount = 100;   // GHS — default selected amount
+
+  /* ════════════════════════════════════════════════
+     Amount selection
+  ════════════════════════════════════════════════ */
+  document.querySelectorAll('.amount-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAmount = parseInt(btn.dataset.amount);
+
+      // Reset custom amount if visible
+      const customWrap = document.getElementById('customAmountWrap');
+      const customToggle = document.getElementById('customToggle');
+      if (customWrap.classList.contains('visible')) {
+        customWrap.classList.remove('visible');
+        customToggle.classList.remove('active');
+        document.getElementById('customAmount').value = '';
+      }
+      updatePayButton();
+    });
+  });
+
+  function showCustomAmount() {
+    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('customAmountWrap').classList.add('visible');
+    document.getElementById('customToggle').classList.add('active');
+    document.getElementById('customAmount').focus();
+    selectedAmount = 0;
+    updatePayButton();
+  }
+
+  function onCustomAmountChange() {
+    const v = parseInt(document.getElementById('customAmount').value) || 0;
+    selectedAmount = v;
+    updatePayButton();
+  }
+
+  function updatePayButton() {
+    const btn = document.getElementById('payBtnText');
+    const submitBtn = document.getElementById('payBtn');
+    if (selectedAmount >= 50) {
+      btn.textContent = `Pay GHS ${selectedAmount} securely`;
+      submitBtn.disabled = false;
+    } else if (selectedAmount > 0) {
+      btn.textContent = `Minimum is GHS 50`;
+      submitBtn.disabled = true;
+    } else {
+      btn.textContent = 'Pick an amount';
+      submitBtn.disabled = true;
+    }
+  }
+
+  /* ════════════════════════════════════════════════
+     Payment initiation
+  ════════════════════════════════════════════════ */
+  function initiatePayment(e) {
+    e.preventDefault();
+
+    if (selectedAmount < 50) {
+      alert('Please enter an amount of GHS 50 or more.');
+      return;
+    }
+
+    const email = document.getElementById('email').value.trim();
+    if (!email) {
+      alert('Please enter your email so Paystack can send your receipt.');
+      return;
+    }
+
+    const fullName = document.getElementById('fullName').value.trim() || 'Anonymous';
+    const message  = document.getElementById('message').value.trim() || '(no message)';
+    const isAnonymous = fullName === 'Anonymous';
+
+    const reference = `CWS_SUPPORT_${selectedAmount}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const amountPesewas = selectedAmount * 100;
+
+    const handler = PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: email,
+      amount: amountPesewas,
+      currency: 'GHS',
+      ref: reference,
+      metadata: {
+        custom_fields: [
+          { display_name: "Supporter Name", variable_name: "supporter_name", value: fullName },
+          { display_name: "Message", variable_name: "message", value: message },
+          { display_name: "Purpose", variable_name: "purpose", value: "cloudwithshad bootcamp support" },
+          { display_name: "Anonymous", variable_name: "anonymous", value: isAnonymous ? "Yes" : "No" }
+        ]
+      },
+      callback: function(response) {
+        // Build WhatsApp confirmation message
+        const waMsg = encodeURIComponent(
+          `Hello Shadrack 👋\n\n` +
+          `I just supported cloudwithshad with GHS ${selectedAmount}.\n\n` +
+          `Reference: ${response.reference}\n` +
+          (isAnonymous ? `From: Anonymous supporter\n` : `From: ${fullName}\n`) +
+          (message !== '(no message)' ? `Message: ${message}\n` : '') +
+          `\nKeep up the great work!`
+        );
+
+        // Show success modal
+        document.getElementById('thankYouMessage').textContent =
+          isAnonymous
+            ? `Your support keeps cloudwithshad free for the next person who wants to learn.`
+            : `Thank you, ${fullName}. Your support keeps cloudwithshad free for the next person who wants to learn.`;
+        document.getElementById('thankYouRef').textContent = `Reference: ${response.reference}`;
+        document.getElementById('waBtn').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`;
+        document.getElementById('successModal').classList.add('active');
+        document.getElementById('payForm').reset();
+        // Reset selection state
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelector('.amount-btn[data-amount="100"]').classList.add('selected');
+        document.getElementById('customAmountWrap').classList.remove('visible');
+        document.getElementById('customToggle').classList.remove('active');
+        selectedAmount = 100;
+        updatePayButton();
+      },
+      onClose: function() {
+        // User closed the Paystack popup — no need to do anything
+      }
+    });
+
+    handler.openIframe();
+  }
+
+  function closeModal() {
+    document.getElementById('successModal').classList.remove('active');
+  }
+
+  // Initialize
+  updatePayButton();
+</script>
+
+</body>
+</html>

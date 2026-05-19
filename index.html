@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>cloudwithshad Bootcamp — Free AWS Cloud Practitioner Course (May 2026)</title>
-<meta name="description" content="Free 4-week hands-on AWS bootcamp for West Africa. Slides, labs, animated quizzes, story explainers, and group projects.">
+<meta name="description" content="Free 4-week hands-on AWS bootcamp told through West African stories. Slides, labs, animated quizzes, story explainers, and group projects. Open to everyone.">
 
 <meta property="og:title" content="cloudwithshad Bootcamp — Free AWS Cloud Practitioner Course">
-<meta property="og:description" content="Free 4-week hands-on AWS bootcamp for West Africa. 8 labs, 4 weeks, 1 capstone project.">
+<meta property="og:description" content="Free 4-week hands-on AWS bootcamp with West African stories. 8 labs, 4 weeks, 1 capstone project. Open to everyone.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/">
 
@@ -238,6 +238,149 @@
   .notify-btn.whatsapp { background: #25D366; color: white; }
   .notify-btn.whatsapp:hover { background: #1FB855; }
 
+  /* ═══════════════════ SUPPORT ═══════════════════ */
+  #support { max-width: 1100px; margin: 70px auto 50px; padding: 0 24px; }
+  .support-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-top: 36px;
+  }
+  @media (max-width: 900px) {
+    .support-grid { grid-template-columns: 1fr; gap: 18px; }
+  }
+  .support-card {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 26px 24px;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+  }
+  .support-card:hover {
+    border-color: rgba(244,185,66,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  }
+  .support-icon {
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  }
+  .support-card h4 {
+    font-size: 19px;
+    color: var(--white);
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .support-sub {
+    font-size: 12px;
+    color: var(--gray);
+    margin-bottom: 20px;
+  }
+  .support-details {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    flex: 1;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 13px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .label {
+    color: var(--gray);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .detail-row .value {
+    color: var(--white);
+    font-weight: 600;
+  }
+  .detail-row .value.mono {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+  }
+  .crypto-address {
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    background: rgba(0,0,0,0.4);
+    padding: 10px 12px;
+    border-radius: 6px;
+    word-break: break-all;
+    border: 1px solid rgba(0,180,216,0.2);
+    line-height: 1.5;
+  }
+  .support-copy {
+    width: 100%;
+    background: rgba(0,180,216,0.1);
+    border: 1px solid rgba(0,180,216,0.3);
+    color: var(--cyan);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .support-copy:hover {
+    background: rgba(0,180,216,0.18);
+    border-color: var(--cyan);
+  }
+  .support-copy.copied {
+    background: rgba(46,160,67,0.15);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .support-warn {
+    font-size: 11px;
+    color: #FCD9A0;
+    text-align: center;
+    margin-top: 12px;
+    line-height: 1.4;
+  }
+
+  /* Primary clickable support card (Paystack) */
+  .support-card-link {
+    text-decoration: none;
+    color: inherit;
+    border-color: rgba(0,180,216,0.35) !important;
+    position: relative;
+  }
+  .support-card-link:hover {
+    border-color: var(--cyan) !important;
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0,180,216,0.18);
+  }
+  .support-card-badge {
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(244,185,66,0.35);
+  }
+
   /* ═══════════════════ FOOTER ═══════════════════ */
   footer { background: var(--navy); border-top: 1px solid rgba(255,255,255,0.06); padding: 50px 24px 40px; text-align: center; }
   .footer-content { max-width: 800px; margin: 0 auto; }
@@ -270,6 +413,7 @@
       <a href="#stories">Stories</a>
       <a href="#projects">Projects</a>
       <a href="#notify">Get Notified</a>
+      <a href="#support">❤️ Support</a>
     </div>
     <a href="https://chat.whatsapp.com/J3WsFjpPGDX82XXPDYUTU1" class="nav-cta" target="_blank" rel="noopener">Join cohort →</a>
   </div>
@@ -282,7 +426,7 @@
       Become an AWS<br>
       <span class="accent">Cloud Engineer</span>
     </h1>
-    <p class="hero-sub">A free, hands-on bootcamp for aspiring cloud engineers across West Africa. 8 labs, 4 weeks, 1 capstone project. Slides, animated quizzes, story explainers, and a community — all open-source.</p>
+    <p class="hero-sub">A free, hands-on bootcamp for aspiring cloud engineers everywhere — taught with West African stories and examples. 8 labs, 4 weeks, 1 capstone project. Slides, animated quizzes, story explainers, and a community — all open-source.</p>
 
     <div class="hero-actions">
       <a href="#start" class="btn btn-primary">🚀 Start the bootcamp →</a>
@@ -565,6 +709,78 @@
   </p>
 </section>
 
+<!-- ═══════════════════ SUPPORT SECTION ═══════════════════ -->
+<section id="support">
+  <div class="section-kicker">IF THIS HELPED YOU</div>
+  <h2 class="section-title">Support cloudwithshad <span style="color: var(--gold);">❤️</span></h2>
+  <p class="section-sub">cloudwithshad will always be free. If it's helped you become a cloud engineer — or you just want to keep the lights on for the next cohort — here's how to say thanks.</p>
+
+  <div class="support-grid">
+
+    <!-- Paystack card (PRIMARY) -->
+    <a href="support/index.html" class="support-card support-card-link">
+      <div class="support-card-badge">EASIEST WAY</div>
+      <div class="support-icon" style="background: linear-gradient(135deg, var(--cyan), #0095B7);">
+        <span style="font-size: 28px;">💚</span>
+      </div>
+      <h4>Support online</h4>
+      <div class="support-sub">Card · MoMo · Bank · USSD — any amount from GHS 50</div>
+      <div class="support-details" style="background: rgba(0,180,216,0.08); border-color: rgba(0,180,216,0.25);">
+        <div class="detail-row"><span class="label">Suggested</span><span class="value">GHS 50 · 100 · 250</span></div>
+        <div class="detail-row"><span class="label">Anonymous?</span><span class="value">✅ Yes, just enter email</span></div>
+        <div class="detail-row"><span class="label">Receipt</span><span class="value">Automatic</span></div>
+      </div>
+      <span class="support-copy" style="display: block; text-align: center; background: linear-gradient(135deg, var(--cyan), #0095B7); color: var(--navy); border: none; font-weight: 700;">
+        💚 Support cloudwithshad →
+      </span>
+      <p style="font-size: 11px; color: var(--gray-2); text-align: center; margin-top: 10px;">Secured by Paystack</p>
+    </a>
+
+    <!-- Crypto card (SECONDARY) -->
+    <div class="support-card">
+      <div class="support-icon" style="background: linear-gradient(135deg, #50AF95, #26A17B);">
+        <span style="font-size: 26px; color: white; font-weight: 800;">₮</span>
+      </div>
+      <h4>Crypto (USDT)</h4>
+      <div class="support-sub">For the crypto-curious</div>
+      <div class="support-details">
+        <div class="detail-row"><span class="label">Currency</span><span class="value">USDT</span></div>
+        <div class="detail-row"><span class="label">Network</span><span class="value" style="color: var(--gold); font-weight: 700;">⚠️ BEP20 only</span></div>
+        <div class="detail-row"><span class="label">Address</span></div>
+        <div class="crypto-address" id="cryptoAddr">0xA5dB3F5995C81380c48D7F9b9866123CB33E84af</div>
+      </div>
+      <button class="support-copy" onclick="copyValue(this, '0xA5dB3F5995C81380c48D7F9b9866123CB33E84af', 'Address')">
+        📋 Copy address
+      </button>
+      <p class="support-warn">⚠️ Other networks (ERC20, TRC20) will lose funds permanently</p>
+    </div>
+
+    <!-- Email card -->
+    <div class="support-card">
+      <div class="support-icon" style="background: linear-gradient(135deg, var(--gold), #D89A2A);">
+        <span style="font-size: 28px;">✉️</span>
+      </div>
+      <h4>Get in touch</h4>
+      <div class="support-sub">For anything else — partnerships, questions, or sponsoring a future cohort</div>
+      <div class="support-details">
+        <div class="detail-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="label">Email</span>
+          <a href="mailto:cloudwithshad@gmail.com" class="value mono" style="color: var(--cyan); text-decoration: none; word-break: break-all;">cloudwithshad@gmail.com</a>
+        </div>
+      </div>
+      <a href="mailto:cloudwithshad@gmail.com?subject=Hello%20cloudwithshad" class="support-copy" style="display: inline-block; text-decoration: none; text-align: center;">
+        ✉️ Send an email
+      </a>
+      <p style="font-size: 11px; color: var(--gray); text-align: center; margin-top: 14px;">International supporter wanting to send fiat? Email first and I'll share the right details.</p>
+    </div>
+
+  </div>
+
+  <p style="text-align: center; margin-top: 32px; color: var(--gray); font-size: 13px; max-width: 540px; margin-left: auto; margin-right: auto;">
+    Every cedi, every sat, every kind email keeps cloudwithshad free for the next person who wants to learn. 🙏🏿
+  </p>
+</section>
+
 <!-- Modal for locked card clicks -->
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
@@ -590,7 +806,7 @@
 <footer>
   <div class="footer-content">
     <div class="footer-brand">cloud<span>withshad</span></div>
-    <div class="footer-tagline">Free AWS bootcamp for West Africa · Taught by Shadrack Darku · May 2026 cohort</div>
+    <div class="footer-tagline">Free AWS bootcamp · taught with West African stories · by Shadrack Darku · May 2026 cohort</div>
 
     <div class="footer-links">
       <a href="https://github.com/cloudwithshad/cloudwithshad-bootcamp-may2026" target="_blank" rel="noopener">GitHub</a>
@@ -776,6 +992,36 @@
   setupModal();
   setInterval(() => { updateCards(); updateBanner(); }, 60 * 1000);
 })();
+
+/* ─── Support section: copy to clipboard ─── */
+function copyValue(btn, value, label) {
+  const originalText = btn.textContent;
+  const fallback = () => {
+    // Old-school fallback for browsers that don't support clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = value;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  };
+  const success = () => {
+    btn.textContent = `✓ ${label} copied!`;
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.classList.remove('copied');
+    }, 2200);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(value).then(success).catch(() => { fallback(); success(); });
+  } else {
+    fallback();
+    success();
+  }
+}
 </script>
 
 </body>
