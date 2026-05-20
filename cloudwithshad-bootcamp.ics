@@ -1,0 +1,85 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//cloudwithshad//Bootcamp May 2026//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:cloudwithshad AWS Bootcamp
+X-WR-TIMEZONE:Africa/Accra
+X-WR-CALDESC:Free 4-week AWS Cloud Practitioner bootcamp - May 2026 cohort
+
+BEGIN:VEVENT
+UID:cws-bootcamp-week-1@cloudwithshad.com
+DTSTAMP:20260517T000000Z
+DTSTART:20260523T180000Z
+DTEND:20260523T200000Z
+SUMMARY:🚀 cloudwithshad Bootcamp - Week 1 LIVE
+DESCRIPTION:Week 1 of the free cloudwithshad AWS Bootcamp begins. Cloud Foundations - S3+CloudFront portfolio & EC2+Nginx web app.\n\nJoin live: https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/\nWhatsApp community: https://chat.whatsapp.com/J3WsFjpPGDX82XXPDYUTU1\n\nBring: laptop\, AWS account\, GitHub account\, snacks 🍿
+LOCATION:Online - WhatsApp community
+URL:https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+STATUS:CONFIRMED
+SEQUENCE:0
+BEGIN:VALARM
+TRIGGER:-PT24H
+DESCRIPTION:cloudwithshad Bootcamp - Week 1 is tomorrow! 🚀
+ACTION:DISPLAY
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT1H
+DESCRIPTION:cloudwithshad Bootcamp Week 1 starts in 1 hour 🚀
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:cws-bootcamp-week-2@cloudwithshad.com
+DTSTAMP:20260517T000000Z
+DTSTART:20260530T180000Z
+DTEND:20260530T200000Z
+SUMMARY:cloudwithshad Bootcamp - Week 2 LIVE
+DESCRIPTION:Week 2 - Networking & Databases. VPC+RDS two-tier app & S3+Lambda image resizer.\n\nhttps://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+LOCATION:Online - WhatsApp community
+URL:https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+
+BEGIN:VEVENT
+UID:cws-bootcamp-week-3@cloudwithshad.com
+DTSTAMP:20260517T000000Z
+DTSTART:20260606T180000Z
+DTEND:20260606T200000Z
+SUMMARY:cloudwithshad Bootcamp - Week 3 LIVE
+DESCRIPTION:Week 3 - Scaling & DevOps. Auto-scaling+ALB & CI/CD GitHub to AWS.\n\nhttps://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+LOCATION:Online - WhatsApp community
+URL:https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+
+BEGIN:VEVENT
+UID:cws-bootcamp-week-4@cloudwithshad.com
+DTSTAMP:20260517T000000Z
+DTSTART:20260613T180000Z
+DTEND:20260613T200000Z
+SUMMARY:cloudwithshad Bootcamp - Week 4 LIVE (AI Capstone)
+DESCRIPTION:Week 4 - AI & Capstone! Textract+Comprehend Smart Doc Analyzer + AI Customer Feedback Hub.\n\nhttps://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+LOCATION:Online - WhatsApp community
+URL:https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+
+BEGIN:VEVENT
+UID:cws-bootcamp-demo-day@cloudwithshad.com
+DTSTAMP:20260517T000000Z
+DTSTART:20260620T180000Z
+DTEND:20260620T210000Z
+SUMMARY:🏆 cloudwithshad Bootcamp - Demo Day!
+DESCRIPTION:The grand finale! Every team demos their group project live. 5 mini-awards announced.\n\nhttps://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+LOCATION:Online - WhatsApp community
+URL:https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+
+END:VCALENDAR
