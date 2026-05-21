@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards · cloudwithshad — 120 AWS Cloud Practitioner revision cards</title>
+<meta name="description" content="120 interactive flashcards to revise AWS Cloud Practitioner. Filter by week or category. Track your progress.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --navy: #0A1628; --navy-2: #13243A; --navy-3: #1A2F4A;
+    --cyan: #00B4D8; --gold: #F4B942;
+    --white: #FFFFFF; --gray: #94A3B8; --gray-2: #64748B;
+    --green: #2EA043; --red: #FF4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  nav.topbar {
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand { font-size: 17px; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back {
+    color: var(--gray); text-decoration: none; font-size: 13px;
+  }
+  .nav-back:hover { color: var(--cyan); }
+
+  main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px 70px;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .kicker {
+    display: inline-block;
+    background: rgba(0,180,216,0.1);
+    border: 1px solid rgba(0,180,216,0.3);
+    color: var(--cyan);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  h1 .accent { color: var(--cyan); }
+  @media (max-width: 480px) { h1 { font-size: 30px; } }
+  .lede {
+    font-size: 16px; color: var(--gray);
+    max-width: 520px; margin: 0 auto;
+  }
+
+  /* Progress stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 28px 0 24px;
+  }
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--gray);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .stat.knew .stat-value { color: var(--green); }
+  .stat.didnt .stat-value { color: var(--red); }
+  .stat.total .stat-value { color: var(--white); }
+  .stat.remaining .stat-value { color: var(--gold); }
+
+  /* Filter controls */
+  .filters {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 22px;
+  }
+  .filter-group {
+    margin-bottom: 14px;
+  }
+  .filter-group:last-child { margin-bottom: 0; }
+  .filter-label {
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .filter-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--gray);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover {
+    color: var(--white);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .chip.active {
+    background: rgba(0,180,216,0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    font-weight: 600;
+  }
+
+  /* Flashcard */
+  .card-wrapper {
+    perspective: 1500px;
+    margin: 20px 0;
+    min-height: 320px;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(0,180,216,0.2);
+    border-radius: 18px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .card-face::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(0,180,216,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .card-back {
+    transform: rotateY(180deg);
+    border-color: rgba(244,185,66,0.25);
+  }
+  .card-back::before {
+    background: radial-gradient(circle, rgba(244,185,66,0.06) 0%, transparent 70%);
+  }
+  .card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .card-meta .week-tag {
+    color: var(--cyan);
+  }
+  .card-back .week-tag {
+    color: var(--gold);
+  }
+  .card-meta .number {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .card-label {
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+  .card-back .card-label { color: var(--gold); }
+  .card-content {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--white);
+    flex: 1;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  @media (max-width: 480px) {
+    .card-content { font-size: 18px; }
+    .card-face { padding: 24px 20px; }
+  }
+  .card-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--gray-2);
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 22px 0 18px;
+  }
+  .action-btn {
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+  .action-btn.didnt-know {
+    background: rgba(255,68,68,0.1);
+    color: var(--red);
+    border-color: rgba(255,68,68,0.3);
+  }
+  .action-btn.didnt-know:hover {
+    background: rgba(255,68,68,0.2);
+    transform: translateY(-2px);
+  }
+  .action-btn.knew {
+    background: rgba(46,160,67,0.1);
+    color: var(--green);
+    border-color: rgba(46,160,67,0.3);
+  }
+  .action-btn.knew:hover {
+    background: rgba(46,160,67,0.2);
+    transform: translateY(-2px);
+  }
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover {
+    background: rgba(0,180,216,0.1);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .shuffle-btn {
+    background: linear-gradient(135deg, var(--gold), #D89A2A);
+    color: var(--navy);
+    border: none;
+    font-weight: 700;
+  }
+  .shuffle-btn:hover {
+    background: linear-gradient(135deg, #F8C355, #F4B942);
+    color: var(--navy);
+    border-color: transparent;
+  }
+
+  /* Reset progress */
+  .reset-section {
+    text-align: center;
+    margin-top: 36px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .reset-btn {
+    background: none;
+    border: none;
+    color: var(--gray-2);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .reset-btn:hover { color: var(--red); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--gray);
+    background: rgba(255,255,255,0.02);
+    border-radius: 14px;
+    border: 1px dashed rgba(255,255,255,0.08);
+  }
+  .empty .ico { font-size: 48px; margin-bottom: 12px; }
+
+  /* Keyboard hint */
+  .keyboard-hint {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--gray-2);
+  }
+  .keyboard-hint kbd {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin: 0 1px;
+  }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html" class="nav-back">← Back to bootcamp</a>
+  </div>
+</nav>
+
+<main>
+  <div class="hero">
+    <span class="kicker">📚 EXAM REVISION</span>
+    <h1>Flashcards <span class="accent">— 120 cards</span></h1>
+    <p class="lede">Cloud Practitioner-level questions, organized by week. Click any card to flip. Track what you know and what to review.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat total"><div class="stat-value" id="statTotal">0</div><div class="stat-label">In deck</div></div>
+    <div class="stat knew"><div class="stat-value" id="statKnew">0</div><div class="stat-label">Knew it</div></div>
+    <div class="stat didnt"><div class="stat-value" id="statDidnt">0</div><div class="stat-label">Review</div></div>
+    <div class="stat remaining"><div class="stat-value" id="statRemaining">0</div><div class="stat-label">Untried</div></div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <div class="filter-label">Week</div>
+      <div class="filter-chips" id="weekChips">
+        <button class="chip active" data-week="all">All weeks</button>
+        <button class="chip" data-week="1">Week 1 · Foundations</button>
+        <button class="chip" data-week="2">Week 2 · Networking</button>
+        <button class="chip" data-week="3">Week 3 · Scaling</button>
+        <button class="chip" data-week="4">Week 4 · AI &amp; Security</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Category</div>
+      <div class="filter-chips" id="categoryChips">
+        <button class="chip active" data-category="all">All categories</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Review filter</div>
+      <div class="filter-chips" id="reviewChips">
+        <button class="chip active" data-review="all">All cards</button>
+        <button class="chip" data-review="untried">Untried only</button>
+        <button class="chip" data-review="didnt">Review pile (didn't know)</button>
+        <button class="chip" data-review="knew">Mastered</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cardArea">
+    <div class="loading">Loading flashcards…</div>
+  </div>
+
+  <div class="keyboard-hint">
+    <kbd>Space</kbd> to flip · <kbd>←</kbd> <kbd>→</kbd> to navigate · <kbd>1</kbd> didn't know · <kbd>2</kbd> knew it
+  </div>
+
+  <div class="reset-section">
+    <button class="reset-btn" onclick="resetProgress()">Reset all progress</button>
+  </div>
+</main>
+
+<script>
+  let allCards = [];
+  let filteredCards = [];
+  let currentIndex = 0;
+  let isFlipped = false;
+  let activeWeek = 'all';
+  let activeCategory = 'all';
+  let activeReview = 'all';
+
+  // localStorage key for progress
+  const STORAGE_KEY = 'cws_flashcard_progress_v1';
+
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+  function saveProgress(progress) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } catch (e) {
+      console.warn('Could not save progress:', e);
+    }
+  }
+
+  fetch('../data/flashcards.json')
+    .then(r => r.json())
+    .then(data => {
+      allCards = data.cards;
+      populateCategoryFilter();
+      applyFilters();
+      updateStats();
+    })
+    .catch(err => {
+      document.getElementById('cardArea').innerHTML =
+        '<div class="loading">Could not load flashcards. Try refreshing.</div>';
+    });
+
+  function populateCategoryFilter() {
+    const cats = new Set(allCards.map(c => c.category));
+    const chipContainer = document.getElementById('categoryChips');
+    [...cats].sort().forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.dataset.category = cat;
+      btn.textContent = cat;
+      chipContainer.appendChild(btn);
+    });
+    // Wire up all chips
+    document.querySelectorAll('#weekChips .chip').forEach(c => {
+      c.addEventListener('click', () => {
+        document.querySelectorAll('#weekChips .chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        activeWeek = c.dataset.week;
+        applyFilters();
+      });
+    });
+    document.querySelectorAll('#categoryChips .chip').forEach(c => {
+      c.addEventListener('click', () => {
+        document.querySelectorAll('#categoryChips .chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        activeCategory = c.dataset.category;
+        applyFilters();
+      });
+    });
+    document.querySelectorAll('#reviewChips .chip').forEach(c => {
+      c.addEventListener('click', () => {
+        document.querySelectorAll('#reviewChips .chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        activeReview = c.dataset.review;
+        applyFilters();
+      });
+    });
+  }
+
+  function applyFilters() {
+    const progress = loadProgress();
+    filteredCards = allCards.filter(card => {
+      if (activeWeek !== 'all' && String(card.week) !== activeWeek) return false;
+      if (activeCategory !== 'all' && card.category !== activeCategory) return false;
+
+      const status = progress[card.id];  // undefined | 'knew' | 'didnt'
+      if (activeReview === 'untried' && status !== undefined) return false;
+      if (activeReview === 'didnt'   && status !== 'didnt') return false;
+      if (activeReview === 'knew'    && status !== 'knew')  return false;
+      return true;
+    });
+    currentIndex = 0;
+    isFlipped = false;
+    renderCard();
+    updateStats();
+  }
+
+  function renderCard() {
+    const area = document.getElementById('cardArea');
+    if (filteredCards.length === 0) {
+      area.innerHTML = `
+        <div class="empty">
+          <div class="ico">🗂️</div>
+          <div>No cards match these filters.</div>
+          <div style="font-size:13px; margin-top:8px;">Try widening the criteria or reset progress.</div>
+        </div>
+      `;
+      return;
+    }
+    const card = filteredCards[currentIndex];
+    const weekTitles = {1:'Foundations', 2:'Networking', 3:'Scaling', 4:'AI &amp; Security'};
+    area.innerHTML = `
+      <div class="card-wrapper">
+        <div class="card ${isFlipped ? 'flipped' : ''}" id="theCard" onclick="flipCard()">
+          <div class="card-face card-front">
+            <div class="card-meta">
+              <span><span class="week-tag">Week ${card.week} · ${weekTitles[card.week]}</span> · ${escapeHtml(card.category)}</span>
+              <span class="number">${currentIndex + 1} / ${filteredCards.length}</span>
+            </div>
+            <div class="card-label">Question</div>
+            <div class="card-content">${escapeHtml(card.q)}</div>
+            <div class="card-hint">Click card or press Space to reveal answer</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-meta">
+              <span><span class="week-tag">Week ${card.week}</span> · ${escapeHtml(card.category)}</span>
+              <span class="number">#${card.id}</span>
+            </div>
+            <div class="card-label">Answer</div>
+            <div class="card-content">${escapeHtml(card.a)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn didnt-know" onclick="markCard('didnt')" ${!isFlipped ? 'disabled' : ''}>
+          ✗ Didn't know
+        </button>
+        <button class="action-btn knew" onclick="markCard('knew')" ${!isFlipped ? 'disabled' : ''}>
+          ✓ Knew it
+        </button>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="nav-btn" onclick="prevCard()" ${currentIndex === 0 ? 'disabled' : ''}>
+          ← Previous
+        </button>
+        <button class="nav-btn shuffle-btn" onclick="shuffleCards()">
+          🔀 Shuffle deck
+        </button>
+        <button class="nav-btn" onclick="nextCard()" ${currentIndex === filteredCards.length - 1 ? 'disabled' : ''}>
+          Next →
+        </button>
+      </div>
+    `;
+  }
+
+  function flipCard() {
+    isFlipped = !isFlipped;
+    const cardEl = document.getElementById('theCard');
+    if (cardEl) cardEl.classList.toggle('flipped');
+    // Re-enable the action buttons after flip
+    document.querySelectorAll('.action-btn').forEach(b => {
+      b.disabled = !isFlipped;
+    });
+  }
+
+  function markCard(status) {
+    if (!isFlipped) return;
+    const card = filteredCards[currentIndex];
+    const progress = loadProgress();
+    progress[card.id] = status;
+    saveProgress(progress);
+    updateStats();
+    nextCard();
+  }
+
+  function nextCard() {
+    if (currentIndex < filteredCards.length - 1) {
+      currentIndex++;
+      isFlipped = false;
+      renderCard();
+    } else {
+      // End of deck — show celebration
+      document.getElementById('cardArea').innerHTML = `
+        <div class="empty">
+          <div class="ico">🎉</div>
+          <div style="font-size:18px; color:var(--white); font-weight:600; margin-bottom:8px;">End of deck!</div>
+          <div style="font-size:13px;">You went through ${filteredCards.length} cards. Switch filters above to keep studying, or reshuffle.</div>
+          <button class="nav-btn shuffle-btn" style="margin-top:18px;" onclick="shuffleCards()">🔀 Restart shuffled</button>
+        </div>
+      `;
+    }
+  }
+
+  function prevCard() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      isFlipped = false;
+      renderCard();
+    }
+  }
+
+  function shuffleCards() {
+    for (let i = filteredCards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+    }
+    currentIndex = 0;
+    isFlipped = false;
+    renderCard();
+  }
+
+  function updateStats() {
+    const progress = loadProgress();
+    const total = allCards.length;
+    const knew = Object.values(progress).filter(v => v === 'knew').length;
+    const didnt = Object.values(progress).filter(v => v === 'didnt').length;
+    const remaining = total - knew - didnt;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statKnew').textContent = knew;
+    document.getElementById('statDidnt').textContent = didnt;
+    document.getElementById('statRemaining').textContent = remaining;
+  }
+
+  function resetProgress() {
+    if (confirm('Reset all your flashcard progress? This cannot be undone.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      updateStats();
+      applyFilters();
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      flipCard();
+    }
+    if (e.key === 'ArrowLeft') prevCard();
+    if (e.key === 'ArrowRight') nextCard();
+    if (e.key === '1' && isFlipped) markCard('didnt');
+    if (e.key === '2' && isFlipped) markCard('knew');
+  });
+</script>
+
+</body>
+</html>

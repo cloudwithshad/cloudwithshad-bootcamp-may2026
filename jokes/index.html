@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Jokes by cloudwithshad — 40 jokes to laugh through the cloud</title>
+<meta name="description" content="40 AWS jokes — half West African flavour, half global. Curated by cloudwithshad. Send us your own!">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --navy: #0A1628; --navy-2: #13243A; --navy-3: #1A2F4A;
+    --cyan: #00B4D8; --gold: #F4B942; --orange: #E8743C;
+    --white: #FFFFFF; --gray: #94A3B8; --gray-2: #64748B;
+    --green: #2EA043;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Top nav */
+  nav.topbar {
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand { font-size: 17px; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back {
+    color: var(--gray); text-decoration: none; font-size: 13px;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: var(--cyan); }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 50px 24px 80px;
+    position: relative;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .kicker {
+    display: inline-block;
+    background: rgba(244,185,66,0.1);
+    border: 1px solid rgba(244,185,66,0.3);
+    color: var(--gold);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  h1 .accent { color: var(--gold); }
+  @media (max-width: 480px) { h1 { font-size: 32px; } }
+  .lede {
+    font-size: 16px; color: var(--gray);
+    max-width: 540px; margin: 0 auto;
+  }
+  .lede strong { color: var(--white); }
+
+  /* The joke card */
+  .joke-card {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(0,180,216,0.18);
+    border-radius: 22px;
+    padding: 38px 32px;
+    margin: 30px 0 22px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+  }
+  .joke-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(244,185,66,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  @media (max-width: 480px) { .joke-card { padding: 28px 22px; } }
+
+  .joke-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+  .joke-service {
+    color: var(--cyan);
+  }
+  .joke-counter {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .joke-flavor {
+    display: inline-block;
+    background: rgba(255,255,255,0.06);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    color: var(--gold);
+    margin-left: 8px;
+    letter-spacing: 1px;
+  }
+  .joke-flavor.global {
+    color: var(--cyan);
+  }
+
+  .joke-emoji {
+    font-size: 56px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .joke-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--white);
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
+  @media (max-width: 480px) { .joke-text { font-size: 18px; } }
+
+  .joke-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .action-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+  .action-btn:hover {
+    background: rgba(0,180,216,0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .action-btn.share-wa:hover {
+    background: rgba(37,211,102,0.15);
+    border-color: #25D366;
+    color: #25D366;
+  }
+  .action-btn.copied {
+    background: rgba(46,160,67,0.15);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* Navigation arrows */
+  .nav-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-btn:hover {
+    background: rgba(0,180,216,0.12);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    transform: translateY(-2px);
+  }
+  .nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .nav-shuffle {
+    background: linear-gradient(135deg, var(--gold), #D89A2A);
+    color: var(--navy);
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .nav-shuffle:hover {
+    transform: translateY(-2px) rotate(-2deg);
+    box-shadow: 0 8px 24px rgba(244,185,66,0.4);
+  }
+
+  /* Footer + submit CTA */
+  .submit-section {
+    text-align: center;
+    margin: 50px auto;
+    padding: 32px 28px;
+    background: linear-gradient(135deg, rgba(0,180,216,0.06), rgba(244,185,66,0.04));
+    border: 1px solid rgba(0,180,216,0.15);
+    border-radius: 18px;
+  }
+  .submit-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .submit-section p {
+    color: var(--gray);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .submit-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .submit-btn.primary {
+    background: var(--cyan);
+    color: var(--navy);
+  }
+  .submit-btn.primary:hover {
+    background: #00C8F0;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,180,216,0.35);
+  }
+  .submit-btn.secondary {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .submit-btn.secondary:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* Loading skeleton */
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+  }
+
+  /* Hint */
+  .keyboard-hint {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--gray-2);
+  }
+  .keyboard-hint kbd {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin: 0 2px;
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html" class="nav-back">← Back to bootcamp</a>
+  </div>
+</nav>
+
+<main>
+  <div class="hero">
+    <span class="kicker">😂 JOKES & MEMES</span>
+    <h1>The AWS <span class="accent">comedy hour</span></h1>
+    <p class="lede">40 jokes about AWS services to make Cloud Foundations stick. Half <strong>West African flavour</strong>, half <strong>universal</strong>. Two fresh ones picked each day — morning & evening.</p>
+  </div>
+
+  <div class="nav-controls">
+    <button class="nav-btn" id="prevBtn" onclick="prevJoke()">
+      ← Previous
+    </button>
+    <button class="nav-shuffle" onclick="shuffleJoke()">
+      🎲 Surprise me
+    </button>
+    <button class="nav-btn" id="nextBtn" onclick="nextJoke()">
+      Next →
+    </button>
+  </div>
+
+  <div id="jokeContainer">
+    <div class="loading">Loading jokes…</div>
+  </div>
+
+  <div class="keyboard-hint">
+    Use <kbd>←</kbd> <kbd>→</kbd> to navigate · <kbd>Space</kbd> for surprise
+  </div>
+
+  <div class="submit-section">
+    <h3>💡 Got a funnier one?</h3>
+    <p>Send it our way — if it lands, it goes into the rotation with your name credited.</p>
+    <div class="submit-actions">
+      <a href="https://forms.gle/wAAvc7vsCkrSWDig9" target="_blank" rel="noopener" class="submit-btn primary">
+        📝 Submit via form
+      </a>
+      <a href="mailto:cloudwithshad@gmail.com?subject=Joke%20submission%20for%20cloudwithshad&body=Service%3A%20%0AJoke%3A%20%0ASubmitted%20by%3A%20" class="submit-btn secondary">
+        ✉️ Email instead
+      </a>
+    </div>
+  </div>
+</main>
+
+<script>
+  let jokes = [];
+  let currentIndex = 0;
+
+  // Fetch jokes
+  fetch('../data/jokes.json')
+    .then(r => r.json())
+    .then(data => {
+      jokes = data.jokes;
+      // Default: show today's joke based on date
+      currentIndex = getTodaysJokeIndex();
+      render();
+    })
+    .catch(err => {
+      document.getElementById('jokeContainer').innerHTML =
+        '<div class="loading">Could not load jokes. Try refreshing the page.</div>';
+    });
+
+  /**
+   * Deterministically pick a joke based on date + time of day.
+   * Morning (00:00 - 11:59) shows one joke, evening (12:00 - 23:59) shows another.
+   * Same day always shows the same morning & evening joke.
+   */
+  function getTodaysJokeIndex() {
+    const now = new Date();
+    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+    const isEvening = now.getHours() >= 12;
+    // Multiply by 2 + offset for evening so morning/evening differ
+    const seed = (dayOfYear * 2) + (isEvening ? 1 : 0);
+    return seed % jokes.length;
+  }
+
+  function render() {
+    if (!jokes.length) return;
+    const j = jokes[currentIndex];
+    const container = document.getElementById('jokeContainer');
+
+    const flavorBadge = j.flavor === 'wa'
+      ? '<span class="joke-flavor">🇬🇭 West African</span>'
+      : '<span class="joke-flavor global">🌍 Universal</span>';
+
+    container.innerHTML = `
+      <div class="joke-card">
+        <div class="joke-meta">
+          <span><span class="joke-service">${escapeHtml(j.service)}</span>${flavorBadge}</span>
+          <span class="joke-counter">${currentIndex + 1} / ${jokes.length}</span>
+        </div>
+        <div class="joke-emoji">${j.emoji}</div>
+        <div class="joke-text">${escapeHtml(j.text)}</div>
+        <div class="joke-actions">
+          <button class="action-btn" onclick="copyJoke(this)">📋 Copy</button>
+          <a class="action-btn share-wa"
+             href="https://wa.me/?text=${encodeURIComponent(j.text + '\n\n— cloudwithshad bootcamp')}"
+             target="_blank" rel="noopener">💬 WhatsApp</a>
+          <a class="action-btn"
+             href="https://twitter.com/intent/tweet?text=${encodeURIComponent(j.text)}"
+             target="_blank" rel="noopener">𝕏 Tweet</a>
+        </div>
+      </div>
+    `;
+
+    // Update nav button states (we wrap around, so they're never truly disabled — just visual hint)
+    document.getElementById('prevBtn').disabled = false;
+    document.getElementById('nextBtn').disabled = false;
+  }
+
+  function nextJoke() {
+    currentIndex = (currentIndex + 1) % jokes.length;
+    render();
+  }
+
+  function prevJoke() {
+    currentIndex = (currentIndex - 1 + jokes.length) % jokes.length;
+    render();
+  }
+
+  function shuffleJoke() {
+    const newIdx = Math.floor(Math.random() * jokes.length);
+    // Make sure shuffle never picks the same joke twice in a row
+    currentIndex = newIdx === currentIndex ? (newIdx + 1) % jokes.length : newIdx;
+    render();
+  }
+
+  function copyJoke(btn) {
+    const j = jokes[currentIndex];
+    const text = `${j.text}\n\n— cloudwithshad bootcamp · https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/jokes/`;
+    const originalText = btn.textContent;
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    };
+    const success = () => {
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('copied');
+      }, 2000);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(success).catch(() => { fallback(); success(); });
+    } else { fallback(); success(); }
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft')  { prevJoke(); }
+    if (e.key === 'ArrowRight') { nextJoke(); }
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      shuffleJoke();
+    }
+  });
+</script>
+
+</body>
+</html>

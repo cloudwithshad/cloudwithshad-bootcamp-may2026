@@ -51,9 +51,10 @@
   .nav-inner { max-width: 1200px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
   .brand { font-size: 17px; font-weight: 500; color: var(--white); text-decoration: none; }
   .brand span { font-weight: 800; color: var(--cyan); }
-  .nav-links { display: flex; gap: 22px; }
-  .nav-links a { color: var(--gray); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s; }
+  .nav-links { display: flex; gap: 16px; flex-wrap: nowrap; }
+  .nav-links a { color: var(--gray); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s; white-space: nowrap; }
   .nav-links a:hover { color: var(--cyan); }
+  @media (max-width: 1200px) { .nav-links { gap: 12px; } .nav-links a { font-size: 12px; } }
   .nav-cta { background: var(--cyan); color: var(--navy); padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 700; text-decoration: none; transition: transform 0.2s; }
   .nav-cta:hover { transform: translateY(-1px); background: #00C8F0; }
   .nav-github {
@@ -316,6 +317,166 @@
   .notify-btn.whatsapp { background: #25D366; color: white; }
   .notify-btn.whatsapp:hover { background: #1FB855; }
 
+  /* ═══════════════════ JOKE OF DAY ═══════════════════ */
+  #joke-of-day { max-width: 760px; margin: 60px auto 30px; padding: 0 24px; }
+  .jod-card {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(244,185,66,0.25);
+    border-radius: 18px;
+    padding: 32px 28px;
+    margin-top: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    min-height: 220px;
+  }
+  .jod-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(244,185,66,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .jod-loading {
+    color: var(--gray); text-align: center; padding: 30px 0;
+  }
+  .jod-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+  .jod-service { color: var(--cyan); }
+  .jod-time {
+    display: inline-block;
+    background: rgba(244,185,66,0.15);
+    color: var(--gold);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+  .jod-emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .jod-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--white);
+    position: relative;
+    z-index: 1;
+  }
+  @media (max-width: 480px) {
+    .jod-text { font-size: 17px; }
+    .jod-card { padding: 24px 20px; }
+  }
+  .jod-card-actions {
+    display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;
+    position: relative; z-index: 1;
+  }
+  .jod-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+  }
+  .jod-btn:hover {
+    background: rgba(0,180,216,0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .jod-btn.copied {
+    background: rgba(46,160,67,0.15);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .jod-actions {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 22px;
+    flex-wrap: wrap;
+  }
+  .jod-link {
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.2s;
+  }
+  .jod-link:hover { color: var(--gold); }
+
+  /* Flashcards CTA */
+  #flashcards-promo { max-width: 900px; margin: 30px auto 60px; padding: 0 24px; }
+  .flashcard-cta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(0,180,216,0.18);
+    border-radius: 16px;
+    padding: 24px 28px;
+    text-decoration: none;
+    color: var(--white);
+    transition: all 0.3s;
+  }
+  .flashcard-cta:hover {
+    transform: translateY(-3px);
+    border-color: var(--cyan);
+    box-shadow: 0 12px 30px rgba(0,180,216,0.15);
+  }
+  .fc-icon {
+    font-size: 48px;
+    flex-shrink: 0;
+  }
+  .fc-content { flex: 1; min-width: 0; }
+  .fc-kicker {
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .fc-content h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    margin-bottom: 4px;
+    color: var(--white);
+  }
+  .fc-content p {
+    font-size: 13px;
+    color: var(--gray);
+    margin: 0;
+  }
+  .fc-arrow {
+    font-size: 24px;
+    color: var(--cyan);
+    flex-shrink: 0;
+  }
+  @media (max-width: 600px) {
+    .flashcard-cta { flex-direction: column; text-align: center; padding: 22px 18px; }
+    .fc-arrow { display: none; }
+  }
+
   /* ═══════════════════ SUPPORT ═══════════════════ */
   #support { max-width: 1100px; margin: 70px auto 50px; padding: 0 24px; }
   .support-grid {
@@ -491,6 +652,8 @@
       <a href="#stories">Stories</a>
       <a href="#projects">Projects</a>
       <a href="#notify">Get Notified</a>
+      <a href="flashcards/index.html">📚 Flashcards</a>
+      <a href="jokes/index.html">😂 Jokes</a>
       <a href="#support">❤️ Support</a>
     </div>
     <a href="https://github.com/cloudwithshad/cloudwithshad-bootcamp-may2026" class="nav-github" target="_blank" rel="noopener" title="Bookmark this on GitHub — helps others find it too">
@@ -748,6 +911,35 @@
       <span class="pill">Bonus</span>
     </a>
   </div>
+</section>
+
+<!-- ═══════════════════ JOKE OF THE DAY ═══════════════════ -->
+<section id="joke-of-day">
+  <div class="section-kicker">😂 LIGHT RELIEF</div>
+  <h2 class="section-title">Joke of the day</h2>
+  <p class="section-sub">A new AWS joke every morning and evening. Because cloud is serious enough already.</p>
+
+  <div class="jod-card" id="jodCard">
+    <div class="jod-loading">Loading today's joke…</div>
+  </div>
+
+  <div class="jod-actions">
+    <a href="jokes/index.html" class="jod-link">Browse all 40 jokes →</a>
+    <a href="https://forms.gle/wAAvc7vsCkrSWDig9" target="_blank" rel="noopener" class="jod-link">💡 Submit your own</a>
+  </div>
+</section>
+
+<!-- ═══════════════════ FLASHCARDS PROMO ═══════════════════ -->
+<section id="flashcards-promo">
+  <a href="flashcards/index.html" class="flashcard-cta">
+    <div class="fc-icon">📚</div>
+    <div class="fc-content">
+      <div class="fc-kicker">EXAM REVISION</div>
+      <h3>120 flashcards to nail Cloud Practitioner</h3>
+      <p>Filter by week or category. Track what you know. Free, no signup.</p>
+    </div>
+    <div class="fc-arrow">→</div>
+  </a>
 </section>
 
 <section id="projects">
@@ -1212,6 +1404,88 @@
     card.style.boxShadow = '';
   });
 })();
+
+/* ─── Joke of the Day on landing page ─── */
+(function() {
+  const card = document.getElementById('jodCard');
+  if (!card) return;
+
+  fetch('data/jokes.json')
+    .then(r => r.json())
+    .then(data => {
+      const jokes = data.jokes;
+      const now = new Date();
+      const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+      const isEvening = now.getHours() >= 12;
+      const seed = (dayOfYear * 2) + (isEvening ? 1 : 0);
+      const j = jokes[seed % jokes.length];
+      const timeLabel = isEvening ? '🌙 Evening' : '☀️ Morning';
+
+      const flavorBadge = j.flavor === 'wa'
+        ? '🇬🇭 West African'
+        : '🌍 Universal';
+
+      card.innerHTML = `
+        <div class="jod-meta">
+          <span><span class="jod-service">${escapeJod(j.service)}</span> · ${flavorBadge}</span>
+          <span class="jod-time">${timeLabel}</span>
+        </div>
+        <div class="jod-emoji">${j.emoji}</div>
+        <div class="jod-text">${escapeJod(j.text)}</div>
+        <div class="jod-card-actions">
+          <button class="jod-btn" onclick="copyJod(this, ${j.id})">📋 Copy</button>
+          <a class="jod-btn"
+             href="https://wa.me/?text=${encodeURIComponent(j.text + '\n\n— cloudwithshad bootcamp')}"
+             target="_blank" rel="noopener">💬 Share on WhatsApp</a>
+        </div>
+      `;
+    })
+    .catch(() => {
+      card.innerHTML = '<div class="jod-loading">Joke loading… try refreshing in a moment.</div>';
+    });
+
+  function escapeJod(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+})();
+
+function copyJod(btn, id) {
+  fetch('data/jokes.json')
+    .then(r => r.json())
+    .then(data => {
+      const j = data.jokes.find(x => x.id === id);
+      if (!j) return;
+      const text = `${j.text}\n\n— cloudwithshad bootcamp · https://cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/jokes/`;
+      const originalText = btn.textContent;
+      const success = () => {
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 1800);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(success).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          success();
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        success();
+      }
+    });
+}
 
 /* ─── Support section: copy to clipboard ─── */
 function copyValue(btn, value, label) {
