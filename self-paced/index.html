@@ -4,236 +4,452 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Self-Paced Library | cloudwithshad Bootcamp</title>
+<meta name="description" content="16 self-paced modules. Each available in three formats: watch (YouTube), listen (audio podcast), or read (PDF).">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
 <style>
   :root {
-    --bg: #0a0a1a;
-    --surface: #12122a;
-    --surface-2: #1a1a3e;
-    --border: #2a2a5a;
-    --text: #e8e8f0;
-    --text-dim: #8888aa;
-    --accent: #7c5cfc;
-    --accent-glow: rgba(124, 92, 252, 0.3);
-    --success: #34d399;
+    --navy:    #0A1628;
+    --navy-2:  #13243A;
+    --navy-3:  #1A2F4A;
+    --cyan:    #00B4D8;
+    --gold:    #F4B942;
+    --green:   #2EA043;
+    --white:   #FFFFFF;
+    --gray:    #94A3B8;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    line-height: 1.6;
     min-height: 100vh;
   }
 
-  .top-nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1rem 2rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
+  nav.topbar {
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
   }
-  .top-nav a { color: var(--text-dim); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
-  .top-nav a:hover { color: var(--accent); }
-  .brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--accent); font-size: 1rem; }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .brand { font-size: 17px; font-weight: 500; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back { color: var(--gray); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .nav-back:hover { color: var(--cyan); }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 50px 24px 80px;
+  }
 
   .hero {
     text-align: center;
-    padding: 3rem 2rem 2rem;
-    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    margin-bottom: 50px;
+  }
+  .hero-kicker {
+    display: inline-block;
+    background: rgba(244,185,66,0.12);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 18px;
   }
   .hero h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(1.5rem, 4vw, 2.2rem);
-    margin-bottom: 0.5rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    color: var(--white);
   }
-  .hero p { color: var(--text-dim); max-width: 600px; margin: 0 auto; font-size: 0.95rem; }
-  .stats {
-    display: flex; gap: 2rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;
+  .hero h1 .accent { color: var(--cyan); }
+  @media (max-width: 720px) { .hero h1 { font-size: 36px; } }
+  .hero p {
+    font-size: 18px;
+    color: var(--gray);
+    max-width: 660px;
+    margin: 0 auto 28px;
   }
-  .stat { text-align: center; }
-  .stat-num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.5rem; font-weight: 700; color: var(--accent);
-  }
-  .stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
 
-  /* ── MODULE GRID ── */
-  .grid {
+  /* Three formats display */
+  .formats-strip {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .format-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #CBD5E1;
+  }
+  .format-badge .ico { font-size: 16px; }
+
+  /* Modules grid */
+  .modules-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.2rem;
-    max-width: 1100px;
-    margin: 2rem auto;
-    padding: 0 2rem 3rem;
+    gap: 18px;
+    margin-top: 50px;
   }
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
+  .module-card {
+    background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 24px 22px;
     text-decoration: none;
-    color: var(--text);
-    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    color: var(--white);
+    transition: all 0.3s;
     position: relative;
-    display: flex; flex-direction: column;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
   }
-  .card:hover {
+  .module-card:hover {
     transform: translateY(-3px);
-    border-color: var(--accent);
-    box-shadow: 0 4px 20px var(--accent-glow);
+    border-color: rgba(0,180,216,0.4);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
   }
-  .card.locked {
-    opacity: 0.5;
-    pointer-events: none;
+  .module-card.locked {
+    opacity: 0.55;
+    cursor: default;
   }
-  .card.locked::after {
-    content: '🔒';
-    position: absolute;
-    top: 1rem; right: 1rem;
-    font-size: 1.2rem;
+  .module-card.locked:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(255,255,255,0.06);
   }
 
-  .card-number {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.7rem; font-weight: 700;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.5rem;
+  .module-card .module-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    color: rgba(0,180,216,0.3);
+    margin-bottom: 10px;
   }
-  .card h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1rem; font-weight: 600;
-    margin-bottom: 0.4rem;
+  .module-card.locked .module-num {
+    color: rgba(148,163,184,0.25);
+  }
+
+  .module-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
     line-height: 1.3;
   }
-  .card .card-subtitle {
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    margin-bottom: 0.8rem;
-    flex-grow: 1;
+  .module-card .theme {
+    font-size: 12px;
+    color: var(--cyan);
+    margin-bottom: 14px;
+    min-height: 18px;
   }
-  .format-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .format-pill {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
+  .module-card.locked .theme {
+    color: var(--gray);
   }
-  .format-pill.ready { border-color: var(--success); color: var(--success); }
 
-  .loading-msg {
+  .module-card .formats {
+    display: flex;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .module-card .format-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: rgba(0,180,216,0.1);
+    border: 1px solid rgba(0,180,216,0.25);
+    color: var(--cyan);
+  }
+  .module-card.locked .format-pill {
+    background: rgba(148,163,184,0.05);
+    border-color: rgba(148,163,184,0.2);
+    color: var(--gray);
+  }
+
+  .lock-overlay {
+    position: absolute;
+    top: 12px; right: 12px;
+    font-size: 14px;
+    opacity: 0.6;
+  }
+
+  /* Footer help */
+  .help-block {
+    background: linear-gradient(135deg, rgba(0,180,216,0.08), rgba(244,185,66,0.08));
+    border: 1px solid rgba(0,180,216,0.25);
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-top: 50px;
     text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-dim);
-    font-family: 'Space Grotesk', sans-serif;
   }
-
-  footer {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-dim);
-    font-size: 0.8rem;
-    border-top: 1px solid var(--border);
+  .help-block h3 {
+    font-size: 18px;
+    color: var(--white);
+    margin-bottom: 10px;
   }
-
-  @media (max-width: 600px) {
-    .grid { padding: 0 1rem 2rem; }
-    .stats { gap: 1.2rem; }
+  .help-block p {
+    font-size: 14px;
+    color: #CBD5E1;
+    margin: 0 auto 14px;
+    max-width: 580px;
   }
 </style>
 </head>
 <body>
 
-<nav class="top-nav">
-  <span class="brand">☁️ cloudwithshad</span>
-  <a href="../index.html">← Back to Bootcamp</a>
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html" class="nav-back">← Back to home</a>
+  </div>
 </nav>
 
-<div class="hero">
-  <h1>📚 Self-Paced Module Library</h1>
-  <p>16 modules covering every AWS Cloud Practitioner domain. Watch, listen, or read — your choice, your pace.</p>
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-num" id="total-count">16</div>
-      <div class="stat-label">Total Modules</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" id="published-count">—</div>
-      <div class="stat-label">Published</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">3</div>
-      <div class="stat-label">Formats Each</div>
+<main>
+
+  <div class="hero">
+    <div class="hero-kicker">🎓 SELF-PACED LIBRARY</div>
+    <h1>Learn at <span class="accent">your own pace</span></h1>
+    <p>16 modules. Each one available in three formats — pick whatever fits your day.</p>
+
+    <div class="formats-strip">
+      <span class="format-badge"><span class="ico">📺</span> Watch on YouTube</span>
+      <span class="format-badge"><span class="ico">🎧</span> Listen as a podcast</span>
+      <span class="format-badge"><span class="ico">📄</span> Read the PDF</span>
     </div>
   </div>
-</div>
 
-<div class="loading-msg" id="loading">Loading modules…</div>
-<div class="grid" id="grid" style="display:none;"></div>
+  <div class="modules-grid">
+<!-- MODULES_GRID_START -->
+    <a href="module-01/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">01</div>
+      <h3>Cloud Concepts &amp; the AWS Global Infrastructure</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-<footer>
-  <p>☁️ cloudwithshad · AWS Cloud Practitioner Bootcamp · Self-Paced Learning</p>
-</footer>
+    <a href="module-02/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">02</div>
+      <h3>S3 Deep Dive — Storage Classes &amp; Lifecycle</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-<script>
-(async function() {
-  const grid = document.getElementById('grid');
-  const loading = document.getElementById('loading');
-  const TOTAL = 16;
-  let publishedCount = 0;
+    <a href="module-03/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">03</div>
+      <h3>EC2 Essentials — Instances, AMIs &amp; Pricing</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-  for (let i = 1; i <= TOTAL; i++) {
-    const num = String(i).padStart(2, '0');
-    let config;
+    <a href="module-04/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">04</div>
+      <h3>IAM — Users, Roles, Policies &amp; Best Practices</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-    try {
-      const resp = await fetch(`./module-${num}/config.json`);
-      config = await resp.json();
-    } catch (e) {
-      // No config found — show placeholder
-      config = {
-        number: num,
-        title: `Module ${num}`,
-        subtitle: 'Coming soon',
-        published: false,
-        youtube_id: '', pdf_file: '', audio_file: ''
-      };
-    }
+    <a href="module-05/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">05</div>
+      <h3>VPC Fundamentals — Your Private Network</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-    const isPublished = config.published === true;
-    if (isPublished) publishedCount++;
+    <a href="module-06/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">06</div>
+      <h3>Security Groups vs NACLs</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-    const hasVideo = !!config.youtube_id;
-    const hasAudio = !!config.audio_file;
-    const hasPdf   = !!config.pdf_file;
+    <a href="module-07/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">07</div>
+      <h3>RDS &amp; Database Options on AWS</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-    const card = document.createElement('a');
-    card.href = `./module-${num}/index.html`;
-    card.className = 'card' + (isPublished ? '' : ' locked');
+    <a href="module-08/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">08</div>
+      <h3>Lambda &amp; Serverless Foundations</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-    card.innerHTML = `
-      <div class="card-number">Module ${config.number}</div>
-      <h3>${config.title}</h3>
-      <div class="card-subtitle">${config.subtitle || ''}</div>
-      <div class="format-pills">
-        <span class="format-pill ${hasVideo ? 'ready' : ''}">📺 Video</span>
-        <span class="format-pill ${hasAudio ? 'ready' : ''}">🎧 Audio</span>
-        <span class="format-pill ${hasPdf   ? 'ready' : ''}">📄 PDF</span>
-      </div>`;
+    <a href="module-09/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">09</div>
+      <h3>Load Balancing &amp; Auto Scaling</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-    grid.appendChild(card);
-  }
+    <a href="module-10/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">10</div>
+      <h3>CI/CD on AWS — The Developer Pipeline</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
 
-  document.getElementById('published-count').textContent = publishedCount;
-  loading.style.display = 'none';
-  grid.style.display = 'grid';
-})();
-</script>
+    <a href="module-11/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">11</div>
+      <h3>Infrastructure as Code with CloudFormation</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
+
+    <a href="module-12/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">12</div>
+      <h3>Monitoring — CloudWatch &amp; CloudTrail</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
+
+    <a href="module-13/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">13</div>
+      <h3>AWS AI Services Overview</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
+
+    <a href="module-14/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">14</div>
+      <h3>Building with Amazon Bedrock</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
+
+    <a href="module-15/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">15</div>
+      <h3>Security &amp; Compliance Essentials</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
+
+    <a href="module-16/index.html" class="module-card locked">
+      <span class="lock-overlay">🔒</span>
+      <div class="module-num">16</div>
+      <h3>Cost Optimization &amp; the Well-Architected Framework</h3>
+      <div class="theme">Coming soon</div>
+      <div class="formats">
+        <span class="format-pill">📺 Video</span>
+        <span class="format-pill">🎧 Audio</span>
+        <span class="format-pill">📄 PDF</span>
+      </div>
+    </a>
+    <!-- MODULES_GRID_END -->
+  
+  
+  </div>
+
+  <div class="help-block">
+    <h3>💡 Why three formats?</h3>
+    <p>Some people learn by watching. Some by listening on a commute. Some by reading and re-reading at their own pace. The same content lives in all three formats — pick what fits your moment.</p>
+  </div>
+
+</main>
+
 </body>
 </html>

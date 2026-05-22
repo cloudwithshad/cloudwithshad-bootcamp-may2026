@@ -3,437 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Loading Module… | cloudwithshad Self-Paced</title>
+<title>Module MODULE_NUMBER_HERE — Coming Soon | cloudwithshad Self-Paced</title>
+<meta name="description" content="This self-paced module is coming soon. Subscribe to be notified when it lands.">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
 <style>
   :root {
-    --bg: #0a0a1a;
-    --surface: #12122a;
-    --surface-2: #1a1a3e;
-    --border: #2a2a5a;
-    --text: #e8e8f0;
-    --text-dim: #8888aa;
-    --accent: #7c5cfc;
-    --accent-glow: rgba(124, 92, 252, 0.3);
-    --success: #34d399;
-    --warning: #fbbf24;
+    --navy:    #0A1628;
+    --navy-2:  #13243A;
+    --navy-3:  #1A2F4A;
+    --cyan:    #00B4D8;
+    --gold:    #F4B942;
+    --green:   #2EA043;
+    --white:   #FFFFFF;
+    --gray:    #94A3B8;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--white);
     line-height: 1.6;
+    min-height: 100vh;
   }
 
-  /* ── NAV ── */
-  .top-nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1rem 2rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
+  nav.topbar {
+    background: rgba(10,22,40,0.92);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
   }
-  .top-nav a { color: var(--text-dim); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
-  .top-nav a:hover { color: var(--accent); }
-  .brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--accent); font-size: 1rem; }
-
-  /* ── HERO ── */
-  .hero {
-    text-align: center;
-    padding: 3rem 2rem 2rem;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
-  }
-  .module-badge {
-    display: inline-block;
-    background: var(--accent);
-    color: #fff;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.9rem;
-    border-radius: 99px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-  .hero h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(1.5rem, 4vw, 2.2rem);
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-  .hero .subtitle { color: var(--text-dim); font-size: 1rem; margin-bottom: 1rem; }
-  .meta-pills { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-  .meta-pill {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 99px;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-  }
-
-  /* ── TABS ── */
-  .tab-bar {
-    display: flex; justify-content: center; gap: 0;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .tab-btn {
-    background: none; border: none; color: var(--text-dim);
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.95rem; font-weight: 500;
-    padding: 1rem 2rem;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-  }
-  .tab-btn:hover { color: var(--text); background: var(--surface-2); }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-  /* ── CONTENT PANELS ── */
-  .tab-panel { display: none; max-width: 900px; margin: 0 auto; padding: 2rem; }
-  .tab-panel.active { display: block; }
-
-  /* Video */
-  .video-wrap {
-    position: relative; padding-bottom: 56.25%; height: 0;
-    border-radius: 12px; overflow: hidden;
-    border: 1px solid var(--border);
-    background: #000;
-  }
-  .video-wrap iframe {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%; border: 0;
-  }
-
-  /* Audio */
-  .audio-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-  }
-  .audio-card h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem; }
-  .audio-card p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
-  audio { width: 100%; max-width: 500px; margin-bottom: 1rem; }
-  .speed-controls { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .speed-btn {
-    background: var(--surface-2); border: 1px solid var(--border);
-    color: var(--text-dim); padding: 0.3rem 0.7rem;
-    border-radius: 6px; cursor: pointer; font-size: 0.8rem;
-    transition: all 0.2s;
-  }
-  .speed-btn:hover, .speed-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .download-link {
-    display: inline-block;
-    color: var(--accent); text-decoration: none;
-    font-size: 0.85rem; border-bottom: 1px dashed var(--accent);
-  }
-
-  /* PDF */
-  .pdf-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-  }
-  .pdf-card h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem; }
-  .pdf-card p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
-  .btn-primary {
-    display: inline-block;
-    background: var(--accent);
-    color: #fff;
-    padding: 0.7rem 2rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 20px var(--accent-glow); }
-
-  /* About section */
-  .about {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-  }
-  .about h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; margin-bottom: 0.5rem; }
-  .about p { color: var(--text-dim); font-size: 0.9rem; }
-
-  /* ── COMING SOON STATE ── */
-  .coming-soon {
-    text-align: center;
-    padding: 4rem 2rem;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-  .coming-soon .lock-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-  .coming-soon h2 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem; color: var(--text-dim); }
-  .coming-soon p { color: var(--text-dim); font-size: 0.9rem; }
-
-  /* ── NOT AVAILABLE (per-tab) ── */
-  .not-available {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: var(--text-dim);
-  }
-  .not-available .icon { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.4; }
-  .not-available p { font-size: 0.9rem; }
-
-  /* ── FOOTER NAV ── */
-  .footer-nav {
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 14px 24px;
     display: flex; justify-content: space-between; align-items: center;
-    max-width: 900px; margin: 2rem auto; padding: 0 2rem 3rem;
   }
-  .footer-nav a {
-    color: var(--text-dim); text-decoration: none; font-size: 0.85rem;
+  .brand { font-size: 17px; font-weight: 500; color: var(--white); text-decoration: none; }
+  .brand span { font-weight: 800; color: var(--cyan); }
+  .nav-back {
+    color: var(--gray); text-decoration: none; font-size: 13px;
     transition: color 0.2s;
   }
-  .footer-nav a:hover { color: var(--accent); }
-  .footer-nav .center { color: var(--text-dim); font-size: 0.8rem; }
+  .nav-back:hover { color: var(--cyan); }
 
-  /* ── LOADING ── */
-  .loading {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 60vh; color: var(--text-dim);
-    font-family: 'Space Grotesk', sans-serif;
+  main {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 80px 24px 80px;
+    text-align: center;
+  }
+  @media (max-width: 720px) { main { padding: 56px 20px 60px; } }
+
+  .breadcrumbs {
+    font-size: 12px;
+    color: var(--gray);
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+  }
+  .breadcrumbs a { color: var(--gray); text-decoration: none; }
+  .breadcrumbs a:hover { color: var(--cyan); }
+  .breadcrumbs .sep { margin: 0 8px; opacity: 0.5; }
+
+  .big-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 180px;
+    font-weight: 800;
+    line-height: 1;
+    color: rgba(0,180,216,0.18);
+    margin-bottom: 4px;
+  }
+  @media (max-width: 720px) { .big-number { font-size: 120px; } }
+
+  .lock-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
   }
 
-  @media (max-width: 600px) {
-    .tab-btn { padding: 0.8rem 1rem; font-size: 0.85rem; }
-    .hero { padding: 2rem 1rem 1.5rem; }
-    .tab-panel { padding: 1.5rem 1rem; }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 14px;
+    color: var(--white);
+  }
+  @media (max-width: 720px) { h1 { font-size: 32px; } }
+
+  h1 .accent { color: var(--gold); }
+
+  .sub {
+    font-size: 18px;
+    color: var(--gray);
+    margin: 0 auto 36px;
+    max-width: 520px;
+  }
+
+  .formats-preview {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .format-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #CBD5E1;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 26px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--cyan); color: var(--navy); }
+  .btn-primary:hover { background: #00C8F0; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,180,216,0.35); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--cyan);
+  }
+
+  .help {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 20px;
   }
 </style>
 </head>
 <body>
 
-<!-- Loading state while config.json loads -->
-<div class="loading" id="loading">☁️ Loading module…</div>
+<nav class="topbar">
+  <div class="nav-inner">
+    <a href="../../index.html" class="brand">cloud<span>withshad</span></a>
+    <a href="../index.html" class="nav-back">← Self-Paced Library</a>
+  </div>
+</nav>
 
-<!-- Main content (hidden until loaded) -->
-<div id="app" style="display:none;">
-
-  <nav class="top-nav">
-    <span class="brand">☁️ cloudwithshad</span>
-    <a href="../index.html">← Back to Library</a>
-  </nav>
-
-  <div class="hero">
-    <span class="module-badge" id="badge">Module 01</span>
-    <h1 id="title">Loading…</h1>
-    <p class="subtitle" id="subtitle"></p>
-    <div class="meta-pills">
-      <span class="meta-pill" id="pill-duration">⏱️ —</span>
-      <span class="meta-pill" id="pill-date">📅 —</span>
-    </div>
+<main>
+  <div class="breadcrumbs">
+    <a href="../../index.html">Home</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Self-Paced</a>
+    <span class="sep">/</span>
+    <span>Module MODULE_NUMBER_HERE</span>
   </div>
 
-  <!-- Tabs -->
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('watch')">📺 Watch</button>
-    <button class="tab-btn" onclick="switchTab('listen')">🎧 Listen</button>
-    <button class="tab-btn" onclick="switchTab('read')">📄 Read</button>
+  <div class="big-number">MODULE_NUMBER_HERE</div>
+  <div class="lock-icon">🔒</div>
+
+  <h1>This module is <span class="accent">coming soon.</span></h1>
+
+  <p class="sub">Shadrack is still building this one. When it's ready, you'll find it here in all three formats — watch, listen, or read.</p>
+
+  <div class="formats-preview">
+    <span class="format-badge">📺 Watch on YouTube</span>
+    <span class="format-badge">🎧 Listen as a podcast</span>
+    <span class="format-badge">📄 Read the PDF</span>
   </div>
 
-  <!-- WATCH panel -->
-  <div class="tab-panel active" id="panel-watch">
-    <div class="video-wrap" id="video-container"></div>
-    <div class="about" id="about-watch">
-      <h3>📖 About This Module</h3>
-      <p id="desc-watch"></p>
-    </div>
+  <div class="actions">
+    <a href="../index.html" class="btn btn-primary">← Back to library</a>
+    <a href="https://github.com/cloudwithshad/cloudwithshad-bootcamp-may2026" target="_blank" rel="noopener" class="btn btn-secondary">
+      🔔 Watch the repo for updates
+    </a>
   </div>
 
-  <!-- LISTEN panel -->
-  <div class="tab-panel" id="panel-listen">
-    <div class="audio-card" id="audio-container"></div>
-    <div class="about" id="about-listen">
-      <h3>📖 About This Module</h3>
-      <p id="desc-listen"></p>
-    </div>
-  </div>
+  <p class="help">When you "Watch → Releases" on GitHub, you'll get an email the moment any new module drops.</p>
+</main>
 
-  <!-- READ panel -->
-  <div class="tab-panel" id="panel-read">
-    <div class="pdf-card" id="pdf-container"></div>
-    <div class="about" id="about-read">
-      <h3>📖 About This Module</h3>
-      <p id="desc-read"></p>
-    </div>
-  </div>
-
-  <!-- Footer nav -->
-  <div class="footer-nav">
-    <a href="#" id="nav-prev">← Previous</a>
-    <span class="center" id="nav-center">Module — of 16</span>
-    <a href="#" id="nav-next">Next →</a>
-  </div>
-
-</div>
-
-<!-- COMING SOON (shown when published:false) -->
-<div id="coming-soon" style="display:none;">
-  <nav class="top-nav">
-    <span class="brand">☁️ cloudwithshad</span>
-    <a href="../index.html">← Back to Library</a>
-  </nav>
-  <div class="hero">
-    <span class="module-badge" id="cs-badge">Module 01</span>
-    <h1 id="cs-title">Coming Soon</h1>
-  </div>
-  <div class="coming-soon">
-    <div class="lock-icon">🔒</div>
-    <h2>This module is on its way</h2>
-    <p>Check back soon — or return to the <a href="../index.html" style="color:var(--accent);">module library</a>.</p>
-  </div>
-</div>
-
-<script>
-(async function() {
-  const loading = document.getElementById('loading');
-  const app = document.getElementById('app');
-  const cs = document.getElementById('coming-soon');
-
-  let config;
-  try {
-    const resp = await fetch('./config.json');
-    config = await resp.json();
-  } catch (e) {
-    loading.textContent = '⚠️ Could not load module config.';
-    return;
-  }
-
-  const num = parseInt(config.number, 10);
-
-  // ── NOT PUBLISHED → show coming soon ──
-  if (!config.published) {
-    loading.style.display = 'none';
-    cs.style.display = 'block';
-    document.getElementById('cs-badge').textContent = 'Module ' + config.number;
-    document.getElementById('cs-title').textContent = config.title || 'Coming Soon';
-    document.title = `Module ${config.number} — Coming Soon | cloudwithshad`;
-    return;
-  }
-
-  // ── PUBLISHED → build the real page ──
-  loading.style.display = 'none';
-  app.style.display = 'block';
-
-  document.title = `Module ${config.number} — ${config.title} | cloudwithshad`;
-  document.getElementById('badge').textContent = 'Module ' + config.number;
-  document.getElementById('title').textContent = config.title;
-  document.getElementById('subtitle').textContent = config.subtitle || '';
-  document.getElementById('pill-duration').textContent = '⏱️ ' + (config.duration || '—');
-  document.getElementById('pill-date').textContent = '📅 ' + (config.date || '—');
-
-  // Description
-  const desc = config.description || '';
-  document.getElementById('desc-watch').textContent = desc;
-  document.getElementById('desc-listen').textContent = desc;
-  document.getElementById('desc-read').textContent = desc;
-
-  // ── VIDEO ──
-  const vc = document.getElementById('video-container');
-  if (config.youtube_id) {
-    vc.innerHTML = `<iframe src="https://www.youtube.com/embed/${config.youtube_id}" 
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-      allowfullscreen loading="lazy"></iframe>`;
-  } else {
-    vc.outerHTML = `<div class="not-available"><div class="icon">📺</div><p>Video coming soon.</p></div>`;
-    document.getElementById('about-watch').style.display = 'none';
-  }
-
-  // ── AUDIO ──
-  const ac = document.getElementById('audio-container');
-  if (config.audio_file) {
-    ac.innerHTML = `
-      <h3>🎧 Listen — Podcast Version</h3>
-      <p>AI-generated podcast discussion of this module's content. Perfect for commutes.</p>
-      <audio controls preload="metadata" id="audio-player">
-        <source src="./audio/${config.audio_file}" type="audio/mpeg">
-        Your browser does not support audio.
-      </audio>
-      <div class="speed-controls">
-        <button class="speed-btn" onclick="setSpeed(0.75)">0.75×</button>
-        <button class="speed-btn active" onclick="setSpeed(1)">1×</button>
-        <button class="speed-btn" onclick="setSpeed(1.25)">1.25×</button>
-        <button class="speed-btn" onclick="setSpeed(1.5)">1.5×</button>
-        <button class="speed-btn" onclick="setSpeed(2)">2×</button>
-      </div>
-      <a class="download-link" href="./audio/${config.audio_file}" download>⬇ Download MP3</a>`;
-  } else {
-    ac.innerHTML = `<div class="not-available"><div class="icon">🎧</div><p>Audio podcast coming soon.</p></div>`;
-    document.getElementById('about-listen').style.display = 'none';
-  }
-
-  // ── PDF ──
-  const pc = document.getElementById('pdf-container');
-  if (config.pdf_file) {
-    pc.innerHTML = `
-      <h3>📄 Study Notes</h3>
-      <p>Download the PDF study guide for this module.</p>
-      <a class="btn-primary" href="./${config.pdf_file}" target="_blank">📄 Open PDF</a>
-      <br><br>
-      <a class="download-link" href="./${config.pdf_file}" download>⬇ Download PDF</a>`;
-  } else {
-    pc.innerHTML = `<div class="not-available"><div class="icon">📄</div><p>PDF notes coming soon.</p></div>`;
-    document.getElementById('about-read').style.display = 'none';
-  }
-
-  // ── FOOTER NAV ──
-  document.getElementById('nav-center').textContent = `Module ${config.number} of 16`;
-  const prev = document.getElementById('nav-prev');
-  const next = document.getElementById('nav-next');
-
-  if (num > 1) {
-    const p = String(num - 1).padStart(2, '0');
-    prev.href = `../module-${p}/index.html`;
-    prev.textContent = `← Module ${p}`;
-  } else {
-    prev.href = '../index.html';
-    prev.textContent = '← Library';
-  }
-
-  if (num < 16) {
-    const n = String(num + 1).padStart(2, '0');
-    next.href = `../module-${n}/index.html`;
-    next.textContent = `Module ${n} →`;
-  } else {
-    next.href = '../index.html';
-    next.textContent = 'Library →';
-  }
-
-})();
-
-// ── Tab switching ──
-function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('panel-' + tab).classList.add('active');
-}
-
-// ── Audio speed ──
-function setSpeed(rate) {
-  const player = document.getElementById('audio-player');
-  if (player) player.playbackRate = rate;
-  document.querySelectorAll('.speed-btn').forEach(b => {
-    b.classList.toggle('active', parseFloat(b.textContent) === rate);
-  });
-}
-</script>
 </body>
 </html>
