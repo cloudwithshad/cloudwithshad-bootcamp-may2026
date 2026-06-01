@@ -17,9 +17,9 @@
   "sessions": [
     {
       "title": "VPC & Networking",
-      "topics": "Building a custom VPC, subnets, route tables, security groups",
-      "duration": "",
-      "youtube": ""
+      "topics": "Understanding AWS Networking and Architecture Basics",
+      "duration": "1:58:47",:
+      "youtube": "i7EJLP2eBeY"
     },
     {
       "title": "RDS & Serverless",
