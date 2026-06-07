@@ -174,7 +174,7 @@
 
 <div class="hero">
   <div class="hero-badge">BUILD-ON-YOUR-OWN · ~75 MINUTES</div>
-  <h1>Build a <span>real serverless image resizer</span></h1>
+  <h1>Build a <span>serverless image resizer</span></h1>
   <p class="hero-sub">Drop any image into an S3 bucket and watch it auto-resize into a thumbnail — no servers, no Nginx, no SSH. This is what serverless really feels like.</p>
   <div class="hero-meta">
     <div class="hero-meta-item"><div class="val">5</div><div class="lbl">PHASES</div></div>
@@ -318,45 +318,162 @@
         <li>Click <strong>Create function</strong></li>
       </ol>
 
-      <p>Once created, scroll to the <strong>Code</strong> tab. Paste this starter code:</p>
+      <p>Once created, scroll to the <strong>Code</strong> tab. Paste this code:</p>
 
       <div class="code-block">
-<span class="comment"># Lambda handler — resizes any image dropped into uploads/</span>
-<span class="cmd">import</span> boto3
+<span class="comment"># Lambda handler — resizes ANY image dropped into uploads/</span>
+<span class="comment"># Handles JPEG, PNG (with transparency), WebP, GIF, BMP, TIFF, CMYK, palette images, rotated phone photos.</span>
+<span class="cmd">import</span> io
 <span class="cmd">import</span> os
-<span class="cmd">from</span> PIL <span class="cmd">import</span> Image
-<span class="cmd">from</span> io <span class="cmd">import</span> BytesIO
+<span class="cmd">import</span> logging
+<span class="cmd">from</span> urllib.parse <span class="cmd">import</span> unquote_plus
+
+<span class="cmd">import</span> boto3
+<span class="cmd">from</span> PIL <span class="cmd">import</span> Image, ImageOps, UnidentifiedImageError
+
+<span class="comment"># Raise Pillow's decompression-bomb safety limit (default ~89M pixels) so big legit images work.</span>
+Image.MAX_IMAGE_PIXELS = 200_000_000
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 s3 = boto3.client(<span class="green">'s3'</span>)
 
+<span class="comment"># What we'll write for each input format. Unknown formats fall back to JPEG.</span>
+FORMAT_MAP = {
+    <span class="green">'JPEG'</span>: (<span class="green">'JPEG'</span>, <span class="green">'image/jpeg'</span>, <span class="green">'.jpg'</span>),
+    <span class="green">'PNG'</span>:  (<span class="green">'PNG'</span>,  <span class="green">'image/png'</span>,  <span class="green">'.png'</span>),   <span class="comment"># keeps transparency</span>
+    <span class="green">'WEBP'</span>: (<span class="green">'WEBP'</span>, <span class="green">'image/webp'</span>, <span class="green">'.webp'</span>),
+    <span class="green">'GIF'</span>:  (<span class="green">'JPEG'</span>, <span class="green">'image/jpeg'</span>, <span class="green">'.jpg'</span>),   <span class="comment"># first frame only</span>
+    <span class="green">'BMP'</span>:  (<span class="green">'JPEG'</span>, <span class="green">'image/jpeg'</span>, <span class="green">'.jpg'</span>),
+    <span class="green">'TIFF'</span>: (<span class="green">'JPEG'</span>, <span class="green">'image/jpeg'</span>, <span class="green">'.jpg'</span>),
+}
+
+THUMB_MAX = (300, 300)   <span class="comment"># max width/height — aspect ratio preserved</span>
+JPEG_QUALITY = 85
+
+
 <span class="cmd">def</span> <span class="yellow">lambda_handler</span>(event, context):
-    bucket = event[<span class="green">'Records'</span>][0][<span class="green">'s3'</span>][<span class="green">'bucket'</span>][<span class="green">'name'</span>]
-    key    = event[<span class="green">'Records'</span>][0][<span class="green">'s3'</span>][<span class="green">'object'</span>][<span class="green">'key'</span>]
+    <span class="cmd">for</span> record <span class="cmd">in</span> event[<span class="green">'Records'</span>]:
+        bucket = record[<span class="green">'s3'</span>][<span class="green">'bucket'</span>][<span class="green">'name'</span>]
+        key    = unquote_plus(record[<span class="green">'s3'</span>][<span class="green">'object'</span>][<span class="green">'key'</span>])
 
-    <span class="comment"># Ignore re-triggers from our own thumb writes</span>
-    <span class="cmd">if</span> <span class="cmd">not</span> key.startswith(<span class="green">'uploads/'</span>):
-        <span class="cmd">return</span> {<span class="green">'status'</span>: <span class="green">'skip'</span>}
+        <span class="comment"># Defence in depth — never resize our own output</span>
+        <span class="cmd">if</span> key.startswith(<span class="green">'thumbs/'</span>):
+            logger.info(<span class="pink">f</span><span class="green">"Skipping {key} (already a thumbnail)"</span>)
+            <span class="cmd">continue</span>
 
-    <span class="comment"># Download original</span>
-    obj = s3.get_object(Bucket=bucket, Key=key)
-    img = Image.open(obj[<span class="green">'Body'</span>])
+        <span class="cmd">try</span>:
+            process_image(bucket, key)
+        <span class="cmd">except</span> UnidentifiedImageError:
+            <span class="comment"># Common cause: HEIC (iPhone), corrupted file, or it isn't actually an image.</span>
+            <span class="comment"># Return success so S3 doesn't retry 3 times on something that will never work.</span>
+            logger.warning(<span class="pink">f</span><span class="green">"Skipping {key}: not a recognised image (HEIC, corrupt, or not an image)"</span>)
+            <span class="cmd">continue</span>
+        <span class="cmd">except</span> Exception <span class="cmd">as</span> e:
+            logger.exception(<span class="pink">f</span><span class="green">"Failed on {key}: {e}"</span>)
+            <span class="cmd">raise</span>   <span class="comment"># let S3 retry transient issues</span>
 
-    <span class="comment"># Resize to 200px wide, keep aspect ratio</span>
-    w_pct = <span class="orange">200</span> / <span class="cmd">float</span>(img.size[<span class="orange">0</span>])
-    h_size = <span class="cmd">int</span>(<span class="cmd">float</span>(img.size[<span class="orange">1</span>]) * w_pct)
-    img = img.resize((<span class="orange">200</span>, h_size), Image.LANCZOS)
+    <span class="cmd">return</span> {<span class="green">'statusCode'</span>: 200, <span class="green">'body'</span>: <span class="green">'done'</span>}
 
-    <span class="comment"># Save into buffer + upload to thumbs/</span>
-    buffer = BytesIO()
-    img.save(buffer, format=<span class="green">'JPEG'</span>)
-    buffer.seek(<span class="orange">0</span>)
-    thumb_key = key.replace(<span class="green">'uploads/'</span>, <span class="green">'thumbs/'</span>)
-    s3.put_object(Bucket=bucket, Key=thumb_key, Body=buffer, ContentType=<span class="green">'image/jpeg'</span>)
 
-    <span class="cmd">return</span> {<span class="green">'status'</span>: <span class="green">'resized'</span>, <span class="green">'thumb'</span>: thumb_key}
+<span class="cmd">def</span> <span class="yellow">process_image</span>(bucket, key):
+    logger.info(<span class="pink">f</span><span class="green">"Reading s3://{bucket}/{key}"</span>)
+    response = s3.get_object(Bucket=bucket, Key=key)
+    img = Image.open(io.BytesIO(response[<span class="green">'Body'</span>].read()))
+
+    <span class="comment"># Capture the format BEFORE exif_transpose — it returns a new image without .format set</span>
+    input_format = img.format
+    logger.info(<span class="pink">f</span><span class="green">"Input: format={input_format}, mode={img.mode}, size={img.size}"</span>)
+
+    <span class="comment"># Apply EXIF orientation so phone photos aren't sideways</span>
+    img = ImageOps.exif_transpose(img)
+
+    <span class="comment"># Choose output format from input (anything weird → JPEG)</span>
+    out_format, out_content_type, out_ext = FORMAT_MAP.get(
+        input_format, (<span class="green">'JPEG'</span>, <span class="green">'image/jpeg'</span>, <span class="green">'.jpg'</span>)
+    )
+
+    <span class="comment"># Make sure the image mode is compatible with the chosen output format</span>
+    img = convert_mode(img, out_format)
+
+    <span class="comment"># Resize — thumbnail() preserves aspect ratio in-place</span>
+    img.thumbnail(THUMB_MAX, Image.Resampling.LANCZOS)
+
+    <span class="comment"># Encode to memory</span>
+    buf = io.BytesIO()
+    save_kwargs = {<span class="green">'format'</span>: out_format, <span class="green">'optimize'</span>: <span class="cmd">True</span>}
+    <span class="cmd">if</span> out_format == <span class="green">'JPEG'</span>:
+        save_kwargs[<span class="green">'quality'</span>] = JPEG_QUALITY
+    img.save(buf, **save_kwargs)
+    buf.seek(0)
+
+    <span class="comment"># Write to thumbs/ with the correct extension and content type</span>
+    base = os.path.splitext(os.path.basename(key))[0]
+    out_key = <span class="pink">f</span><span class="green">"thumbs/{base}{out_ext}"</span>
+    s3.put_object(
+        Bucket=bucket,
+        Key=out_key,
+        Body=buf,
+        ContentType=out_content_type,
+    )
+    logger.info(<span class="pink">f</span><span class="green">"Wrote s3://{bucket}/{out_key} ({out_content_type})"</span>)
+
+
+<span class="cmd">def</span> <span class="yellow">convert_mode</span>(img, out_format):
+    <span class="green">"""Convert image mode so it can be safely saved in the chosen output format.
+    JPEG can't do transparency — we flatten on white. PNG/WebP keep more modes natively."""</span>
+    <span class="cmd">if</span> out_format == <span class="green">'JPEG'</span>:
+        <span class="comment"># Transparent? Flatten onto white background</span>
+        <span class="cmd">if</span> img.mode <span class="cmd">in</span> (<span class="green">'RGBA'</span>, <span class="green">'LA'</span>):
+            bg = Image.new(<span class="green">'RGB'</span>, img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            <span class="cmd">return</span> bg
+        <span class="cmd">if</span> img.mode == <span class="green">'P'</span>:   <span class="comment"># palette (often GIF / PNG-8) may carry transparency</span>
+            img = img.convert(<span class="green">'RGBA'</span>)
+            bg = Image.new(<span class="green">'RGB'</span>, img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            <span class="cmd">return</span> bg
+        <span class="cmd">if</span> img.mode != <span class="green">'RGB'</span>:   <span class="comment"># CMYK, grayscale, 1-bit, etc</span>
+            <span class="cmd">return</span> img.convert(<span class="green">'RGB'</span>)
+        <span class="cmd">return</span> img
+
+    <span class="cmd">if</span> out_format == <span class="green">'PNG'</span>:
+        <span class="cmd">if</span> img.mode == <span class="green">'CMYK'</span>:
+            <span class="cmd">return</span> img.convert(<span class="green">'RGB'</span>)
+        <span class="cmd">return</span> img
+
+    <span class="cmd">if</span> out_format == <span class="green">'WEBP'</span>:
+        <span class="cmd">if</span> img.mode == <span class="green">'P'</span>:
+            <span class="cmd">return</span> img.convert(<span class="green">'RGBA'</span>)
+        <span class="cmd">if</span> img.mode == <span class="green">'CMYK'</span>:
+            <span class="cmd">return</span> img.convert(<span class="green">'RGB'</span>)
+        <span class="cmd">return</span> img
+
+    <span class="cmd">return</span> img
       </div>
 
       <p>Click <strong>Deploy</strong>.</p>
+
+      <div class="callout info">
+        <span class="label">📖 Why is this code longer than a basic resizer?</span>
+        <p>Real-world image processing is messy. A naïve 25-line resizer works for "normal" JPEGs but breaks on roughly half the images people actually upload. Here's what each defensive block fixes:</p>
+        <ul style="margin: 10px 0 0 18px; line-height: 1.7;">
+          <li><strong><code>ImageOps.exif_transpose</code></strong> — phone photos store rotation as EXIF metadata, not pixel data. Without this, portrait shots come out sideways.</li>
+          <li><strong><code>convert_mode()</code> for RGBA / LA / P</strong> — PNG-with-transparency, palette GIFs, and screenshots have an alpha channel. JPEG can't store alpha — saving raises <code>OSError: cannot write mode RGBA as JPEG</code>. We flatten transparency onto white.</li>
+          <li><strong><code>FORMAT_MAP</code></strong> — PNG in → PNG out (preserves transparency for logos/screenshots). JPEG in → JPEG out. Weird stuff (BMP/TIFF/CMYK) → JPEG. The output extension and S3 <code>ContentType</code> match the actual format so browsers display it correctly inline.</li>
+          <li><strong><code>UnidentifiedImageError</code> catch</strong> — iPhone HEIC photos and corrupted files crash Pillow. We log and skip cleanly so S3 doesn't retry the same broken file 3 times.</li>
+          <li><strong><code>MAX_IMAGE_PIXELS</code></strong> — Pillow refuses images bigger than ~89 megapixels by default (anti-bomb security). Modern phone cameras push 50MP, drone shots push 100MP+. We raise the limit to 200M.</li>
+          <li><strong><code>unquote_plus(key)</code></strong> — S3 event keys are URL-encoded. A filename with a space arrives as <code>my+photo.jpg</code>; without decoding, <code>get_object</code> fails with "key not found."</li>
+          <li><strong><code>thumbs/</code> early return + the trigger prefix</strong> — defence in depth against the infinite-loop trap.</li>
+        </ul>
+        <p style="margin-top: 10px;">You'll see this pattern in every production Lambda you write: the happy path is short, the defensive code around it is what keeps it alive at 3 AM.</p>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">⚠️ One unsupported format: HEIC (iPhone .heic photos)</span>
+        <p>The code logs and skips HEIC files cleanly — it won't crash, but it won't resize them either. If you want HEIC support, you need an extra Lambda Layer (<code>pillow-heif</code>). For this lab we keep it simple: tell users to upload JPEG/PNG/WebP/GIF/BMP/TIFF. iPhone users can change their camera setting to "Most Compatible" instead of "High Efficiency" to save as JPEG by default.</p>
+      </div>
 
       <div class="callout warn">
         <span class="label">⚠️ Pillow isn't in Lambda by default</span>
