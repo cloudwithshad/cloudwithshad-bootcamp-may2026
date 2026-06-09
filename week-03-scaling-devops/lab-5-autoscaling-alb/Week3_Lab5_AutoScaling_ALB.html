@@ -343,9 +343,12 @@
 yum update -y
 yum install -y nginx stress
 
+<span class="comment"># Get IMDSv2 token</span>
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
 <span class="comment"># Get this instance's metadata so we can display it</span>
-INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone)
 
 <span class="comment"># Build a unique page so we can see which server is responding</span>
 cat &gt; /usr/share/nginx/html/index.html &lt;&lt;EOF
@@ -360,7 +363,7 @@ EOF
 
 systemctl start nginx
 systemctl enable nginx
-      </div>
+</div>
 
       <p>Click <strong>Create launch template</strong>.</p>
 
