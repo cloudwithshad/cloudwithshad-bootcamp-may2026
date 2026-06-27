@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verify a Certificate · cloudwithshad</title>
+<meta name="description" content="Verify the authenticity of a cloudwithshad certificate by its Certificate ID.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#0A1628;--navy2:#14253D;--cyan:#00B4D8;--gold:#F4B942;--cream:#F5EFE0;--paper:#FAF8F2;
+    --ink:#0A1628;--ink-soft:#475063;--ink-mut:#8A93A6;--line:#E2DDCE;--white:#fff;
+    --green:#15803D;--green-bg:#F0FDF4;--green-line:#BBF7D0;--red:#B91C1C;--red-bg:#FEF2F2;--red-line:#FECACA;
+  }
+  body{font-family:'Sora',sans-serif;background:#EFEADD;color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+
+  .top{background:var(--navy);color:var(--cream);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .top .brand{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem}
+  .top .brand .dot{color:var(--cyan)}
+  .top .spons{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:#9FB0C4}
+
+  .wrap{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 20px 70px}
+  .panel{width:100%;max-width:560px}
+
+  .lead{text-align:center;margin-bottom:30px}
+  .lead .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);font-weight:600}
+  .lead h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.1rem;letter-spacing:-.02em;margin:10px 0 8px}
+  .lead p{color:var(--ink-soft);font-size:.95rem;line-height:1.55;max-width:440px;margin:0 auto}
+
+  .search{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:0 12px 36px rgba(10,22,40,.08)}
+  .search label{display:block;font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:7px}
+  .search label em{font-style:normal;color:var(--ink-mut);font-weight:400}
+  .ico-row{display:flex;gap:10px}
+  .search input{flex:1;font:inherit;font-size:1rem;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:13px 15px;color:var(--ink);text-transform:uppercase}
+  .search input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,180,216,.12)}
+  .search button{font:inherit;font-weight:600;font-size:.95rem;border:none;border-radius:9px;padding:0 22px;background:var(--navy);color:var(--white);cursor:pointer;transition:background .12s,transform .12s}
+  .search button:hover{background:var(--navy2);transform:translateY(-1px)}
+  .hint{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-mut);margin-top:10px}
+
+  .result{margin-top:22px;border-radius:14px;padding:26px;display:none}
+  .result.show{display:block;animation:rise .25s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .result.valid{background:var(--green-bg);border:1px solid var(--green-line)}
+  .result.invalid{background:var(--red-bg);border:1px solid var(--red-line)}
+
+  .r-status{display:flex;align-items:center;gap:11px;font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+  .result.valid .r-status{color:var(--green)}
+  .result.invalid .r-status{color:var(--red)}
+  .r-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:1.1rem}
+  .result.valid .r-badge{background:var(--green)}
+  .result.invalid .r-badge{background:var(--red)}
+
+  .r-name{font-family:'Fraunces',serif;font-weight:600;font-size:1.85rem;letter-spacing:-.01em;margin:18px 0 4px;color:var(--navy)}
+  .r-rows{margin-top:14px;border-top:1px solid rgba(0,0,0,.07);padding-top:14px}
+  .r-row{display:flex;justify-content:space-between;gap:14px;padding:5px 0;font-size:.9rem}
+  .r-row .k{color:var(--ink-soft)}
+  .r-row .v{font-weight:600;color:var(--navy);text-align:right}
+  .r-row .v.mono{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:.84rem}
+  .r-note{margin-top:16px;font-size:.82rem;line-height:1.5;color:var(--ink-soft)}
+  .r-note a{color:var(--cyan);font-weight:600;text-decoration:none}
+  .r-note a:hover{text-decoration:underline}
+
+  .foot{text-align:center;padding:22px;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.06em;color:var(--ink-mut)}
+  .foot a{color:var(--ink-soft);text-decoration:none}
+  .foot a:hover{color:var(--cyan)}
+
+  @media(max-width:520px){.lead h1{font-size:1.7rem}.ico-row{flex-direction:column}.search button{padding:13px}}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">cloudwithshad<span class="dot">.</span></div>
+    <div class="spons">Sponsored by Get Skills Network</div>
+  </div>
+
+  <div class="wrap">
+    <div class="panel">
+      <div class="lead">
+        <div class="eyebrow">Certificate Verification</div>
+        <h1>Verify a certificate</h1>
+        <p>Enter the Certificate ID printed at the bottom of any cloudwithshad certificate to confirm it is genuine.</p>
+      </div>
+
+      <div class="search">
+        <label>Certificate ID <em>— e.g. CWS-CLF-2026-19E6E0</em></label>
+        <div class="ico-row">
+          <input id="q" placeholder="CWS-CLF-2026-XXXXXX" autocomplete="off" spellcheck="false">
+          <button id="go">Verify</button>
+        </div>
+        <div class="hint">Tip: the ID is printed at the very bottom of the certificate.</div>
+
+        <div class="result" id="result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    cloudwithshad · Accra · <a href="https://www.linkedin.com/in/shadrackdarku/" target="_blank" rel="noopener">linkedin.com/in/shadrackdarku</a>
+  </div>
+
+<script>
+  /* ============================================================
+     ISSUED CERTIFICATES — maintain this list.
+     Add one line per certificate you issue. Keep the ID UPPERCASE.
+     The cert generator gives you these lines ready to paste.
+     ============================================================ */
+  const CERTIFICATES = {
+    "CWS-CLF-2026-926AEF": { name: "Yasir Abdul-Rahaman", course: "AWS Cloud Practitioner Bootcamp", type: "Full Completion (Labs + Capstone)", date: "23 June 2026" },
+    "CWS-CLF-2026-19E6E0": { name: "Ama Serwaa Boateng", course: "AWS Cloud Practitioner Bootcamp", type: "Full Completion (Labs + Capstone)", date: "20 June 2026" },
+    "CWS-CLF-2026-C26FDC": { name: "Kofi Mensah",         course: "AWS Cloud Practitioner Bootcamp", type: "Full Completion (Labs + Capstone)", date: "20 June 2026" },
+    // ⬇ paste new certificate lines below this line ⬇
+
+  };
+  /* ============================================================ */
+
+  const $=id=>document.getElementById(id);
+  const res=$('result');
+
+  function normalize(s){return (s||'').trim().toUpperCase().replace(/\s+/g,'');}
+
+  function show(id){
+    const key=normalize(id);
+    if(!key){res.className='result';return;}
+    const rec=CERTIFICATES[key];
+    if(rec){
+      res.className='result valid show';
+      res.innerHTML=`
+        <div class="r-status"><span class="r-badge">✓</span> Verified · Genuine certificate</div>
+        <div class="r-name">${escapeHtml(rec.name)}</div>
+        <div class="r-rows">
+          <div class="r-row"><span class="k">Course</span><span class="v">${escapeHtml(rec.course)}</span></div>
+          <div class="r-row"><span class="k">Achievement</span><span class="v">${escapeHtml(rec.type)}</span></div>
+          <div class="r-row"><span class="k">Date</span><span class="v">${escapeHtml(rec.date)}</span></div>
+          <div class="r-row"><span class="k">Certificate ID</span><span class="v mono">${key}</span></div>
+        </div>`;
+    }else{
+      res.className='result invalid show';
+      res.innerHTML=`
+        <div class="r-status"><span class="r-badge">!</span> No match found</div>
+        <div class="r-note">We couldn't find a certificate with the ID <b>${escapeHtml(key)}</b>. Please check it was typed exactly as printed on the certificate. If you believe this is an error, contact <a href="https://www.linkedin.com/in/shadrackdarku/" target="_blank" rel="noopener">Shadrack Darku</a> or message <a href="https://wa.me/233544260206" target="_blank" rel="noopener">+233 54 426 0206</a>.</div>`;
+    }
+  }
+  function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  $('go').onclick=()=>show($('q').value);
+  $('q').addEventListener('keydown',e=>{if(e.key==='Enter')show($('q').value);});
+
+  // deep link: verify.html?id=CWS-CLF-2026-XXXXXX
+  const params=new URLSearchParams(location.search);
+  const pre=params.get('id');
+  if(pre){$('q').value=pre;show(pre);}
+</script>
+</body>
+</html>

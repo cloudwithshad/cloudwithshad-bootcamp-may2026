@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cloudwithshad · Certificate Generator — Full Completion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#0A1628;--navy2:#14253D;--cyan:#00B4D8;--gold:#F4B942;--cream:#F5EFE0;--paper:#FAF8F2;
+    --ink:#0A1628;--ink-soft:#475063;--ink-mut:#8A93A6;--line:#E2DDCE;--white:#fff;--green:#15803D;
+  }
+  body{font-family:'Sora',sans-serif;background:#EFEADD;color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+  .top{background:var(--navy);color:var(--cream);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+  .top .brand{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem}
+  .top .brand .dot{color:var(--cyan)}
+  .top .brand .sub{font-family:'Sora';font-weight:300;font-size:.85rem;color:#9FB0C4;margin-left:10px}
+  .top .kind{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);border:1px solid #2A415F;border-radius:5px;padding:6px 12px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 24px 70px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:26px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:22px;box-shadow:0 8px 28px rgba(10,22,40,.06)}
+  .card h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.2rem;margin-bottom:3px}
+  .card .desc{font-size:.85rem;color:var(--ink-soft);margin-bottom:18px;line-height:1.5}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:5px}
+  .field label em{font-style:normal;color:var(--ink-mut);font-weight:400}
+  .field input,.field textarea{width:100%;font:inherit;font-size:.9rem;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);resize:vertical}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--cyan)}
+  .field .tip{font-size:.72rem;color:var(--ink-mut);margin-top:4px;font-family:'JetBrains Mono',monospace}
+  .count{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--cyan);font-weight:600;margin-top:4px}
+  .btns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+  .btn{font:inherit;font-size:.9rem;font-weight:600;border:none;border-radius:9px;padding:13px 18px;cursor:pointer;transition:background .12s,transform .12s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary{background:var(--navy);color:var(--white)}
+  .btn-primary:hover{background:var(--navy2)}
+
+  .howto{margin-top:16px;background:#FBF6E9;border:1px solid #F0E2BE;border-radius:9px;padding:13px 15px;font-size:.78rem;line-height:1.55;color:#6B5526}
+  .howto b{color:#4A3A12}
+  .howto ol{margin:6px 0 0 16px}
+  .howto li{margin-bottom:2px}
+
+  .verify-out{margin-top:16px;background:#F0F8FB;border:1px solid #C9E7F0;border-radius:9px;padding:14px 15px}
+  .vo-head{font-family:'JetBrains Mono',monospace;font-size:.74rem;font-weight:600;letter-spacing:.06em;color:#065A75;margin-bottom:6px}
+  .vo-desc{font-size:.76rem;line-height:1.5;color:var(--ink-soft);margin-bottom:10px}
+  .vo-desc b{color:var(--navy)}
+  #voText{width:100%;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.5;background:var(--navy);color:#CFE8F0;border:none;border-radius:7px;padding:11px 12px;resize:vertical}
+  .btn-copy{margin-top:9px;width:100%;background:var(--cyan);color:#04222B}
+  .btn-copy:hover{background:#00A2C2}
+  .btn-json{margin-top:8px;width:100%;background:var(--navy);color:var(--white)}
+  .btn-json:hover{background:var(--navy2)}
+  .vo-foot{font-size:.72rem;color:var(--ink-mut);margin-top:9px;line-height:1.5}
+  .vo-foot b{color:var(--navy)}
+
+  .preview-col{min-width:0}
+  .preview-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mut);margin-bottom:10px}
+  .preview-frame{width:100%;overflow:hidden;border-radius:8px;box-shadow:0 16px 50px rgba(10,22,40,.22)}
+  .preview-scale{transform-origin:top left}
+
+  /* ================= CERTIFICATE ================= */
+  .cert{
+    width:1123px;height:794px;background:var(--paper);color:var(--navy);position:relative;overflow:hidden;
+    font-family:'Sora',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .cert .frame{position:absolute;top:34px;left:34px;right:34px;bottom:34px;border:2px solid var(--navy)}
+  .cert .frame-in{position:absolute;top:42px;left:42px;right:42px;bottom:42px;border:1px solid var(--cyan)}
+  .cert .corner{position:absolute;width:52px;height:52px}
+  .cert .corner.tl{top:22px;left:22px;border-top:3px solid var(--gold);border-left:3px solid var(--gold)}
+  .cert .corner.tr{top:22px;right:22px;border-top:3px solid var(--gold);border-right:3px solid var(--gold)}
+  .cert .corner.bl{bottom:22px;left:22px;border-bottom:3px solid var(--gold);border-left:3px solid var(--gold)}
+  .cert .corner.br{bottom:22px;right:22px;border-bottom:3px solid var(--gold);border-right:3px solid var(--gold)}
+  .cert .body{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:78px 110px 64px}
+  .cert .c-brand{font-family:'Fraunces',serif;font-weight:600;font-size:30px;letter-spacing:-.01em}
+  .cert .c-brand .dot{color:var(--cyan)}
+  .cert .c-sponsor{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-mut);margin-top:8px}
+  .cert .c-divider{width:64px;height:2px;background:var(--gold);margin:22px 0}
+  .cert .c-pre{font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.34em;text-transform:uppercase;color:var(--ink-soft)}
+  .cert .c-name{font-family:'Fraunces',serif;font-weight:600;font-size:62px;letter-spacing:-.02em;margin:16px 0 14px;line-height:1}
+  .cert .c-cite{font-size:18px;line-height:1.62;color:var(--ink-soft);max-width:760px}
+  .cert .c-cite .course{font-family:'Fraunces',serif;font-style:italic;color:var(--cyan);font-weight:600}
+  .cert .c-cite b{color:var(--navy);font-weight:600}
+  .cert .c-badge{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#9a7218;border:1px solid var(--gold);border-radius:6px;padding:8px 16px;margin-top:24px;background:#FBF3E1}
+  .cert .c-foot{position:absolute;left:140px;right:140px;bottom:120px;display:flex;justify-content:space-between;align-items:flex-end}
+  .cert .c-foot .col{width:260px;text-align:center}
+  .cert .c-foot .val{font-family:'Fraunces',serif;font-size:20px;color:var(--navy)}
+  .cert .c-foot .ln{border-top:1px solid var(--navy);margin-top:6px;padding-top:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+  .cert .c-seal{position:absolute;bottom:104px;left:50%;transform:translateX(-50%);width:96px;height:96px}
+  .cert .c-id{position:absolute;left:0;right:0;bottom:62px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ink-mut)}
+
+  #printArea{display:none}
+
+  @media print{
+    @page{size:297mm 210mm;margin:0}
+    html,body{background:#fff!important}
+    .app{display:none!important}
+    #printArea{display:block!important}
+    #printArea .cert{page-break-after:always;break-after:page}
+    #printArea .cert:last-child{page-break-after:auto;break-after:auto}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="brand">cloudwithshad<span class="dot">.</span><span class="sub">Certificate Generator</span></div>
+      <div class="kind">Full Completion · Labs + Capstone</div>
+    </div>
+
+    <div class="wrap">
+      <div class="grid">
+        <div class="card">
+          <h2>Full Completion Certificate</h2>
+          <p class="desc">For students who completed <b>all course requirements</b> — every hands-on lab and the final capstone project.</p>
+
+          <div class="field"><label>Course name</label><input id="in_course" value="AWS Cloud Practitioner Bootcamp"></div>
+          <div class="field"><label>Cohort / programme line <em>(in citation)</em></label><input id="in_cohort" value="May 2026 Cohort"></div>
+          <div class="field"><label>Completion date</label><input id="in_date" value="20 June 2026"></div>
+          <div class="field">
+            <label>Recipient name(s) <em>— one per line for batch</em></label>
+            <textarea id="in_names" rows="7" placeholder="Ama Serwaa Boateng&#10;Kofi Mensah&#10;Yaw Owusu">Ama Serwaa Boateng</textarea>
+            <div class="count" id="nameCount"></div>
+            <div class="tip">Single name = one page. Multiple lines = one cert per page.</div>
+          </div>
+
+          <div class="btns">
+            <button class="btn btn-primary" id="btnPrint">⬇ Generate PDF</button>
+          </div>
+
+          <div class="howto">
+            <b>When the print box opens:</b>
+            <ol>
+              <li>Destination → <b>Save as PDF</b></li>
+              <li>Layout → <b>Landscape</b></li>
+              <li>Margins → <b>None</b></li>
+              <li>Enable <b>Background graphics</b> (if shown)</li>
+            </ol>
+            Colours print automatically. Add your founder signature afterwards in WPS PDF editor.
+          </div>
+
+          <div class="verify-out" id="verifyOut" style="display:none">
+            <div class="vo-head">📋 Add these to your verify page</div>
+            <p class="vo-desc">Paste these lines into the <b>CERTIFICATES</b> list in <b>verify.html</b>, then push to GitHub. This makes each certificate verifiable.</p>
+            <textarea id="voText" rows="5" readonly></textarea>
+            <button class="btn btn-copy" id="btnCopy">Copy lines</button>
+            <button class="btn btn-json" id="btnJson">⬇ Download verify data (.json)</button>
+            <p class="vo-foot">Use the .json with <b>update_verify.py</b> to auto-update your verify page.</p>
+          </div>
+        </div>
+
+        <div class="preview-col">
+          <div class="preview-label">Live preview · first name shown</div>
+          <div class="preview-frame" id="previewFrame">
+            <div class="preview-scale" id="previewScale">
+              <div class="cert" id="cert"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="printArea"></div>
+
+<script>
+  const $=id=>document.getElementById(id);
+  const CERT_W=1123, CERT_H=794;
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  function makeCertId(){return 'CWS-CLF-'+new Date().getFullYear()+'-'+Math.random().toString(16).slice(2,8).toUpperCase();}
+  function citation(course,cohort){
+    return `has successfully completed the <span class="course">${esc(course)}</span> (${esc(cohort)}), fulfilling <b>all course requirements</b> — including every hands-on lab and the final capstone project — demonstrating readiness to operate confidently in the AWS Cloud.`;
+  }
+  function certInner(name,course,cohort,date,certId){
+    return `
+      <div class="frame"></div><div class="frame-in"></div>
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="body">
+        <div class="c-brand">cloudwithshad<span class="dot">.</span></div>
+        <div class="c-sponsor">Sponsored by Get Skills Network</div>
+        <div class="c-divider"></div>
+        <div class="c-pre">Certificate of Completion</div>
+        <div class="c-name">${esc(name)||'Recipient Name'}</div>
+        <div class="c-cite">${citation(course,cohort)}</div>
+        <div class="c-badge">★ All Requirements Completed</div>
+      </div>
+      <svg class="c-seal" viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="46" stroke="#F4B942" stroke-width="2"/>
+        <circle cx="50" cy="50" r="38" stroke="#0A1628" stroke-width="1"/>
+        <path id="sat_${certId}" d="M 20 50 A 30 30 0 0 1 80 50" fill="none"/>
+        <path id="sab_${certId}" d="M 80 50 A 30 30 0 0 1 20 50" fill="none"/>
+        <text font-family="JetBrains Mono, monospace" font-size="7.5" font-weight="600" letter-spacing="1.5" fill="#0A1628"><textPath href="#sat_${certId}" startOffset="50%" text-anchor="middle">CLOUDWITHSHAD</textPath></text>
+        <text font-family="JetBrains Mono, monospace" font-size="7" font-weight="600" letter-spacing="2" fill="#0A1628"><textPath href="#sab_${certId}" startOffset="50%" text-anchor="middle">CERTIFIED 2026</textPath></text>
+        <text x="50" y="46" text-anchor="middle" font-family="Fraunces, serif" font-size="20" font-weight="600" fill="#00B4D8">AWS</text>
+        <text x="50" y="60" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="1" fill="#0A1628">CLF · C02</text>
+      </svg>
+      <div class="c-foot">
+        <div class="col"><div class="val">${esc(date)}</div><div class="ln">Date of Completion</div></div>
+        <div class="col"><div class="val" style="min-height:30px">&nbsp;</div><div class="ln">Shadrack Darku · Founder &amp; Lead Instructor</div></div>
+      </div>
+      <div class="c-id">CERTIFICATE ID · ${certId} · verify at cloudwithshad.github.io/cloudwithshad-bootcamp-may2026/verify.html</div>`;
+  }
+
+  function names(){return $('in_names').value.split('\n').map(s=>s.trim()).filter(Boolean);}
+
+  function refreshPreview(){
+    const n=names();
+    $('cert').innerHTML=certInner(n[0]||'Recipient Name',$('in_course').value,$('in_cohort').value,$('in_date').value,'CWS-CLF-2026-XXXXXX');
+    const c=n.length;
+    $('nameCount').textContent=c===0?'No names yet':c===1?'1 certificate':`${c} certificates (batch)`;
+  }
+  ['in_course','in_cohort','in_date','in_names'].forEach(id=>$(id).addEventListener('input',refreshPreview));
+
+  function fitPreview(){
+    const frame=$('previewFrame');const scale=frame.clientWidth/CERT_W;
+    $('previewScale').style.transform=`scale(${scale})`;
+    frame.style.height=(CERT_H*scale)+'px';
+  }
+  window.addEventListener('resize',fitPreview);
+
+  let lastBatch=[];
+  function generate(){
+    const list=names();
+    if(!list.length){alert('Add at least one name first.');return;}
+    const course=$('in_course').value, cohort=$('in_cohort').value, date=$('in_date').value;
+    const area=$('printArea');area.innerHTML='';
+    const entries=[]; lastBatch=[];
+    list.forEach(nm=>{
+      const id=makeCertId();
+      const d=document.createElement('div');d.className='cert';
+      d.innerHTML=certInner(nm,course,cohort,date,id);
+      area.appendChild(d);
+      const rec={id, name:nm, course, cohort, type:"Full Completion (Labs + Capstone)", date};
+      lastBatch.push(rec);
+      entries.push(`    "${id}": { name: ${JSON.stringify(nm)}, course: ${JSON.stringify(course)}, type: "Full Completion (Labs + Capstone)", date: ${JSON.stringify(date)} },`);
+    });
+    $('voText').value=entries.join('\n');
+    $('verifyOut').style.display='';
+    setTimeout(()=>window.print(),80);
+  }
+  $('btnPrint').onclick=generate;
+
+  $('btnCopy').onclick=()=>{
+    const t=$('voText');t.select();
+    navigator.clipboard.writeText(t.value).then(()=>{
+      const b=$('btnCopy');const o=b.textContent;b.textContent='✓ Copied!';setTimeout(()=>b.textContent=o,1500);
+    }).catch(()=>{document.execCommand('copy');});
+  };
+
+  $('btnJson').onclick=()=>{
+    if(!lastBatch.length){alert('Generate certificates first.');return;}
+    const blob=new Blob([JSON.stringify(lastBatch,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='cert-batch-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  };
+
+  document.fonts.ready.then(()=>{fitPreview();refreshPreview();});
+  fitPreview();refreshPreview();
+</script>
+</body>
+</html>

@@ -69,6 +69,31 @@ my-solutions/
 .~lock*
 ~$*
 
+#0000000000000000000000000000000000000000000000000000000000000000
+
+# ── Local certificate tooling (run on your machine, not served by GitHub Pages) ──
+update_verify.py
+cloudwithshad-cert-generator-full-completion.html
+# If you keep the other scenario generators local too, add them here:
+# cloudwithshad-cert-generator-first-four-labs.html
+# cloudwithshad-cert-generator-quiz.html
+
+# ── Private record of issued certificates (keep names/IDs out of the public repo) ──
+certificates_master.csv
+
+# ── Throwaway / generated files ──
+cert-batch-*.json
+verify.html.bak-*
+
+# ── OS / editor noise ──
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# NOTE: verify.html is intentionally NOT ignored — it MUST be committed and pushed
+# so GitHub Pages can serve the public verification page.
 # ─────────────────────────────────────────────────────────────
 # AUTHORING TOOLS — not needed by the live site (GitHub Pages
 # only serves the generated HTML + the data/ JSON it fetches).

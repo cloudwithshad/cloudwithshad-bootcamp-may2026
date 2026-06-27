@@ -118,51 +118,7 @@
   .cleanup-card h4 { color: #E65100; margin-bottom: 10px; font-size: 16px; }
   .cleanup-card ul { margin-left: 22px; }
   .cleanup-card li { color: #5D4037; font-size: 13.5px; margin-bottom: 6px; }
-    
-  /* ═══════════════════════════════════════════════════
-     UNIFIED LAB MOBILE FIX (v3 — definitive)
-  ═══════════════════════════════════════════════════ */
-  html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }
-  *, *::before, *::after { box-sizing: border-box; }
-
-  /* The key fix: main itself must clip + allow shrink */
-  main { overflow-x: hidden; min-width: 0; max-width: 100vw; }
-
-  /* Flex/grid children must be allowed to shrink below content size */
-  main *, .page *, .content * { min-width: 0; }
-
-  /* Code blocks scroll internally */
-  pre, code, .code-block, .terminal, .cmd-block, .code {
-    max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
-  }
-  pre { white-space: pre; }
-  img, svg, video, iframe { max-width: 100%; height: auto; }
-
-  @media (max-width: 900px) {
-    .arch-node, .arch-box, .node { min-width: 0 !important; width: 100% !important; max-width: 100% !important; }
-    .arch-row, .arch-flow, .architecture, .arch-diagram { flex-direction: column !important; align-items: stretch !important; }
-    .arch-arrow, .arrow { transform: rotate(90deg); }
-    .page { grid-template-columns: 1fr !important; gap: 20px !important; }
-    .sidebar { display: none !important; }
-  }
-
-  @media (max-width: 600px) {
-    .page, .content, main, .container, section, header { padding-left: 16px !important; padding-right: 16px !important; }
-    .overview-grid, .field-row, .two-col, .grid-2, .grid-3,
-    .card-grid, .build-grid, .steps-grid, .compare-grid, .checklist-grid { grid-template-columns: 1fr !important; }
-    table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; max-width: 100%; }
-    h1 { font-size: clamp(24px, 7vw, 38px) !important; }
-    h2 { font-size: clamp(19px, 5vw, 28px) !important; }
-    h3 { font-size: clamp(16px, 4.5vw, 22px) !important; }
-    pre, code, .code-block, .terminal { font-size: 12px !important; }
-    p, li, td, th, .field-row, .callout, .tip, .warn, .note { overflow-wrap: anywhere; word-break: break-word; }
-  }
-
-  @media (max-width: 400px) {
-    .page, .content, main, .container, section, header { padding-left: 12px !important; padding-right: 12px !important; }
-  }
-
-  </style>
+</style>
 </head>
 <body>
 
@@ -389,6 +345,11 @@
 
       <p>Once created, scroll to the <strong>Code</strong> tab and paste this:</p>
 
+      <div class="callout info">
+        <span class="label">Option A · Managed AI (Amazon Comprehend)</span>
+        <p>This version uses <strong>Amazon Comprehend</strong> for sentiment + entities. It's the most accurate, but Comprehend is <strong>not on the perpetual free tier</strong> — depending on your account it may need billing enabled and can cost a dollar or two. If you'd rather not upgrade your account, use <strong>Option B</strong> just below — it does the same job for free.</p>
+      </div>
+
       <div class="code-block">
 <span class="cmd">import</span> boto3
 <span class="cmd">import</span> json
@@ -459,6 +420,115 @@ table     = dynamo.Table(<span class="green">'cloudwithshad-documents'</span>)
         <span class="green">'sentiment'</span>: sentiment_result[<span class="green">'Sentiment'</span>],
         <span class="green">'entity_count'</span>: <span class="cmd">len</span>(entities)
     }
+      </div>
+
+      <div class="callout success">
+        <span class="label">Option B · Free, no account upgrade</span>
+        <p>Don't want to enable billing or pay for Comprehend? Use this version instead. It keeps <strong>Textract</strong> (which has a free 1,000 pages/month window) but does the sentiment + entity analysis <strong>in plain Python inside the same Lambda</strong> — so it costs nothing beyond the Lambda free tier. Same architecture, same DynamoDB result, <strong>$0</strong>.</p>
+      </div>
+
+      <p>Paste <strong>this</strong> into your Lambda's Code tab instead of the Option A code:</p>
+
+      <div class="code-block">
+<span class="cmd">import</span> boto3
+<span class="cmd">import</span> uuid
+<span class="cmd">import</span> re
+<span class="cmd">from</span> datetime <span class="cmd">import</span> datetime
+
+s3       = boto3.client(<span class="green">'s3'</span>)
+textract = boto3.client(<span class="green">'textract'</span>)
+dynamo   = boto3.resource(<span class="green">'dynamodb'</span>)
+table    = dynamo.Table(<span class="green">'cloudwithshad-documents'</span>)
+
+<span class="comment"># --- Tiny built-in sentiment word lists (no paid AI service needed) ---</span>
+POSITIVE = {<span class="green">'good'</span>,<span class="green">'great'</span>,<span class="green">'excellent'</span>,<span class="green">'positive'</span>,<span class="green">'happy'</span>,<span class="green">'love'</span>,<span class="green">'best'</span>,<span class="green">'strong'</span>,<span class="green">'success'</span>,<span class="green">'improve'</span>,<span class="green">'benefit'</span>,<span class="green">'effective'</span>,<span class="green">'reliable'</span>,<span class="green">'recommend'</span>,<span class="green">'pleased'</span>,<span class="green">'satisfied'</span>,<span class="green">'achieve'</span>,<span class="green">'gain'</span>,<span class="green">'advantage'</span>,<span class="green">'opportunity'</span>,<span class="green">'wonderful'</span>,<span class="green">'amazing'</span>}
+NEGATIVE = {<span class="green">'bad'</span>,<span class="green">'poor'</span>,<span class="green">'terrible'</span>,<span class="green">'negative'</span>,<span class="green">'hate'</span>,<span class="green">'worst'</span>,<span class="green">'awful'</span>,<span class="green">'fail'</span>,<span class="green">'failure'</span>,<span class="green">'weak'</span>,<span class="green">'problem'</span>,<span class="green">'issue'</span>,<span class="green">'difficult'</span>,<span class="green">'delay'</span>,<span class="green">'risk'</span>,<span class="green">'loss'</span>,<span class="green">'concern'</span>,<span class="green">'disappointed'</span>,<span class="green">'unable'</span>,<span class="green">'error'</span>,<span class="green">'broken'</span>,<span class="green">'decline'</span>,<span class="green">'complaint'</span>}
+
+<span class="cmd">def</span> <span class="yellow">analyze_sentiment</span>(text):
+    words = re.findall(<span class="green">r"[a-z']+"</span>, text.lower())
+    pos = <span class="cmd">sum</span>(<span class="orange">1</span> <span class="cmd">for</span> w <span class="cmd">in</span> words <span class="cmd">if</span> w <span class="cmd">in</span> POSITIVE)
+    neg = <span class="cmd">sum</span>(<span class="orange">1</span> <span class="cmd">for</span> w <span class="cmd">in</span> words <span class="cmd">if</span> w <span class="cmd">in</span> NEGATIVE)
+    total = pos + neg
+    <span class="cmd">if</span> total == <span class="orange">0</span>:
+        <span class="cmd">return</span> <span class="green">'NEUTRAL'</span>, {<span class="green">'Positive'</span>:<span class="green">'0.0'</span>, <span class="green">'Negative'</span>:<span class="green">'0.0'</span>, <span class="green">'Neutral'</span>:<span class="green">'1.0'</span>, <span class="green">'Mixed'</span>:<span class="green">'0.0'</span>}
+    p = <span class="cmd">round</span>(pos / total, <span class="orange">3</span>)
+    n = <span class="cmd">round</span>(neg / total, <span class="orange">3</span>)
+    <span class="cmd">if</span> pos &gt; <span class="orange">0</span> <span class="cmd">and</span> neg &gt; <span class="orange">0</span> <span class="cmd">and</span> <span class="cmd">abs</span>(pos - neg) &lt;= <span class="orange">1</span>:
+        label = <span class="green">'MIXED'</span>
+    <span class="cmd">elif</span> pos &gt; neg:
+        label = <span class="green">'POSITIVE'</span>
+    <span class="cmd">elif</span> neg &gt; pos:
+        label = <span class="green">'NEGATIVE'</span>
+    <span class="cmd">else</span>:
+        label = <span class="green">'NEUTRAL'</span>
+    scores = {<span class="green">'Positive'</span>: <span class="cmd">str</span>(p), <span class="green">'Negative'</span>: <span class="cmd">str</span>(n),
+              <span class="green">'Neutral'</span>: <span class="cmd">str</span>(<span class="cmd">round</span>(<span class="cmd">max</span>(<span class="orange">0.0</span>, <span class="orange">1</span> - p - n), <span class="orange">3</span>)), <span class="green">'Mixed'</span>: <span class="green">'0.0'</span>}
+    <span class="cmd">return</span> label, scores
+
+<span class="cmd">def</span> <span class="yellow">extract_entities</span>(text):
+    <span class="comment"># Capitalized words/phrases = likely names, orgs, places</span>
+    candidates = re.findall(<span class="green">r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b'</span>, text)
+    emails = re.findall(<span class="green">r'\b[\w.\-]+@[\w.\-]+\.\w+\b'</span>, text)
+    seen, entities = <span class="cmd">set</span>(), []
+    <span class="cmd">for</span> c <span class="cmd">in</span> candidates:
+        <span class="cmd">if</span> c.lower() <span class="cmd">in</span> seen <span class="cmd">or</span> <span class="cmd">len</span>(c) &lt; <span class="orange">3</span>:
+            <span class="cmd">continue</span>
+        seen.add(c.lower())
+        entities.append({<span class="green">'text'</span>: c, <span class="green">'type'</span>: <span class="green">'PROPER_NOUN'</span>, <span class="green">'score'</span>: <span class="green">'0.80'</span>})
+        <span class="cmd">if</span> <span class="cmd">len</span>(entities) &gt;= <span class="orange">10</span>:
+            <span class="cmd">break</span>
+    <span class="cmd">for</span> e <span class="cmd">in</span> emails[:<span class="orange">3</span>]:
+        entities.append({<span class="green">'text'</span>: e, <span class="green">'type'</span>: <span class="green">'EMAIL'</span>, <span class="green">'score'</span>: <span class="green">'0.99'</span>})
+    <span class="cmd">return</span> entities[:<span class="orange">10</span>]
+
+<span class="cmd">def</span> <span class="yellow">lambda_handler</span>(event, context):
+    bucket = event[<span class="green">'Records'</span>][<span class="orange">0</span>][<span class="green">'s3'</span>][<span class="green">'bucket'</span>][<span class="green">'name'</span>]
+    key    = event[<span class="green">'Records'</span>][<span class="orange">0</span>][<span class="green">'s3'</span>][<span class="green">'object'</span>][<span class="green">'key'</span>]
+    <span class="cmd">if</span> <span class="cmd">not</span> key.startswith(<span class="green">'uploads/'</span>):
+        <span class="cmd">return</span> {<span class="green">'status'</span>: <span class="green">'skipped'</span>}
+
+    <span class="comment"># Textract still extracts the text (free 1,000 pages/month window)</span>
+    textract_response = textract.detect_document_text(
+        Document={<span class="green">'S3Object'</span>: {<span class="green">'Bucket'</span>: bucket, <span class="green">'Name'</span>: key}}
+    )
+    extracted_text = <span class="green">' '</span>.join([
+        b[<span class="green">'Text'</span>] <span class="cmd">for</span> b <span class="cmd">in</span> textract_response[<span class="green">'Blocks'</span>]
+        <span class="cmd">if</span> b[<span class="green">'BlockType'</span>] == <span class="green">'LINE'</span>
+    ])
+
+    <span class="comment"># Analyze IN PYTHON — no Comprehend, no extra cost</span>
+    sentiment, sentiment_scores = <span class="yellow">analyze_sentiment</span>(extracted_text)
+    entities = <span class="yellow">extract_entities</span>(extracted_text)
+
+    doc_id = <span class="cmd">str</span>(uuid.uuid4())
+    table.put_item(Item={
+        <span class="green">'document_id'</span>: doc_id,
+        <span class="green">'filename'</span>: key,
+        <span class="green">'processed_at'</span>: datetime.utcnow().isoformat(),
+        <span class="green">'extracted_text'</span>: extracted_text[:<span class="orange">1000</span>],
+        <span class="green">'sentiment'</span>: sentiment,
+        <span class="green">'sentiment_scores'</span>: sentiment_scores,
+        <span class="green">'entities'</span>: entities,
+        <span class="green">'analysis_method'</span>: <span class="green">'python-builtin'</span>
+    })
+
+    <span class="cmd">return</span> {
+        <span class="green">'statusCode'</span>: <span class="orange">200</span>,
+        <span class="green">'document_id'</span>: doc_id,
+        <span class="green">'sentiment'</span>: sentiment,
+        <span class="green">'entity_count'</span>: <span class="cmd">len</span>(entities)
+    }
+      </div>
+
+      <div class="callout tip">
+        <span class="label">Two small differences for Option B</span>
+        <p><strong>1. Skip the Comprehend permission.</strong> In the IAM role step earlier, you can leave off <code>ComprehendFullAccess</code> — Option B never calls Comprehend. You only need S3 read, Textract, DynamoDB, and CloudWatch logs.</p>
+        <p><strong>2. Same 60s timeout is fine.</strong> Only Textract makes a network call now; the Python analysis is instant.</p>
+      </div>
+
+      <div class="callout info">
+        <span class="label">Honest trade-off (worth understanding)</span>
+        <p>Option B's analysis is simpler than Comprehend's machine-learning models — it uses word lists for sentiment and capitalisation for entities. It's perfect for learning the full pipeline at zero cost, and it's a great lesson in <strong>why managed AI services exist</strong>: Comprehend is more accurate because it's trained on huge datasets. When you're ready to spend a little (or in the AI course), swapping Option B for Comprehend — or for a Bedrock model — is a one-function change. The architecture you built stays exactly the same.</p>
       </div>
 
       <p>Click <strong>Deploy</strong>.</p>
