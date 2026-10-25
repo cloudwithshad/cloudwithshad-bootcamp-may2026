@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI/CD Pipeline: GitHub to Azure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  /* Design Tokens */
+  --bering-slate: #4B5B6E;
+  --bering-abyss: #0B131C;
+  --bering-deep: #111A24;
+  --bering-dark: #182533;
+  --bering-slate: #243547;
+  --bering-sea: #4B5B6E;
+  --bering-light: #5F7A96;
+  --bering-mist: #829CB2;
+  --bering-frost: #BFD3E2;
+  --bering-ice: #E8F1F7;
+
+  /* Functional Accents */
+  --sea-foam: #48D1A0;
+  --warm-amber: #F0B265;
+  --soft-coral: #E8727C;
+
+  /* Glassmorphism Presentation Fills */
+  --glass-surface: linear-gradient(155deg, rgba(36, 53, 71, 0.85) 0%, rgba(17, 26, 36, 0.94) 100%);
+  --glass-card: linear-gradient(140deg, rgba(75, 91, 110, 0.38) 0%, rgba(24, 37, 51, 0.72) 100%);
+  --glass-card-hover: linear-gradient(140deg, rgba(95, 122, 150, 0.52) 0%, rgba(36, 53, 71, 0.85) 100%);
+  --glass-border: rgba(130, 156, 178, 0.28);
+  --glass-border-bright: rgba(191, 211, 226, 0.55);
+
+  /* Typography */
+  --text-pure: #FFFFFF;
+  --text-primary: #F1F6FA;
+  --text-secondary: #D0DFEC;
+  --text-muted: #8FA7BC;
+
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-tech: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bering-abyss);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(75, 91, 110, 0.45) 0px, transparent 55%),
+    radial-gradient(at 100% 100%, rgba(24, 37, 51, 0.7) 0px, transparent 65%),
+    radial-gradient(at 50% 50%, rgba(17, 26, 36, 0.5) 0px, transparent 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 110px;
+}
+
+/* TOPBAR */
+.deck-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11, 19, 28, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand-group { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(135deg, var(--bering-frost) 0%, var(--bering-sea) 100%);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(75, 91, 110, 0.45);
+}
+.brand-title {
+  font-family: var(--font-tech);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-pure);
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--bering-frost);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* DECK STAGE */
+.deck-container {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 24px 110px;
+  box-sizing: border-box;
+}
+
+/* SLIDE BASE */
+.slide {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 26px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 28px 34px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 24px 60px -20px rgba(8, 16, 26, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.25);
+  transition: border-color 0.25s ease;
+  scroll-margin-top: 70px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.slide:hover { border-color: var(--glass-border-bright); }
+.slide::before {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, rgba(130, 156, 178, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+.slide::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: 20%;
+  width: 380px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(75, 91, 110, 0.3) 0%, transparent 75%);
+  pointer-events: none;
+}
+
+/* SLIDE HEADER & INLINE WATERMARK */
+.slide-header-block {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 12px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+.slide-header-main {
+  flex: 1;
+  min-width: 0;
+}
+.slide-watermark {
+  font-family: var(--font-tech);
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.6) 0%, rgba(30, 45, 61, 0.8) 100%);
+  border: 1px solid var(--glass-border-bright);
+  padding: 4px 12px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.slide-index-tag {
+  font-family: var(--font-tech);
+  font-size: 10.5px;
+  letter-spacing: 1.3px;
+  color: var(--bering-frost);
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slide-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--text-pure);
+  line-height: 1.25;
+}
+.slide-title span {
+  background: linear-gradient(180deg, #FFFFFF 25%, var(--bering-frost) 70%, var(--bering-mist) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* SLIDE 1 HERO */
+.slide.hero-slide {
+  justify-content: flex-start;
+  gap: 18px;
+}
+.hero-pill-badge {
+  font-family: var(--font-tech);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.65) 0%, rgba(30, 45, 61, 0.85) 100%);
+  border: 1px solid var(--glass-border-bright);
+  padding: 4px 13px;
+  border-radius: 100px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.hero-pill-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--sea-foam);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--sea-foam);
+}
+.hero-main-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+  margin-top: 8px;
+}
+.hero-main-title span {
+  background: linear-gradient(180deg, #FFFFFF 20%, var(--bering-frost) 65%, var(--bering-mist) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-lead-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--bering-frost);
+  max-width: 820px;
+  margin-top: 6px;
+}
+.hero-bottom-row {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--glass-border);
+}
+.hero-abstract {
+  flex: 1;
+  min-width: 280px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.stat-card {
+  background: rgba(11, 19, 28, 0.65);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 88px;
+}
+.stat-val {
+  font-family: var(--font-tech);
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.stat-lbl {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* EDITORIAL CALLOUTS */
+.editorial-callout {
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.4) 0%, rgba(24, 37, 51, 0.7) 100%);
+  border: 1.5px solid var(--glass-border-bright);
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin: 12px 0;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.editorial-callout.callout-info { border-left: 5px solid var(--bering-frost); }
+.editorial-callout.callout-warn { 
+  border-left: 5px solid var(--warm-amber);
+  background: linear-gradient(135deg, rgba(240, 178, 101, 0.16) 0%, rgba(36, 28, 16, 0.85) 100%);
+}
+.editorial-callout.callout-exam {
+  border-left: 5px solid var(--sea-foam);
+  background: linear-gradient(135deg, rgba(72, 209, 160, 0.16) 0%, rgba(16, 36, 28, 0.85) 100%);
+}
+.callout-tag {
+  font-family: var(--font-tech);
+  font-size: 10px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.callout-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* MODERN TABLES */
+.table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1.5px solid var(--glass-border);
+  background: rgba(11, 19, 28, 0.65);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin: 12px 0;
+  width: 100%;
+}
+.struforma-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12.5px;
+}
+.struforma-table th {
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.55) 0%, rgba(36, 53, 71, 0.75) 100%);
+  color: #FFFFFF;
+  font-family: var(--font-tech);
+  font-size: 10.5px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-bottom: 1.5px solid var(--glass-border-bright);
+}
+.struforma-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(130, 156, 178, 0.15);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.struforma-table tr:last-child td { border-bottom: none; }
+.struforma-table tr:hover td { background: rgba(75, 91, 110, 0.18); color: #FFFFFF; }
+
+/* LAB GRID - FIXING OVERFLOW BLOWOUT */
+.lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 10px;
+  width: 100%;
+}
+.lab-card {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  transition: all 0.2s ease;
+  min-width: 0; /* CRITICAL: prevents grid track blowout */
+  max-width: 100%;
+  overflow: hidden;
+}
+.lab-card:hover {
+  background: var(--glass-card-hover);
+  border-color: var(--glass-border-bright);
+}
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.step-num-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bering-frost) 0%, var(--bering-sea) 100%);
+  color: var(--bering-abyss);
+  font-family: var(--font-tech);
+  font-weight: 800;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(75, 91, 110, 0.5);
+  flex-shrink: 0;
+}
+.card-header-title {
+  font-family: var(--font-tech);
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+.card-description {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.card-description strong {
+  color: var(--bering-frost);
+}
+
+/* TERMINAL CODE BOX */
+.terminal-block {
+  background: #0B131C;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+  width: 100%;
+  min-width: 0; /* CRITICAL */
+  max-width: 100%;
+}
+.terminal-header {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.terminal-dots { display: flex; gap: 5px; }
+.terminal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+.terminal-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 600;
+}
+.terminal-body {
+  padding: 11px 13px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre-wrap; /* wraps clean lines or allows clean scroll */
+  word-break: break-word;
+  color: var(--text-primary);
+  max-height: 400px;
+  min-width: 0;
+}
+.cmd { color: #A4CCF0; }
+.comment { color: #7B94A8; font-style: italic; }
+.green { color: #7AE7C5; }
+.yellow { color: #F5CA88; }
+.key { color: #A4CCF0; font-weight: 600; }
+.val { color: #7AE7C5; }
+
+code {
+  font-family: var(--font-mono);
+  background: rgba(75, 91, 110, 0.45);
+  color: var(--bering-ice);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  border: 1px solid var(--glass-border);
+  word-break: break-word;
+}
+
+/* ARCHITECTURE DIAGRAM */
+.arch-diagram-wrapper {
+  background: #0B131C;
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0 0 0;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+.diagram-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+}
+.diagram-tag {
+  font-family: var(--font-tech);
+  font-size: 10px;
+  letter-spacing: 1.1px;
+  color: var(--bering-frost);
+  text-transform: uppercase;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.diagram-beacon {
+  width: 7px;
+  height: 7px;
+  background: var(--sea-foam);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--sea-foam);
+}
+.diagram-metric {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.pipeline-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@keyframes pipelineFlow {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+.flow-pipe-cyan { stroke-dasharray: 6 6; animation: pipelineFlow 1.6s linear infinite; }
+.flow-pipe-green { stroke-dasharray: 6 6; animation: pipelineFlow 1.6s linear infinite; }
+.flow-pipe-amber { stroke-dasharray: 6 6; animation: pipelineFlow 1.6s linear infinite; }
+
+/* COMPACT FLOATING DOCK */
+.deck-dock {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(11, 19, 28, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 100px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
+}
+.deck-dock:hover { opacity: 1; }
+.dock-nav-btn {
+  background: rgba(75, 91, 110, 0.4);
+  border: 1px solid var(--glass-border);
+  color: #FFFFFF;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.dock-nav-btn:hover {
+  background: var(--bering-frost);
+  color: var(--bering-abyss);
+}
+.dock-dots { display: flex; align-items: center; gap: 6px; }
+.dock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(191, 211, 226, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dock-dot.active {
+  background: #FFFFFF;
+  transform: scale(1.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+.dock-counter {
+  font-family: var(--font-tech);
+  font-size: 11px;
+  color: var(--bering-frost);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+/* EVIDENCE CHECKLIST */
+.evidence-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.evidence-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.evidence-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(72, 209, 160, 0.25);
+  border: 1.5px solid var(--sea-foam);
+  color: var(--sea-foam);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* RESPONSIVE LAYOUT BREAKPOINTS */
+@media (max-width: 1024px) {
+  .deck-container { padding: 14px 16px 110px; }
+  .slide { padding: 22px 20px; border-radius: 14px; }
+  .lab-grid { grid-template-columns: 1fr; gap: 14px; }
+  .hero-bottom-row { flex-direction: column; align-items: stretch; }
+  .hero-stats-grid { grid-template-columns: repeat(2, 1fr); width: 100%; }
+}
+
+  
+/* BRAND HEADER & TAGLINE */
+.brand-lockup { display: flex; align-items: center; gap: 12px; }
+.brand-title-wrap { display: flex; flex-direction: column; }
+.brand-subtitle { font-size: 11px; color: var(--bering-frost); font-weight: 600; margin-top: 1px; }
+.deck-actions { display: flex; align-items: center; gap: 10px; }
+.deck-tagline { font-family: var(--font-tech); font-size: 11px; color: var(--bering-mist); letter-spacing: 0.8px; text-transform: uppercase; font-weight: 700; background: rgba(75, 91, 110, 0.25); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 6px; }
+
+/* EDITORIAL TWO-COLUMN GRID */
+.editorial-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 14px;
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .editorial-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* STEP LIST & STEP CARDS */
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 10px 0 14px;
+}
+.step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s ease;
+}
+.step-card:hover {
+  background: var(--glass-card-hover);
+  border-color: var(--glass-border-bright);
+}
+.step-idx {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bering-frost) 0%, var(--bering-sea) 100%);
+  color: var(--bering-abyss);
+  font-family: var(--font-tech);
+  font-weight: 800;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  box-shadow: 0 0 10px rgba(75, 91, 110, 0.45);
+}
+.step-content {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.step-content strong {
+  color: #FFFFFF;
+}
+
+/* TERMINAL CARD */
+.terminal-card {
+  background: #0B131C;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+  width: 100%;
+}
+.terminal-card .terminal-body {
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary);
+}
+
+/* SUCCESS CALLOUT */
+.editorial-callout.callout-success {
+  border-left: 5px solid var(--sea-foam);
+  background: linear-gradient(135deg, rgba(72, 209, 160, 0.16) 0%, rgba(16, 36, 28, 0.85) 100%);
+}
+
+  </style>
+</head>
+<body class="deck-page">
+
+<!-- TOPBAR -->
+<header class="deck-topbar">
+  <div class="brand-lockup">
+    <div class="brand-title-wrap">
+      <div class="brand-title">Azure DevOps · Cloud Architect</div>
+      <div class="brand-subtitle">Automated CI/CD Delivery Pipeline</div>
+    </div>
+  </div>
+  <div class="deck-actions">
+    <span class="deck-tagline">Lab 06: Hands-On Cloud Challenge</span>
+  </div>
+</header>
+
+<!-- MAIN SLIDES VIEWPORT -->
+<main class="deck-container">
+
+  <!-- SLIDE 1: COVER / HERO -->
+  <section class="slide hero-slide" id="slide-1">
+    <div class="slide-header-block" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+      <div class="hero-pill-badge">CI/CD Pipeline: GitHub Actions to Microsoft Azure</div>
+      <div class="slide-watermark">Page 01 · Overview</div>
+    </div>
+    <div>
+      <h1 class="hero-main-title">Build a <span>CI/CD Pipeline</span></h1>
+      <p class="hero-lead-text">
+        Automate your static website deployments from GitHub Actions to Microsoft Azure Blob Storage with zero manual intervention.
+      </p>
+    </div>
+
+    <div class="hero-bottom-row">
+      <div class="hero-abstract">
+        Push code to GitHub. GitHub Actions builds and verifies it. Microsoft Azure deploys it. All in under 60 seconds, automatically, every single time. This is the exact DevOps workflow used by modern cloud engineering teams.
+      </div>
+      <div class="hero-stats-grid">
+        <div class="stat-card">
+          <div class="stat-val">5</div>
+          <div class="stat-lbl">Phases</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">60 MIN</div>
+          <div class="stat-lbl">Duration</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">FREE</div>
+          <div class="stat-lbl">Tier Eligible</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">$WEB</div>
+          <div class="stat-lbl">Blob Static Host</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: AZURE DEPLOYMENT ARCHITECTURE STACK -->
+  <section class="slide" id="slide-2">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Core Technologies · Cloud Architecture</div>
+        <h2 class="slide-title">Azure Architecture and <span>Deployment Stack</span></h2>
+      </div>
+      <div class="slide-watermark">Page 02 · Architecture Stack</div>
+    </div>
+
+    <div class="editorial-callout callout-info" style="margin-top: 0; margin-bottom: 22px;">
+      <div class="callout-tag">🛠️ Hands-On Engineering Challenge</div>
+      <div class="callout-body">
+        Lab 6 is a portfolio-grade challenge. We provide the architecture, the workflow YAML, the Azure Service Principal configuration, and step-by-step verification, and you wire it together. Stuck? Expand the hints.
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="struforma-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">Architecture Layer</th>
+            <th style="width: 32%;">Azure Service and Tooling</th>
+            <th style="width: 46%;">Role in CI/CD Delivery Pipeline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Application Layer</strong></td>
+            <td><strong>Static Web Application (HTML5 / CSS3)</strong></td>
+            <td>Lightweight web code hosted directly in version control and rendered in the browser.</td>
+          </tr>
+          <tr>
+            <td><strong>Hosting Infrastructure</strong></td>
+            <td><strong>Azure Blob Storage ($web container)</strong></td>
+            <td>Serverless, zero-maintenance static web hosting with a public endpoint URL.</td>
+          </tr>
+          <tr>
+            <td><strong>Identity &amp; Access (RBAC)</strong></td>
+            <td><strong>Azure Service Principal with RBAC</strong></td>
+            <td>A digital employee badge (Service Principal) with a hotel keycard permission (RBAC) allowing GitHub to upload website files without touching anything else.</td>
+          </tr>
+          <tr>
+            <td><strong>DevOps Automation</strong></td>
+            <td><strong>GitHub Actions (Ubuntu Runner)</strong></td>
+            <td>Event-driven CI/CD runner executing checkout, Azure login, and batch file uploads.</td>
+          </tr>
+          <tr>
+            <td><strong>Secrets Vault</strong></td>
+            <td><strong>GitHub Encrypted Secrets</strong></td>
+            <td>Zero-trust encrypted store housing the authentication JSON payload.</td>
+          </tr>
+          <tr>
+            <td><strong>Edge Delivery (Bonus)</strong></td>
+            <td><strong>Azure Front Door / Azure CDN</strong></td>
+            <td>Global edge caching, TLS certificate management, and custom domain routing.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: THE GOAL & PIPELINE FLOW -->
+  <section class="slide" id="slide-3">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 1: Overview</div>
+        <h2 class="slide-title">The Goal: <span>Pure DevOps Automation</span></h2>
+      </div>
+      <div class="slide-watermark">Page 03 · Automated Pipeline Flow</div>
+    </div>
+
+    <p style="font-size: 16px; margin-bottom: 20px; max-width: 960px; color: var(--text-secondary);">
+      By the end of this lab, every <code>git push</code> to your <code>main</code> branch will automatically deploy your website to Azure Storage. <strong>No manual uploads in Azure Portal. Instantaneous cloud delivery in under 60 seconds.</strong>
+    </p>
+
+    <!-- ANIMATED ARCHITECTURE SCHEMATIC -->
+    <div class="arch-diagram-wrapper">
+      <div class="diagram-top-meta">
+        <div class="diagram-tag"><span class="diagram-beacon"></span> LIVE DEVOPS TOPOLOGY AND AUTOMATED DISPATCH</div>
+        <div class="diagram-metric">PIPELINE EXECUTION TIME &lt; 60s · AZURE BLOB DATA CONTRIBUTOR</div>
+      </div>
+
+      <svg class="pipeline-svg" viewBox="0 0 960 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="archGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1"/>
+          </pattern>
+          <filter id="nodeShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.65"/>
+          </filter>
+          <linearGradient id="gradDev" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2D4258"/>
+            <stop offset="100%" stop-color="#182736"/>
+          </linearGradient>
+          <linearGradient id="gradGH" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#30475E"/>
+            <stop offset="100%" stop-color="#1A2A3B"/>
+          </linearGradient>
+          <linearGradient id="gradActions" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#23463E"/>
+            <stop offset="100%" stop-color="#142B26"/>
+          </linearGradient>
+          <linearGradient id="gradAzure" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2B4967"/>
+            <stop offset="100%" stop-color="#162D42"/>
+          </linearGradient>
+        </defs>
+
+        <rect width="960" height="330" rx="14" fill="#0A121A"/>
+        <rect width="960" height="330" rx="14" fill="url(#archGrid)"/>
+        <rect width="960" height="330" rx="14" fill="none" stroke="rgba(130, 156, 178, 0.4)" stroke-width="1.5"/>
+
+        <!-- Connection Bus -->
+        <path d="M 115 165 L 230 165 M 350 165 L 420 165 M 560 165 L 635 165 M 755 165 L 830 165" 
+              stroke="rgba(75, 91, 110, 0.3)" stroke-width="8" stroke-linecap="round"/>
+
+        <!-- Animated Data Streams -->
+        <line x1="115" y1="165" x2="230" y2="165" stroke="#BFD3E2" stroke-width="2.5" class="flow-pipe-cyan"/>
+        <line x1="350" y1="165" x2="420" y2="165" stroke="#F0B265" stroke-width="2.5" class="flow-pipe-amber"/>
+        <line x1="560" y1="165" x2="635" y2="165" stroke="#48D1A0" stroke-width="2.5" class="flow-pipe-green"/>
+        <line x1="755" y1="165" x2="830" y2="165" stroke="#E8F1F7" stroke-width="2.5" class="flow-pipe-blue"/>
+
+        <!-- Step Badges -->
+        <g font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700">
+          <rect x="140" y="140" width="65" height="18" rx="9" fill="#162534" stroke="#BFD3E2" stroke-width="1"/>
+          <text x="172" y="152" fill="#E8F1F7" text-anchor="middle">git push</text>
+
+          <rect x="362" y="140" width="56" height="18" rx="9" fill="#281F14" stroke="#F0B265" stroke-width="1"/>
+          <text x="390" y="152" fill="#F5CA88" text-anchor="middle">webhook</text>
+
+          <rect x="575" y="140" width="52" height="18" rx="9" fill="#142F26" stroke="#48D1A0" stroke-width="1"/>
+          <text x="601" y="152" fill="#8DF0D0" text-anchor="middle">Sync $web</text>
+
+          <rect x="770" y="140" width="50" height="18" rx="9" fill="#1C2E40" stroke="#BFD3E2" stroke-width="1"/>
+          <text x="795" y="152" fill="#E8F1F7" text-anchor="middle">HTTPS</text>
+        </g>
+
+        <!-- NODE 1: DEVELOPER WORKSTATION -->
+        <g transform="translate(25, 75)" filter="url(#nodeShadow)">
+          <rect width="90" height="180" rx="12" fill="url(#gradDev)" stroke="rgba(130, 156, 178, 0.5)" stroke-width="1.5"/>
+          <rect x="10" y="12" width="70" height="16" rx="8" fill="rgba(75, 91, 110, 0.4)"/>
+          <text x="45" y="23" font-family="'Space Grotesk', sans-serif" font-size="8" font-weight="700" fill="#E8F1F7" text-anchor="middle" letter-spacing="1">LOCAL DEV</text>
+          
+          <circle cx="45" cy="70" r="24" fill="#1A2938" stroke="#BFD3E2" stroke-width="2"/>
+          <text x="45" y="78" font-size="22" text-anchor="middle">💻</text>
+          
+          <text x="45" y="118" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Engineer</text>
+          <text x="45" y="133" font-family="'JetBrains Mono', monospace" font-size="9" fill="#BFD3E2" text-anchor="middle">VS Code</text>
+          
+          <rect x="10" y="148" width="70" height="18" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)"/>
+          <text x="45" y="160" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8DF0D0" text-anchor="middle">Commit Code</text>
+        </g>
+
+        <!-- NODE 2: GITHUB REPOSITORY -->
+        <g transform="translate(230, 60)" filter="url(#nodeShadow)">
+          <rect width="120" height="210" rx="12" fill="url(#gradGH)" stroke="rgba(130, 156, 178, 0.5)" stroke-width="1.5"/>
+          <rect x="15" y="14" width="90" height="18" rx="9" fill="#1D2E40"/>
+          <text x="60" y="26" font-family="'Space Grotesk', sans-serif" font-size="8.5" font-weight="700" fill="#E8F1F7" text-anchor="middle" letter-spacing="1">SOURCE SCM</text>
+          
+          <circle cx="60" cy="72" r="26" fill="#142332" stroke="#4B5B6E" stroke-width="2"/>
+          <path d="M 60 54 C 50.06 54 42 62.06 42 72 C 42 79.95 47.16 86.69 54.32 89.07 C 55.22 89.24 55.55 88.68 55.55 88.2 C 55.55 87.77 55.53 86.37 55.53 84.86 C 50.52 85.95 49.46 82.72 49.46 82.72 C 48.65 80.64 47.47 80.09 47.47 80.09 C 45.83 78.97 47.59 79 47.59 79 C 49.4 79.13 50.35 80.87 50.35 80.87 C 51.96 83.63 54.57 82.83 55.6 82.37 C 55.76 81.2 56.23 80.4 56.75 79.94 C 52.75 79.49 48.54 77.94 48.54 71.05 C 48.54 69.08 49.24 67.48 50.39 66.22 C 50.2 65.77 49.58 63.94 50.58 61.47 C 50.58 61.47 52.09 60.99 55.53 63.32 C 56.97 62.92 58.49 62.72 60 62.71 C 61.51 62.72 63.03 62.92 64.47 63.32 C 67.91 60.99 69.42 61.47 69.42 61.47 C 70.42 63.94 69.8 65.77 69.61 66.22 C 70.76 67.48 71.46 69.08 71.46 71.05 C 71.46 77.96 67.24 79.48 63.22 79.93 C 63.86 80.48 64.45 81.57 64.45 83.25 C 64.45 85.66 64.43 87.6 64.43 88.2 C 64.43 88.69 64.76 89.26 65.68 89.07 C 72.83 86.68 78 79.95 78 72 C 78 62.06 69.94 54 60 54 Z" fill="#F0F6FC"/>
+          
+          <text x="60" y="120" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">GitHub Repo</text>
+          <text x="60" y="136" font-family="'JetBrains Mono', monospace" font-size="9" fill="#BFD3E2" text-anchor="middle">main branch</text>
+          
+          <rect x="10" y="152" width="100" height="42" rx="6" fill="#162534" stroke="rgba(255,255,255,0.08)"/>
+          <text x="60" y="168" font-family="'JetBrains Mono', monospace" font-size="8" fill="#F5CA88" text-anchor="middle">🔒 AZURE_CREDS</text>
+          <text x="60" y="183" font-family="'JetBrains Mono', monospace" font-size="8" fill="#BFD3E2" text-anchor="middle">Encrypted Secrets</text>
+        </g>
+
+        <!-- NODE 3: GITHUB ACTIONS ENGINE -->
+        <g transform="translate(420, 48)" filter="url(#nodeShadow)">
+          <rect width="140" height="234" rx="12" fill="url(#gradActions)" stroke="rgba(72, 209, 160, 0.55)" stroke-width="1.5"/>
+          <rect x="20" y="14" width="100" height="18" rx="9" fill="rgba(72, 209, 160, 0.25)"/>
+          <text x="70" y="26" font-family="'Space Grotesk', sans-serif" font-size="8.5" font-weight="700" fill="#8DF0D0" text-anchor="middle" letter-spacing="1">CI/CD ENGINE</text>
+          
+          <circle cx="70" cy="74" r="28" fill="#16312B" stroke="#48D1A0" stroke-width="2"/>
+          <text x="70" y="83" font-size="24" text-anchor="middle">⚙️</text>
+          
+          <text x="70" y="122" font-family="'Plus Jakarta Sans', sans-serif" font-size="13.5" font-weight="800" fill="#FFFFFF" text-anchor="middle">GitHub Actions</text>
+          <text x="70" y="138" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="#8DF0D0" text-anchor="middle">ubuntu-latest</text>
+          
+          <rect x="10" y="152" width="120" height="66" rx="6" fill="#0E201B" stroke="rgba(72, 209, 160, 0.3)"/>
+          <text x="18" y="170" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#E8F1F7">1. actions/checkout</text>
+          <text x="18" y="188" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#A4CCF0">2. azure/login@v2</text>
+          <text x="18" y="206" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8DF0D0">3. Sync to $web</text>
+        </g>
+
+        <!-- NODE 4: AZURE STORAGE HOST -->
+        <g transform="translate(635, 60)" filter="url(#nodeShadow)">
+          <rect width="120" height="210" rx="12" fill="url(#gradAzure)" stroke="rgba(130, 156, 178, 0.6)" stroke-width="1.5"/>
+          <rect x="15" y="14" width="90" height="18" rx="9" fill="rgba(75, 91, 110, 0.4)"/>
+          <text x="60" y="26" font-family="'Space Grotesk', sans-serif" font-size="8.5" font-weight="700" fill="#E8F1F7" text-anchor="middle" letter-spacing="1">CLOUD HOST</text>
+          
+          <circle cx="60" cy="72" r="26" fill="#182F45" stroke="#BFD3E2" stroke-width="2"/>
+          <text x="60" y="81" font-size="22" text-anchor="middle">☁️</text>
+          
+          <text x="60" y="120" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">Azure Storage</text>
+          <text x="60" y="136" font-family="'JetBrains Mono', monospace" font-size="9" fill="#A4CCF0" text-anchor="middle">$web container</text>
+          
+          <rect x="10" y="152" width="100" height="42" rx="6" fill="#152738" stroke="rgba(130, 156, 178, 0.4)"/>
+          <text x="60" y="168" font-family="'JetBrains Mono', monospace" font-size="8" fill="#F5CA88" text-anchor="middle">RBAC: Blob Contributor</text>
+          <text x="60" y="183" font-family="'JetBrains Mono', monospace" font-size="8" fill="#8DF0D0" text-anchor="middle">Static Web: ENABLED</text>
+        </g>
+
+        <!-- NODE 5: WORLDWIDE LIVE WEB -->
+        <g transform="translate(830, 75)" filter="url(#nodeShadow)">
+          <rect width="95" height="180" rx="12" fill="url(#gradDev)" stroke="rgba(130, 156, 178, 0.5)" stroke-width="1.5"/>
+          <rect x="12" y="12" width="71" height="16" rx="8" fill="rgba(75, 91, 110, 0.4)"/>
+          <text x="47" y="23" font-family="'Space Grotesk', sans-serif" font-size="8" font-weight="700" fill="#E8F1F7" text-anchor="middle" letter-spacing="1">PRODUCTION</text>
+          
+          <circle cx="47" cy="70" r="24" fill="#182A3B" stroke="#E8F1F7" stroke-width="2"/>
+          <text x="47" y="79" font-size="22" text-anchor="middle">🌍</text>
+          
+          <text x="47" y="118" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Live Web</text>
+          <text x="47" y="133" font-family="'JetBrains Mono', monospace" font-size="9" fill="#8DF0D0" text-anchor="middle">z5.web.core</text>
+          
+          <rect x="10" y="148" width="75" height="18" rx="4" fill="rgba(72, 209, 160, 0.22)" stroke="rgba(72, 209, 160, 0.45)"/>
+          <text x="47" y="160" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="#8DF0D0" text-anchor="middle">⚡ &lt;60s SYNC</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 4-CARD ARCHITECTURAL GRID -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; position: relative; z-index: 2;">
+      <div class="step-card" style="padding: 16px 18px;">
+        <div class="step-idx">1</div>
+        <div class="step-content"><strong>GitHub Repository:</strong> Hosts clean static HTML and CSS web code.</div>
+      </div>
+      <div class="step-card" style="padding: 16px 18px;">
+        <div class="step-idx">2</div>
+        <div class="step-content"><strong>Azure Storage:</strong> Serverless <code>$web</code> static hosting enabled.</div>
+      </div>
+      <div class="step-card" style="padding: 16px 18px;">
+        <div class="step-idx">3</div>
+        <div class="step-content"><strong>Permissions (RBAC):</strong> Digital employee badge letting GitHub upload files safely.</div>
+      </div>
+      <div class="step-card" style="padding: 16px 18px;">
+        <div class="step-idx">4</div>
+        <div class="step-content"><strong>GitHub Actions:</strong> Instantaneous auto-deploy on git push.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: PHASE 2: REPOSITORY SETUP -->
+  <section class="slide" id="slide-4">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 2: Repository Setup</div>
+        <h2 class="slide-title">Create the GitHub Repository and <span>Site Code</span></h2>
+      </div>
+      <div class="slide-watermark">Page 04 · Service Principal & OIDC</div>
+    </div>
+
+    <div class="editorial-grid">
+      <div>
+        <div class="step-list">
+          <div class="step-card">
+            <div class="step-idx">1</div>
+            <div class="step-content">Sign in to GitHub, click the <strong>+</strong> icon, then select <strong>New repository</strong>.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">2</div>
+            <div class="step-content">Repository name: <code>azure-cicd-portfolio</code>. Visibility: <strong>Public</strong>. Check <strong>Add a README file</strong>.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">3</div>
+            <div class="step-content">
+              Clone repo to your local workspace:
+              <div class="terminal-card">
+                <div class="terminal-body" style="padding: 12px 16px;"><span class="cmd">git clone https://github.com/YOUR-USERNAME/azure-cicd-portfolio.git</span>
+<span class="cmd">cd azure-cicd-portfolio</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">4</div>
+            <div class="step-content">
+              Commit and push your initial site structure:
+              <div class="terminal-card">
+                <div class="terminal-body" style="padding: 12px 16px;"><span class="cmd">git add index.html</span>
+<span class="cmd">git commit -m "feat: initial site structure"</span>
+<span class="cmd">git push origin main</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="terminal-card" style="margin-top: 0;">
+          <div class="terminal-header">
+            <div class="terminal-dots"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span></div>
+            <div class="terminal-tag">index.html</div>
+          </div>
+          <div class="terminal-body"><span class="comment">&lt;!-- index.html --&gt;</span>
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;Azure CI/CD Live Showcase&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style=<span class="green">"font-family: 'Segoe UI', sans-serif; background: #0A1628; color: #FFFFFF; text-align: center; padding: 80px 20px;"</span>&gt;
+  &lt;h1 style=<span class="green">"color: #8FB3D0;"</span>&gt;Deployed by GitHub Actions to Microsoft Azure ☁️&lt;/h1&gt;
+  &lt;p style=<span class="green">"font-size: 18px; margin: 20px 0;"</span>&gt;Pipeline Version: &lt;strong style=<span class="yellow">"color: #F5CA88;"</span>&gt;Version 1.0 (Initial Push)&lt;/strong&gt;&lt;/p&gt;
+  &lt;p style=<span class="green">"opacity: 0.8;"</span>&gt;Continuous Deployment verified via Azure Blob Storage and GitHub Actions&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: PHASE 3: AZURE STORAGE -->
+  <section class="slide" id="slide-5">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 3: Azure Storage</div>
+        <h2 class="slide-title">Configure Static Website <span>Hosting</span></h2>
+      </div>
+      <div class="slide-watermark">Page 05 · GitHub Secrets & Permissions</div>
+    </div>
+
+    <div class="editorial-grid">
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-idx">1</div>
+          <div class="step-content">
+            <strong>Create Resource Group &amp; Storage Account:</strong><br>
+            1. In the Azure Portal search bar, type <strong>Storage accounts</strong> and click <strong>+ Create</strong>.<br>
+            2. <strong>Resource group:</strong> Click <em>Create new</em> and enter <code>rg-cicd-pipeline-lab</code>.<br>
+            3. <strong>Storage account name:</strong> Enter a globally unique name (e.g. <code>stcicdportfolio[id]</code>).<br>
+            4. <strong>Region:</strong> <code>West US 2</code> (or <code>East US</code>).<br>
+            5. <strong>Redundancy:</strong> Locally-redundant storage (LRS).<br>
+            6. Click <strong>Review + create</strong> &gt; <strong>Create</strong>.
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-idx">2</div>
+          <div class="step-content">
+            <strong>Verify Storage Account Deployment:</strong><br>
+            When deployment completes, click <strong>Go to resource</strong> to view your storage account overview dashboard.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-idx">3</div>
+          <div class="step-content">
+            <strong>Enable Static Website Hosting in Portal:</strong><br>
+            1. In the storage account left menu under <strong>Data management</strong>, click <strong>Static website</strong>.<br>
+            2. Select <strong>Enabled</strong>.<br>
+            3. <strong>Index document name:</strong> <code>index.html</code>.<br>
+            4. <strong>Error document path:</strong> <code>404.html</code>.<br>
+            5. Click <strong>Save</strong> at the top. Azure automatically provisions the special <code>$web</code> container.
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-idx">4</div>
+          <div class="step-content">
+            <strong>Copy Primary Web Endpoint:</strong><br>
+            Copy the generated <strong>Primary endpoint</strong> URL (e.g. <code>https://stcicdportfolio123.z5.web.core.windows.net/</code>). Keep this handy for live deployment testing!
+          </div>
+        </div>
+
+        <div class="editorial-callout callout-info" style="margin-top: 4px; margin-bottom: 0;">
+          <div class="callout-tag">Web Endpoint Active</div>
+          <div class="callout-body">The endpoint is immediately live. Visiting it right now returns a 404 error because GitHub Actions has not deployed our website code yet.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: PHASE 4: SECURITY & CREDENTIALS -->
+  <section class="slide" id="slide-6">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 4: Security and Credentials</div>
+        <h2 class="slide-title">Azure Service Principal and <span>RBAC Credentials</span></h2>
+      </div>
+      <div class="slide-watermark">Page 06 · Workflow Implementation</div>
+    </div>
+
+    <!-- BEGINNER-FRIENDLY CONCEPT EXPLAINER -->
+    <div class="editorial-callout callout-info" style="margin-top: 0; margin-bottom: 24px;">
+      <div class="callout-tag">💡 Beginners Guide: What are RBAC and Service Principals?</div>
+      <div class="callout-body">
+        <p style="margin-bottom: 10px;">
+          <strong>1. What is RBAC? (Role-Based Access Control):</strong><br>
+          Think of a <strong>hotel keycard</strong>. When you check in, your keycard unlocks your hotel room door and the elevator, but it will never unlock the manager's office or the penthouse suite. In Azure, RBAC gives software a specific keycard role (here, <code>Storage Blob Data Contributor</code>). This lets GitHub Actions upload website files to the <code>$web</code> folder, but strictly prevents it from touching virtual machines, databases, or billing.
+        </p>
+        <p>
+          <strong>2. What is a Service Principal?</strong><br>
+          Humans log into Azure with an email, password, and two-factor phone code. But GitHub Actions is an automated robot running in the cloud; it has no phone to receive a text message. A <strong>Service Principal</strong> is an automated digital employee badge created specifically for software, giving it a secure Client ID and Client Secret so it can log into Azure safely without human intervention.
+        </p>
+      </div>
+    </div>
+
+    <div class="editorial-grid">
+      <div>
+        <p style="font-size: 15px; margin-bottom: 16px; color: var(--text-secondary);">
+          Follow these two steps to create GitHub's automated login badge and assign its upload permissions:
+        </p>
+
+        <div class="step-list">
+          <div class="step-card">
+            <div class="step-idx">1</div>
+            <div class="step-content">
+              <strong>Register App in Microsoft Entra ID:</strong><br>
+              1. In Azure Portal top search bar, type <strong>Microsoft Entra ID</strong> and select it.<br>
+              2. Under <strong>Manage</strong>, click <strong>App registrations</strong> &gt; <strong>+ New registration</strong>.<br>
+              3. Name: <code>sp-github-cicd-deploy</code>.<br>
+              4. Click <strong>Register</strong>. Copy the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong>.
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-idx">2</div>
+            <div class="step-content">
+              <strong>Generate Client Secret &amp; Assign IAM Role:</strong><br>
+              1. In <code>sp-github-cicd-deploy</code>, click <strong>Certificates &amp; secrets</strong> &gt; <strong>+ New client secret</strong> &gt; click <strong>Add</strong>. Copy the Secret <strong>Value</strong> immediately.<br>
+              2. Navigate to your storage account &gt; click <strong>Access Control (IAM)</strong> &gt; <strong>+ Add role assignment</strong>.<br>
+              3. Select role <strong>Storage Blob Data Contributor</strong> &gt; assign to member <code>sp-github-cicd-deploy</code> &gt; click <strong>Review + assign</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="terminal-card" style="margin-top: 0;">
+          <div class="terminal-header">
+            <div class="terminal-dots"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span></div>
+            <div class="terminal-tag">SDK-Auth JSON Output</div>
+          </div>
+          <div class="terminal-body">{
+  <span class="yellow">"clientId"</span>: <span class="green">"xxxx-xxxx-xxxx"</span>,
+  <span class="yellow">"clientSecret"</span>: <span class="green">"xxxx-xxxx-xxxx"</span>,
+  <span class="yellow">"subscriptionId"</span>: <span class="green">"xxxx-xxxx-xxxx"</span>,
+  <span class="yellow">"tenantId"</span>: <span class="green">"xxxx-xxxx-xxxx"</span>
+}</div>
+        </div>
+
+        <div class="editorial-callout callout-warn" style="margin-top: 14px; margin-bottom: 12px;">
+          <div class="callout-tag">⚠️ Critical Security Rule</div>
+          <div class="callout-body">NEVER commit this JSON payload or your <code>clientSecret</code> to git. Anyone with this JSON can access your Azure resources.</div>
+        </div>
+
+        <div class="editorial-callout callout-exam" style="margin: 0;">
+          <div class="callout-tag">Production Best Practice</div>
+          <div class="callout-body">In enterprise setups, teams use <strong>Workload Identity Federation (OIDC)</strong> to let GitHub assume roles without long-lived client secrets.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: PHASE 5: GITHUB SECRETS & WORKFLOW YAML -->
+  <section class="slide" id="slide-7">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 5: Automation Configuration</div>
+        <h2 class="slide-title">Secrets and <span>GitHub Actions Workflow</span></h2>
+      </div>
+      <div class="slide-watermark">Page 07 · Automated Pipeline Testing</div>
+    </div>
+
+    <div class="editorial-grid">
+      <div>
+        <h4 style="font-family: var(--font-tech); color: var(--bering-frost); letter-spacing: 0.8px; text-transform: uppercase; font-size: 12.5px; margin-bottom: 12px;">Step 4a: Add Repository Secrets</h4>
+        <div class="step-list">
+          <div class="step-card">
+            <div class="step-idx">1</div>
+            <div class="step-content">In GitHub: Navigate to <strong>Settings</strong>, click <strong>Secrets and variables</strong>, then select <strong>Actions</strong>.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">2</div>
+            <div class="step-content">Secret 1: <code>AZURE_CREDENTIALS</code>. Paste the full Service Principal JSON output.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">3</div>
+            <div class="step-content">Secret 2: <code>AZURE_STORAGE_ACCOUNT</code>. Paste your Storage Account name.</div>
+          </div>
+        </div>
+
+        <h4 style="font-family: var(--font-tech); color: var(--bering-frost); letter-spacing: 0.8px; text-transform: uppercase; font-size: 12.5px; margin: 20px 0 10px;">Step 4b: Commit and Push</h4>
+        <div class="terminal-card" style="margin: 0;">
+          <div class="terminal-body" style="padding: 12px 16px;"><span class="cmd">git add .github/workflows/deploy.yml</span>
+<span class="cmd">git commit -m "ci: add automated Azure deployment workflow"</span>
+<span class="cmd">git push origin main</span></div>
+        </div>
+
+        <div class="editorial-callout callout-info" style="margin-top: 14px; margin-bottom: 0;">
+          <div class="callout-tag">Pipeline Logic</div>
+          <div class="callout-body">On every push to main: Spin up an Ubuntu runner, authenticate via Azure Service Principal, and batch-upload files into <code>$web</code> using Azure CLI.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="terminal-card" style="margin-top: 0;">
+          <div class="terminal-header">
+            <div class="terminal-dots"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span></div>
+            <div class="terminal-tag">.github/workflows/deploy.yml</div>
+          </div>
+          <div class="terminal-body" style="max-height: 440px;"><span class="comment"># .github/workflows/deploy.yml</span>
+<span class="key">name</span>: <span class="val">Deploy Static Website to Azure</span>
+
+<span class="key">on</span>:
+  <span class="key">push</span>:
+    <span class="key">branches</span>: [ <span class="val">main</span> ]
+
+<span class="key">jobs</span>:
+  <span class="step-name">build-and-deploy</span>:
+    <span class="key">runs-on</span>: <span class="val">ubuntu-latest</span>
+    <span class="key">steps</span>:
+      - <span class="key">name</span>: <span class="val">Checkout repository code</span>
+        <span class="key">uses</span>: <span class="val">actions/checkout@v4</span>
+
+      - <span class="key">name</span>: <span class="val">Log in to Azure via Service Principal</span>
+        <span class="key">uses</span>: <span class="val">azure/login@v2</span>
+        <span class="key">with</span>:
+          <span class="key">creds</span>: <span class="val">${{ secrets.AZURE_CREDENTIALS }}</span>
+
+      - <span class="key">name</span>: <span class="val">Upload files to Azure Blob Storage ($web)</span>
+        <span class="key">uses</span>: <span class="val">azure/CLI@v2</span>
+        <span class="key">with</span>:
+          <span class="key">inlineScript</span>: |
+            az storage blob upload-batch \
+              --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
+              --auth-mode login \
+              --destination '$web' \
+              --source . \
+              --overwrite true \
+              --pattern "*"</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: PHASE 6: EXECUTION & REAL-TIME TEST -->
+  <section class="slide" id="slide-8">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 6: Execution</div>
+        <h2 class="slide-title">Watch It Deploy and <span>Real-Time Verification Test</span></h2>
+      </div>
+      <div class="slide-watermark">Page 08 · Proof & Submission</div>
+    </div>
+
+    <div class="editorial-grid">
+      <div>
+        <div class="step-list">
+          <div class="step-card">
+            <div class="step-idx">1</div>
+            <div class="step-content">Open GitHub, click the <strong>Actions</strong> tab, and observe the active workflow run.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">2</div>
+            <div class="step-content">Within 30 to 60 seconds, it completes with a <strong>Green Checkmark (✔)</strong>.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">3</div>
+            <div class="step-content">Open your Azure endpoint in a new tab: Your website is live worldwide.</div>
+          </div>
+        </div>
+
+        <div class="editorial-callout callout-success" style="margin-top: 16px; margin-bottom: 0;">
+          <div class="callout-tag">Submission Evidence</div>
+          <div class="callout-body">Capture screenshots of: (1) Green checkmark in GitHub Actions; (2) Live Azure Storage website displaying Version 2.0 content.</div>
+        </div>
+      </div>
+
+      <div>
+        <h4 style="font-family: var(--font-tech); color: var(--bering-frost); letter-spacing: 0.8px; text-transform: uppercase; font-size: 12.5px; margin-bottom: 10px;">The Real-Time Update Test</h4>
+        <div class="terminal-card" style="margin-top: 0;">
+          <div class="terminal-body" style="padding: 12px 16px;"><span class="comment"># Open index.html locally, change Version 1.0 to Version 2.0:</span>
+<span class="cmd">git add index.html</span>
+<span class="cmd">git commit -m "update: bump site version to 2.0"</span>
+<span class="cmd">git push origin main</span></div>
+        </div>
+        <p style="font-size: 14.5px; margin-top: 14px; line-height: 1.7; color: var(--text-secondary);">
+          Watch GitHub Actions automatically trigger, build, and deploy. Refresh your Azure URL in the browser: <strong>the new page appears live immediately.</strong> Zero manual Azure console clicks.
+        </p>
+
+        <details class="struforma-details">
+          <summary>Troubleshooting: What to do if the workflow fails</summary>
+          <div class="details-inner">
+            <ul style="margin-left: 20px; line-height: 1.75;">
+              <li><strong>AuthorizationPermissionMismatch:</strong> Ensure Service Principal has <code>Storage Blob Data Contributor</code> on the Resource Group.</li>
+              <li><strong>Invalid credentials:</strong> Ensure entire JSON block was pasted into <code>AZURE_CREDENTIALS</code> with no missing braces.</li>
+              <li><strong>Destination container not found:</strong> Verify static website hosting is enabled so <code>$web</code> exists.</li>
+              <li><strong>Workflow not triggering:</strong> Verify path is <code>.github/workflows/deploy.yml</code> (lowercase, plural workflows).</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: BONUS CHALLENGES & CLEANUP -->
+  <section class="slide" id="slide-9">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Wrap-Up: Enterprise Next Steps</div>
+        <h2 class="slide-title">Bonus Challenges, Cleanup, and <span>Portfolio Proof</span></h2>
+      </div>
+      <div class="slide-watermark">Page 09 · Resource Teardown</div>
+    </div>
+
+    <div class="editorial-grid">
+      <div>
+        <div class="editorial-callout callout-exam" style="margin-top: 0;">
+          <div class="callout-tag">🚀 Enterprise Bonus Challenges</div>
+          <div class="callout-body">
+            <ul style="margin-left: 18px; margin-top: 8px; line-height: 1.75;">
+              <li><strong>Azure CDN or Front Door:</strong> Add a CDN profile for custom domain and free SSL.</li>
+              <li><strong>Purge CDN on Deploy:</strong> Add CDN Purge in Azure Portal to workflow.</li>
+              <li><strong>Automated HTML Linting:</strong> Add an <code>htmlhint</code> test step in GitHub Actions before deployment.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="editorial-callout callout-success" style="margin-top: 16px; margin-bottom: 0;">
+          <div class="callout-tag">🎉 Azure Lab 6 Complete</div>
+          <div class="callout-body">
+            You engineered the standard CI/CD pattern used across modern tech organizations. Every push triggers an automated build and deployment.
+            <div style="margin-top: 8px; color: var(--bering-frost); font-weight: 700;">Next up: Lab 7: AI Smart Document Analyzer</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4 style="font-family: var(--font-tech); color: var(--bering-frost); letter-spacing: 0.8px; text-transform: uppercase; font-size: 12.5px; margin-bottom: 12px;">Clean Up and Portfolio Proof</h4>
+        <div class="step-list">
+          <div class="step-card">
+            <div class="step-idx">1</div>
+            <div class="step-content">
+              Tear down the lab Resource Group via Azure Portal:
+              <div class="step-card" style="margin-top: 6px; background: rgba(0,0,0,0.25);">
+                <div class="step-content">
+                  1. Search <strong>Resource groups</strong> &gt; select <code>rg-cicd-pipeline-lab</code>.<br>
+                  2. Click <strong>Delete resource group</strong> &gt; enter name &gt; click <strong>Delete</strong>.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">2</div>
+            <div class="step-content">
+              Delete App Registration to revoke credentials:
+              <div class="step-card" style="margin-top: 6px; background: rgba(0,0,0,0.25);">
+                <div class="step-content">
+                  1. Search <strong>Microsoft Entra ID</strong> &gt; click <strong>App registrations</strong>.<br>
+                  2. Select <code>sp-github-cicd-deploy</code> &gt; click <strong>Delete</strong> on the top bar.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-idx">3</div>
+            <div class="step-content">
+              <strong>Keep the GitHub repository.</strong> Pin it to your GitHub profile:
+              <p style="margin-top: 6px; font-style: italic; color: #8DF0D0; font-size: 14px;">"Engineered an automated CI/CD pipeline deploying static web applications to Microsoft Azure via GitHub Actions."</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- FLOATING PRESENTATION DOCK -->
+<div class="deck-dock" id="deckDock">
+  <button class="dock-nav-btn" onclick="prevSlide()" title="Previous page (Left Arrow)">‹</button>
+  <div class="dock-dots" id="dockDots">
+    <div class="dock-dot active" onclick="goToSlide(1)"></div>
+    <div class="dock-dot" onclick="goToSlide(2)"></div>
+    <div class="dock-dot" onclick="goToSlide(3)"></div>
+    <div class="dock-dot" onclick="goToSlide(4)"></div>
+    <div class="dock-dot" onclick="goToSlide(5)"></div>
+    <div class="dock-dot" onclick="goToSlide(6)"></div>
+    <div class="dock-dot" onclick="goToSlide(7)"></div>
+    <div class="dock-dot" onclick="goToSlide(8)"></div>
+    <div class="dock-dot" onclick="goToSlide(9)"></div>
+  </div>
+  <span class="dock-counter" id="dockCounter">01 / 09</span>
+  <button class="dock-nav-btn" onclick="nextSlide()" title="Next page (Right Arrow)">›</button>
+</div>
+
+<script>
+let currentSlide = 1;
+const totalSlides = 9;
+
+function updateDeckUI(slideNum) {
+  currentSlide = slideNum;
+  const counter = document.getElementById('dockCounter');
+  if (counter) {
+    counter.innerText = (currentSlide < 10 ? '0' + currentSlide : currentSlide) + ' / 0' + totalSlides;
+  }
+
+  // Update dots
+  const dots = document.querySelectorAll('.dock-dot');
+  dots.forEach((dot, idx) => {
+    if (idx + 1 === currentSlide) {
+      dot.classList.add('active');
+    } else {
+      dot.classList.remove('active');
+    }
+  });
+
+  if (history.replaceState) {
+    history.replaceState(null, null, '#slide-' + currentSlide);
+  }
+}
+
+function scrollToSlide(n) {
+  if (n < 1) n = 1;
+  if (n > totalSlides) n = totalSlides;
+  updateDeckUI(n);
+  const target = document.getElementById('slide-' + n);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides) {
+    scrollToSlide(currentSlide + 1);
+  }
+}
+
+function prevSlide() {
+  if (currentSlide > 1) {
+    scrollToSlide(currentSlide - 1);
+  }
+}
+
+function goToSlide(n) {
+  scrollToSlide(n);
+}
+
+// Track active slide on scroll
+const observerOptions = {
+  root: null,
+  rootMargin: '-20% 0px -40% 0px',
+  threshold: 0
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const match = entry.target.id.match(/slide-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1]);
+        updateDeckUI(num);
+      }
+    }
+  });
+}, observerOptions);
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.slide').forEach(slide => observer.observe(slide));
+  
+  if (window.location.hash) {
+    const match = window.location.hash.match(/slide-(\d+)/);
+    if (match) {
+      const num = parseInt(match[1]);
+      if (num >= 1 && num <= totalSlides) {
+        setTimeout(() => scrollToSlide(num), 120);
+      }
+    }
+  }
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+    e.preventDefault();
+    nextSlide();
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    prevSlide();
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Azure Lab 2 | Virtual Machines & Nginx</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+
+:root {
+  /* Design Tokens */
+  --bering-slate: #4B5B6E;
+  --bering-abyss: #0B131C;
+  --bering-deep: #111A24;
+  --bering-dark: #182533;
+  --bering-slate: #243547;
+  --bering-sea: #4B5B6E;
+  --bering-light: #5F7A96;
+  --bering-mist: #829CB2;
+  --bering-frost: #BFD3E2;
+  --bering-ice: #E8F1F7;
+
+  /* Functional Accents */
+  --sea-foam: #48D1A0;
+  --warm-amber: #F0B265;
+  --soft-coral: #E8727C;
+
+  /* Glassmorphism Presentation Fills */
+  --glass-surface: linear-gradient(155deg, rgba(36, 53, 71, 0.85) 0%, rgba(17, 26, 36, 0.94) 100%);
+  --glass-card: linear-gradient(140deg, rgba(75, 91, 110, 0.38) 0%, rgba(24, 37, 51, 0.72) 100%);
+  --glass-card-hover: linear-gradient(140deg, rgba(95, 122, 150, 0.52) 0%, rgba(36, 53, 71, 0.85) 100%);
+  --glass-border: rgba(130, 156, 178, 0.28);
+  --glass-border-bright: rgba(191, 211, 226, 0.55);
+
+  /* Typography */
+  --text-pure: #FFFFFF;
+  --text-primary: #F1F6FA;
+  --text-secondary: #D0DFEC;
+  --text-muted: #8FA7BC;
+
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-tech: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bering-abyss);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(75, 91, 110, 0.45) 0px, transparent 55%),
+    radial-gradient(at 100% 100%, rgba(24, 37, 51, 0.7) 0px, transparent 65%),
+    radial-gradient(at 50% 50%, rgba(17, 26, 36, 0.5) 0px, transparent 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 110px;
+}
+
+/* TOPBAR */
+.deck-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11, 19, 28, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand-group { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(135deg, var(--bering-frost) 0%, var(--bering-sea) 100%);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(75, 91, 110, 0.45);
+}
+.brand-title {
+  font-family: var(--font-tech);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-pure);
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--bering-frost);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* DECK STAGE */
+.deck-container {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 24px 110px;
+  box-sizing: border-box;
+}
+
+/* SLIDE BASE */
+.slide {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 26px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 28px 34px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 24px 60px -20px rgba(8, 16, 26, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.25);
+  transition: border-color 0.25s ease;
+  scroll-margin-top: 70px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.slide:hover { border-color: var(--glass-border-bright); }
+.slide::before {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, rgba(130, 156, 178, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+.slide::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: 20%;
+  width: 380px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(75, 91, 110, 0.3) 0%, transparent 75%);
+  pointer-events: none;
+}
+
+/* SLIDE HEADER & INLINE WATERMARK */
+.slide-header-block {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 12px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+.slide-header-main {
+  flex: 1;
+  min-width: 0;
+}
+.slide-watermark {
+  font-family: var(--font-tech);
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.6) 0%, rgba(30, 45, 61, 0.8) 100%);
+  border: 1px solid var(--glass-border-bright);
+  padding: 4px 12px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.slide-index-tag {
+  font-family: var(--font-tech);
+  font-size: 10.5px;
+  letter-spacing: 1.3px;
+  color: var(--bering-frost);
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slide-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--text-pure);
+  line-height: 1.25;
+}
+.slide-title span {
+  background: linear-gradient(180deg, #FFFFFF 25%, var(--bering-frost) 70%, var(--bering-mist) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* SLIDE 1 HERO */
+.slide.hero-slide {
+  justify-content: flex-start;
+  gap: 18px;
+}
+.hero-pill-badge {
+  font-family: var(--font-tech);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.65) 0%, rgba(30, 45, 61, 0.85) 100%);
+  border: 1px solid var(--glass-border-bright);
+  padding: 4px 13px;
+  border-radius: 100px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.hero-pill-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--sea-foam);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--sea-foam);
+}
+.hero-main-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+  margin-top: 8px;
+}
+.hero-main-title span {
+  background: linear-gradient(180deg, #FFFFFF 20%, var(--bering-frost) 65%, var(--bering-mist) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-lead-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--bering-frost);
+  max-width: 820px;
+  margin-top: 6px;
+}
+.hero-bottom-row {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--glass-border);
+}
+.hero-abstract {
+  flex: 1;
+  min-width: 280px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.stat-card {
+  background: rgba(11, 19, 28, 0.65);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 88px;
+}
+.stat-val {
+  font-family: var(--font-tech);
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+.stat-lbl {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* EDITORIAL CALLOUTS */
+.editorial-callout {
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.4) 0%, rgba(24, 37, 51, 0.7) 100%);
+  border: 1.5px solid var(--glass-border-bright);
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin: 12px 0;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.editorial-callout.callout-info { border-left: 5px solid var(--bering-frost); }
+.editorial-callout.callout-warn { 
+  border-left: 5px solid var(--warm-amber);
+  background: linear-gradient(135deg, rgba(240, 178, 101, 0.16) 0%, rgba(36, 28, 16, 0.85) 100%);
+}
+.editorial-callout.callout-exam {
+  border-left: 5px solid var(--sea-foam);
+  background: linear-gradient(135deg, rgba(72, 209, 160, 0.16) 0%, rgba(16, 36, 28, 0.85) 100%);
+}
+.callout-tag {
+  font-family: var(--font-tech);
+  font-size: 10px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.callout-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* MODERN TABLES */
+.table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1.5px solid var(--glass-border);
+  background: rgba(11, 19, 28, 0.65);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin: 12px 0;
+  width: 100%;
+}
+.struforma-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12.5px;
+}
+.struforma-table th {
+  background: linear-gradient(135deg, rgba(75, 91, 110, 0.55) 0%, rgba(36, 53, 71, 0.75) 100%);
+  color: #FFFFFF;
+  font-family: var(--font-tech);
+  font-size: 10.5px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-bottom: 1.5px solid var(--glass-border-bright);
+}
+.struforma-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(130, 156, 178, 0.15);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.struforma-table tr:last-child td { border-bottom: none; }
+.struforma-table tr:hover td { background: rgba(75, 91, 110, 0.18); color: #FFFFFF; }
+
+/* LAB GRID - FIXING OVERFLOW BLOWOUT */
+.lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 10px;
+  width: 100%;
+}
+.lab-card {
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  transition: all 0.2s ease;
+  min-width: 0; /* CRITICAL: prevents grid track blowout */
+  max-width: 100%;
+  overflow: hidden;
+}
+.lab-card:hover {
+  background: var(--glass-card-hover);
+  border-color: var(--glass-border-bright);
+}
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.step-num-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bering-frost) 0%, var(--bering-sea) 100%);
+  color: var(--bering-abyss);
+  font-family: var(--font-tech);
+  font-weight: 800;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(75, 91, 110, 0.5);
+  flex-shrink: 0;
+}
+.card-header-title {
+  font-family: var(--font-tech);
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+.card-description {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.card-description strong {
+  color: var(--bering-frost);
+}
+
+/* TERMINAL CODE BOX */
+.terminal-block {
+  background: #0B131C;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+  width: 100%;
+  min-width: 0; /* CRITICAL */
+  max-width: 100%;
+}
+.terminal-header {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.terminal-dots { display: flex; gap: 5px; }
+.terminal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+.terminal-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--bering-frost);
+  font-weight: 600;
+}
+.terminal-body {
+  padding: 11px 13px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre-wrap; /* wraps clean lines or allows clean scroll */
+  word-break: break-word;
+  color: var(--text-primary);
+  max-height: 400px;
+  min-width: 0;
+}
+.cmd { color: #A4CCF0; }
+.comment { color: #7B94A8; font-style: italic; }
+.green { color: #7AE7C5; }
+.yellow { color: #F5CA88; }
+.key { color: #A4CCF0; font-weight: 600; }
+.val { color: #7AE7C5; }
+
+code {
+  font-family: var(--font-mono);
+  background: rgba(75, 91, 110, 0.45);
+  color: var(--bering-ice);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  border: 1px solid var(--glass-border);
+  word-break: break-word;
+}
+
+/* ARCHITECTURE DIAGRAM */
+.arch-diagram-wrapper {
+  background: #0B131C;
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0 0 0;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+.diagram-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+}
+.diagram-tag {
+  font-family: var(--font-tech);
+  font-size: 10px;
+  letter-spacing: 1.1px;
+  color: var(--bering-frost);
+  text-transform: uppercase;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.diagram-beacon {
+  width: 7px;
+  height: 7px;
+  background: var(--sea-foam);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--sea-foam);
+}
+.diagram-metric {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.pipeline-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@keyframes pipelineFlow {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+.flow-pipe-cyan { stroke-dasharray: 6 6; animation: pipelineFlow 1.6s linear infinite; }
+.flow-pipe-green { stroke-dasharray: 6 6; animation: pipelineFlow 1.6s linear infinite; }
+.flow-pipe-amber { stroke-dasharray: 6 6; animation: pipelineFlow 1.6s linear infinite; }
+
+/* COMPACT FLOATING DOCK */
+.deck-dock {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(11, 19, 28, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 100px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
+}
+.deck-dock:hover { opacity: 1; }
+.dock-nav-btn {
+  background: rgba(75, 91, 110, 0.4);
+  border: 1px solid var(--glass-border);
+  color: #FFFFFF;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.dock-nav-btn:hover {
+  background: var(--bering-frost);
+  color: var(--bering-abyss);
+}
+.dock-dots { display: flex; align-items: center; gap: 6px; }
+.dock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(191, 211, 226, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dock-dot.active {
+  background: #FFFFFF;
+  transform: scale(1.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+.dock-counter {
+  font-family: var(--font-tech);
+  font-size: 11px;
+  color: var(--bering-frost);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+/* EVIDENCE CHECKLIST */
+.evidence-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.evidence-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--glass-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.evidence-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(72, 209, 160, 0.25);
+  border: 1.5px solid var(--sea-foam);
+  color: var(--sea-foam);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* RESPONSIVE LAYOUT BREAKPOINTS */
+@media (max-width: 1024px) {
+  .deck-container { padding: 14px 16px 110px; }
+  .slide { padding: 22px 20px; border-radius: 14px; }
+  .lab-grid { grid-template-columns: 1fr; gap: 14px; }
+  .hero-bottom-row { flex-direction: column; align-items: stretch; }
+  .hero-stats-grid { grid-template-columns: repeat(2, 1fr); width: 100%; }
+}
+
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="deck-topbar">
+  <div class="brand-group">
+    <div class="brand-icon">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+        <polyline points="2 17 12 22 22 17"></polyline>
+        <polyline points="2 12 12 17 22 12"></polyline>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-title">Azure Architecture Laboratory</div>
+      <div class="brand-sub">Week 1 · Lab 2 · Linux Compute & Nginx (Portal)</div>
+    </div>
+  </div>
+</header>
+
+<main class="deck-container">
+
+  <!-- SLIDE 1: COVER / HERO -->
+  <section class="slide hero-slide" id="slide-1">
+    <div class="slide-header-block" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+      <div class="hero-pill-badge">Azure Portal Walkthrough: Linux Compute &amp; Nginx</div>
+      <div class="slide-watermark">Page 01 · Overview</div>
+    </div>
+    
+    <div>
+      <h1 class="hero-main-title">Linux Virtual Machines &amp; <span>Nginx Web Server</span></h1>
+      <p class="hero-lead-text">
+        Provision an enterprise Ubuntu 24.04 virtual machine in Azure, configure stateful firewall rules with Network Security Groups, connect over secure SSH, and host a live Nginx web server using the Azure Portal.
+      </p>
+    </div>
+
+    <div class="hero-bottom-row">
+      <div class="hero-abstract">
+        A step-by-step console guide: deploy an Azure Virtual Machine configured for cost-efficient burstable compute, apply granular inbound port security rules, connect via SSH keypair authentication, and verify global public HTTP routing.
+      </div>
+      <div class="hero-stats-grid">
+        <div class="stat-card">
+          <div class="stat-val">6</div>
+          <div class="stat-lbl">Phases</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">50 MIN</div>
+          <div class="stat-lbl">Duration</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">B1S</div>
+          <div class="stat-lbl">VM Size</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">NGINX</div>
+          <div class="stat-lbl">Web Engine</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: ARCHITECTURE STACK & BEGINNER MODELS -->
+  <section class="slide" id="slide-2">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Core Technologies · Cloud Compute</div>
+        <h2 class="slide-title">Azure Compute &amp; <span>Security Architecture</span></h2>
+      </div>
+      <div class="slide-watermark">Page 02 · Architecture Stack</div>
+    </div>
+
+    <div class="editorial-callout callout-info" style="margin-top: 0; margin-bottom: 12px;">
+      <div class="callout-tag">💡 Beginners Guide: Core Compute &amp; Security Concepts</div>
+      <div class="callout-body">
+        <p style="margin-bottom: 6px;">
+          <strong>1. What is an Azure Virtual Machine (VM)?</strong><br>
+          Think of a <strong>rented private office unit in a cloud tower</strong>. Instead of buying physical computer hardware, Azure allocates dedicated virtual CPU cores, memory, and storage that you control fully with complete administrator access.
+        </p>
+        <p style="margin-bottom: 6px;">
+          <strong>2. What is a Network Security Group (NSG)?</strong><br>
+          Think of a <strong>security guard desk at the building entrance</strong>. Every packet of traffic arriving at your server must show its badge. The guard checks the port number: port 22 is allowed only for administrators holding the secret SSH key, and port 80 is allowed for public visitors wanting to view the website. All other ports are blocked by default.
+        </p>
+        <p>
+          <strong>3. What is an SSH Keypair?</strong><br>
+          Think of a <strong>high security digital master lock and key</strong>. The public key is permanently installed in the lock on your Linux server. The private key (.pem file) stays only on your personal computer. When you connect, cryptographic handshakes authenticate you instantly without transmitting passwords across the internet.
+        </p>
+      </div>
+    </div>
+
+    <div class="editorial-callout callout-warn" style="margin-top: 0; margin-bottom: 14px;">
+      <div class="callout-tag">💰 Azure Free Tier Advisory: B1s Configuration Rule</div>
+      <div class="callout-body">
+        Azure includes 750 hours per month of the <code>Standard_B1s</code> size for 12 months. However, the portal defaults <strong>Security type</strong> to <strong>Trusted Launch</strong>, which blocks all burstable B-series sizes. In the portal creation wizard, you must switch Security type to <strong>Standard</strong> to select B1s. Additionally, on the Disks tab, change the OS disk type from Premium SSD to <strong>Standard SSD</strong> to prevent unexpected billing.
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="struforma-table">
+        <thead>
+          <tr>
+            <th style="width: 24%;">Architecture Layer</th>
+            <th style="width: 32%;">Azure Portal Resource</th>
+            <th style="width: 44%;">Role in System Architecture</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Virtual Compute Tier</strong></td>
+            <td><strong>Azure Virtual Machine (Standard_B1s)</strong></td>
+            <td>Runs Ubuntu Server 24.04 LTS with dedicated vCPU and 1 GiB memory for lightweight workloads.</td>
+          </tr>
+          <tr>
+            <td><strong>Traffic Filtering</strong></td>
+            <td><strong>Network Security Group (nsg-vm-web)</strong></td>
+            <td>Stateful cloud firewall enforcing inbound rule priority 100 (SSH 22) and 110 (HTTP 80).</td>
+          </tr>
+          <tr>
+            <td><strong>Network Ingress</strong></td>
+            <td><strong>Azure Public IP Address</strong></td>
+            <td>Dynamic or static IPv4 address routed through Microsoft global edge routers to your virtual NIC.</td>
+          </tr>
+          <tr>
+            <td><strong>Virtual Network</strong></td>
+            <td><strong>Azure VNet &amp; Default Subnet</strong></td>
+            <td>Isolated private network space facilitating secure communication between NICs and subnets.</td>
+          </tr>
+          <tr>
+            <td><strong>Application Tier</strong></td>
+            <td><strong>Nginx HTTP Server (systemd)</strong></td>
+            <td>High performance web server process listening on port 80 and returning HTML web responses.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: ANIMATED TOPOLOGY SCHEMATIC -->
+  <section class="slide" id="slide-3">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">System Design: Interactive Schematic</div>
+        <h2 class="slide-title">Network Flow: <span>Internet Ingress to Linux VM</span></h2>
+      </div>
+      <div class="slide-watermark">Page 03 · Network Flow Topology</div>
+    </div>
+
+    <p style="font-size: 13.5px; margin-bottom: 12px; max-width: 940px; color: var(--text-secondary);">
+      Inbound requests hit the Azure Public IP, pass through the Network Security Group inspection rules, reach the Virtual Network Interface Card (NIC), and are processed by Nginx inside the Ubuntu VM.
+    </p>
+
+    <!-- ANIMATED SCHEMATIC -->
+    <div class="arch-diagram-wrapper">
+      <div class="diagram-top-meta">
+        <div class="diagram-tag"><span class="diagram-beacon"></span> LIVE COMPUTE INGRESS TOPOLOGY</div>
+        <div class="diagram-metric">STANDARD_B1S · UBUNTU 24.04 LTS · NSG PORTS 22 &amp; 80</div>
+      </div>
+
+      <svg class="pipeline-svg" viewBox="0 0 960 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid2" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1"/>
+          </pattern>
+          <filter id="nodeShadow2" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.6"/>
+          </filter>
+          <linearGradient id="nodeGradVisitor" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2D4258"/><stop offset="100%" stop-color="#182736"/>
+          </linearGradient>
+          <linearGradient id="nodeGradNSG" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#23463E"/><stop offset="100%" stop-color="#142B26"/>
+          </linearGradient>
+          <linearGradient id="nodeGradNIC" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#30475E"/><stop offset="100%" stop-color="#1A2A3B"/>
+          </linearGradient>
+          <linearGradient id="nodeGradVM" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4A3B22"/><stop offset="100%" stop-color="#261E11"/>
+          </linearGradient>
+        </defs>
+
+        <rect width="960" height="280" rx="14" fill="#0A121A"/>
+        <rect width="960" height="280" rx="14" fill="url(#grid2)"/>
+        <rect width="960" height="280" rx="14" fill="none" stroke="rgba(130, 156, 178, 0.4)" stroke-width="1.5"/>
+
+        <!-- Flow lines -->
+        <path d="M 125 140 L 245 140 M 390 140 L 510 140 M 650 140 L 775 140" 
+              stroke="rgba(75, 91, 110, 0.3)" stroke-width="8" stroke-linecap="round"/>
+
+        <line x1="125" y1="140" x2="245" y2="140" stroke="#BFD3E2" stroke-width="2.5" class="flow-pipe-cyan"/>
+        <line x1="390" y1="140" x2="510" y2="140" stroke="#48D1A0" stroke-width="2.5" class="flow-pipe-green"/>
+        <line x1="650" y1="140" x2="775" y2="140" stroke="#F0B265" stroke-width="2.5" class="flow-pipe-amber"/>
+
+        <!-- Flow badges -->
+        <g font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700">
+          <rect x="155" y="118" width="60" height="18" rx="9" fill="#162534" stroke="#BFD3E2" stroke-width="1"/>
+          <text x="185" y="130" fill="#E8F1F7" text-anchor="middle">TCP 80/22</text>
+
+          <rect x="420" y="118" width="60" height="18" rx="9" fill="#142F26" stroke="#48D1A0" stroke-width="1"/>
+          <text x="450" y="130" fill="#8DF0D0" text-anchor="middle">Rule Match</text>
+
+          <rect x="680" y="118" width="65" height="18" rx="9" fill="#281F14" stroke="#F0B265" stroke-width="1"/>
+          <text x="712" y="130" fill="#F5CA88" text-anchor="middle">Private IP</text>
+        </g>
+
+        <!-- NODE 1: USERS -->
+        <g transform="translate(25, 50)" filter="url(#nodeShadow2)">
+          <rect width="100" height="180" rx="12" fill="url(#nodeGradVisitor)" stroke="rgba(130, 156, 178, 0.5)" stroke-width="1.5"/>
+          <rect x="12" y="12" width="76" height="16" rx="8" fill="rgba(75, 91, 110, 0.4)"/>
+          <text x="50" y="23" font-family="'Space Grotesk', sans-serif" font-size="8" font-weight="700" fill="#E8F1F7" text-anchor="middle" letter-spacing="1">ACCESS</text>
+          <circle cx="50" cy="70" r="22" fill="#1A2938" stroke="#BFD3E2" stroke-width="2"/>
+          <text x="50" y="78" font-size="20" text-anchor="middle">🌐</text>
+          <text x="50" y="118" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Users &amp; Admin</text>
+          <text x="50" y="133" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#BFD3E2" text-anchor="middle">HTTP &amp; SSH</text>
+          <rect x="10" y="148" width="80" height="18" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)"/>
+          <text x="50" y="160" font-family="'JetBrains Mono', monospace" font-size="8" fill="#8DF0D0" text-anchor="middle">Public Traffic</text>
+        </g>
+
+        <!-- NODE 2: NETWORK SECURITY GROUP -->
+        <g transform="translate(245, 38)" filter="url(#nodeShadow2)">
+          <rect width="145" height="204" rx="12" fill="url(#nodeGradNSG)" stroke="rgba(72, 209, 160, 0.55)" stroke-width="1.5"/>
+          <rect x="15" y="14" width="115" height="18" rx="9" fill="rgba(72, 209, 160, 0.25)"/>
+          <text x="72" y="26" font-family="'Space Grotesk', sans-serif" font-size="8" font-weight="700" fill="#8DF0D0" text-anchor="middle" letter-spacing="1">STATEFUL FIREWALL</text>
+          <circle cx="72" cy="70" r="24" fill="#16312B" stroke="#48D1A0" stroke-width="2"/>
+          <text x="72" y="78" font-size="22" text-anchor="middle">🛡️</text>
+          <text x="72" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">nsg-vm-web</text>
+          <text x="72" y="132" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8DF0D0" text-anchor="middle">Priority 100: SSH 22</text>
+          <rect x="10" y="148" width="125" height="42" rx="6" fill="#0E201B" stroke="rgba(72, 209, 160, 0.3)"/>
+          <text x="72" y="164" font-family="'JetBrains Mono', monospace" font-size="8" fill="#E8F1F7" text-anchor="middle">Priority 110: HTTP 80</text>
+          <text x="72" y="179" font-family="'JetBrains Mono', monospace" font-size="8" fill="#7AE7C5" text-anchor="middle">Default Deny Inbound</text>
+        </g>
+
+        <!-- NODE 3: NIC & PUBLIC IP -->
+        <g transform="translate(510, 38)" filter="url(#nodeShadow2)">
+          <rect width="140" height="204" rx="12" fill="url(#nodeGradNIC)" stroke="rgba(191, 211, 226, 0.55)" stroke-width="1.5"/>
+          <rect x="15" y="14" width="110" height="18" rx="9" fill="rgba(75, 91, 110, 0.5)"/>
+          <text x="70" y="26" font-family="'Space Grotesk', sans-serif" font-size="8" font-weight="700" fill="#BFD3E2" text-anchor="middle" letter-spacing="1">NETWORK INTERFACE</text>
+          <circle cx="70" cy="70" r="24" fill="#1F2F40" stroke="#BFD3E2" stroke-width="2"/>
+          <text x="70" y="78" font-size="22" text-anchor="middle">🔌</text>
+          <text x="70" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">Virtual NIC</text>
+          <text x="70" y="132" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#BFD3E2" text-anchor="middle">Dynamic Public IP</text>
+          <rect x="10" y="148" width="120" height="42" rx="6" fill="#14212D" stroke="rgba(191, 211, 226, 0.3)"/>
+          <text x="70" y="164" font-family="'JetBrains Mono', monospace" font-size="8" fill="#E8F1F7" text-anchor="middle">Private IP: 10.0.0.4</text>
+          <text x="70" y="179" font-family="'JetBrains Mono', monospace" font-size="8" fill="#8DF0D0" text-anchor="middle">VNet Subnet Binding</text>
+        </g>
+
+        <!-- NODE 4: UBUNTU VM & NGINX -->
+        <g transform="translate(775, 40)" filter="url(#nodeShadow2)">
+          <rect width="160" height="200" rx="12" fill="url(#nodeGradVM)" stroke="rgba(240, 178, 101, 0.55)" stroke-width="1.5"/>
+          <rect x="15" y="14" width="130" height="18" rx="9" fill="rgba(240, 178, 101, 0.25)"/>
+          <text x="80" y="26" font-family="'Space Grotesk', sans-serif" font-size="8" font-weight="700" fill="#F5CA88" text-anchor="middle" letter-spacing="1">UBUNTU COMPUTE</text>
+          <circle cx="80" cy="70" r="24" fill="#2E2316" stroke="#F0B265" stroke-width="2"/>
+          <text x="80" y="78" font-size="22" text-anchor="middle">🐧</text>
+          <text x="80" y="116" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">vm-linux-web-01</text>
+          <text x="80" y="132" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#F5CA88" text-anchor="middle">Ubuntu 24.04 LTS (B1s)</text>
+          <rect x="10" y="148" width="140" height="40" rx="6" fill="#20180F" stroke="rgba(240, 178, 101, 0.3)"/>
+          <text x="80" y="163" font-family="'JetBrains Mono', monospace" font-size="8" fill="#E8F1F7" text-anchor="middle">Nginx Service Active</text>
+          <text x="80" y="178" font-family="'JetBrains Mono', monospace" font-size="8" fill="#F5CA88" text-anchor="middle">Custom HTML Served</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: PHASE 1 & 2 - RG & NSG IN PORTAL -->
+  <section class="slide" id="slide-4">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 1 &amp; 2 · Azure Portal Console</div>
+        <h2 class="slide-title">Create Resource Group &amp; <span>Configure Firewall Rules</span></h2>
+      </div>
+      <div class="slide-watermark">Page 04 · Firewall Configuration</div>
+    </div>
+
+    <div class="lab-grid">
+      <!-- STEP 1: RESOURCE GROUP -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">1</div>
+          <div class="card-header-title">Create Resource Group via Portal</div>
+        </div>
+        <div class="card-description">
+          1. Sign in to the <strong>Azure Portal</strong> at <code>portal.azure.com</code>.<br>
+          2. Search <strong>Resource groups</strong> in the top search bar and click <strong>+ Create</strong>.<br>
+          3. Subscription: Select your active subscription.<br>
+          4. Resource group name: Type <code>rg-virtual-machines-lab</code>.<br>
+          5. Region: Choose your preferred deployment region (such as <code>East US</code>).<br>
+          6. Click <strong>Review + create</strong>, then click <strong>Create</strong>.
+        </div>
+      </div>
+
+      <!-- STEP 2: NSG & INBOUND RULES -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">2</div>
+          <div class="card-header-title">Create NSG &amp; Add Firewall Rules in Portal</div>
+        </div>
+        <div class="card-description">
+          1. In the search bar, type <strong>Network security groups</strong> and click <strong>+ Create</strong>.<br>
+          2. Resource group: Select <code>rg-virtual-machines-lab</code>.<br>
+          3. Name: Type <code>nsg-vm-web</code>; Region: Same as your resource group.<br>
+          4. Click <strong>Review + create</strong>, then click <strong>Create</strong>.<br>
+          5. Open your new <code>nsg-vm-web</code> resource and go to <strong>Settings > Inbound security rules</strong>.<br>
+          6. Click <strong>+ Add</strong> in the top bar to add these two rules:
+        </div>
+        <div class="table-container" style="margin: 4px 0 0 0;">
+          <table class="struforma-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Rule Name</th>
+                <th>Port</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>100</strong></td>
+                <td>Allow-SSH</td>
+                <td>22</td>
+                <td><span style="color:var(--sea-foam); font-weight:700;">Allow</span></td>
+              </tr>
+              <tr>
+                <td><strong>110</strong></td>
+                <td>Allow-HTTP</td>
+                <td>80</td>
+                <td><span style="color:var(--sea-foam); font-weight:700;">Allow</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: PHASE 3 - DEPLOY VM IN PORTAL -->
+  <section class="slide" id="slide-5">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 3 · Azure Portal Console</div>
+        <h2 class="slide-title">Deploy Ubuntu Linux VM <span>(Standard_B1s)</span></h2>
+      </div>
+      <div class="slide-watermark">Page 05 · Compute Provisioning</div>
+    </div>
+
+    <div class="lab-grid">
+      <!-- BASICS TAB CONFIG -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">3</div>
+          <div class="card-header-title">Basics Tab Configuration</div>
+        </div>
+        <div class="card-description">
+          1. In the search bar, type <strong>Virtual machines</strong> and click <strong>+ Create > Azure virtual machine</strong>.<br>
+          2. Resource group: Select <code>rg-virtual-machines-lab</code>.<br>
+          3. Virtual machine name: Type <code>vm-linux-web-01</code>.<br>
+          4. Image: Select <strong>Ubuntu Server 24.04 LTS - x64 Gen2</strong>.<br>
+          5. <strong>CRITICAL:</strong> Under <strong>Security type</strong>, change the dropdown from <em>Trusted Launch virtual machines</em> to <strong>Standard</strong>.<br>
+          6. Size: Click <strong>See all sizes</strong>, search <code>B1s</code>, and select <strong>Standard_B1s</strong> (1 vCPU, 1 GiB memory).<br>
+          7. Administrator account: Authentication type -> <strong>SSH public key</strong>.<br>
+          &nbsp;&nbsp;• Username: <code>azureuser</code><br>
+          &nbsp;&nbsp;• Key pair name: Keep default <code>vm-linux-web-01_key</code>.
+        </div>
+      </div>
+
+      <!-- DISKS, NETWORKING & CREATE -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">4</div>
+          <div class="card-header-title">Disks, Networking &amp; Key Download</div>
+        </div>
+        <div class="card-description">
+          1. Click the <strong>Disks</strong> tab at the top:<br>
+          &nbsp;&nbsp;• Change OS disk type to <strong>Standard SSD (locally-redundant storage)</strong>.<br>
+          2. Click the <strong>Networking</strong> tab:<br>
+          &nbsp;&nbsp;• NIC network security group: Select <strong>Advanced</strong>.<br>
+          &nbsp;&nbsp;• Configure network security group: Choose your existing <code>nsg-vm-web</code>.<br>
+          3. Click <strong>Review + create</strong> at the bottom.<br>
+          4. When validation passes, click <strong>Create</strong>.<br>
+          5. A pop-up will appear: <em>Generate new key pair</em>. Click <strong>Download private key and create resource</strong>.<br>
+          6. Save the downloaded <code>vm-linux-web-01_key.pem</code> file into your project folder.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: PHASE 4 & 5 - SSH ACCESS & NGINX -->
+  <section class="slide" id="slide-6">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 4 &amp; 5 · Server Configuration</div>
+        <h2 class="slide-title">Connect Over SSH &amp; <span>Install Nginx Web Server</span></h2>
+      </div>
+      <div class="slide-watermark">Page 06 · SSH &amp; Web Server Setup</div>
+    </div>
+
+    <div class="lab-grid">
+      <!-- FIND IP & SSH -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">5</div>
+          <div class="card-header-title">Connect to Your Server via SSH</div>
+        </div>
+        <div class="card-description">
+          1. In the Azure Portal, open your <code>vm-linux-web-01</code> overview page.<br>
+          2. Copy the <strong>Public IP address</strong> displayed on the right.<br>
+          3. Open your local terminal (Git Bash, Command Prompt, or Terminal on macOS/Linux).<br>
+          4. Navigate to the folder where you saved your downloaded <code>.pem</code> key file:<br>
+          &nbsp;&nbsp;<code>chmod 400 vm-linux-web-01_key.pem</code><br>
+          5. Connect to your server over SSH (replace with your copied Public IP):<br>
+          &nbsp;&nbsp;<code>ssh -i vm-linux-web-01_key.pem azureuser@&lt;YOUR_VM_PUBLIC_IP&gt;</code><br>
+          6. When prompted, type <code>yes</code> to trust the host connection.
+        </div>
+      </div>
+
+      <!-- INSTALL NGINX -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">6</div>
+          <div class="card-header-title">Install and Start Nginx</div>
+        </div>
+        <div class="card-description">
+          Now that you are connected to your Ubuntu server prompt, install Nginx and write a custom landing page:
+        </div>
+        <div class="terminal-block">
+          <div class="terminal-header">
+            <div class="terminal-dots"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span></div>
+            <div class="terminal-tag">UBUNTU SHELL · NGINX SETUP</div>
+          </div>
+          <div class="terminal-body"><span class="comment"># 1. Update package list and install Nginx</span>
+sudo apt update &amp;&amp; sudo apt install -y nginx
+
+<span class="comment"># 2. Write custom landing page</span>
+sudo bash -c 'cat &lt;&lt;EOF &gt; /var/www/html/index.html
+&lt;!doctype html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Azure VM Web Server&lt;/title&gt;&lt;/head&gt;
+&lt;body style="background:#0B131C;color:#E8F1F7;font-family:Arial;text-align:center;padding:80px;"&gt;
+  &lt;h1 style="color:#BFD3E2"&gt;Azure Lab 2 Complete&lt;/h1&gt;
+  &lt;p&gt;Ubuntu 24.04 VM running Nginx is successfully configured.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF'
+
+<span class="comment"># 3. Restart Nginx to apply changes</span>
+sudo systemctl restart nginx</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: PHASE 6 - VERIFICATION -->
+  <section class="slide" id="slide-7">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Phase 6 · Browser Verification</div>
+        <h2 class="slide-title">Verify HTTP Ingress &amp; <span>Nginx Daemon Health</span></h2>
+      </div>
+      <div class="slide-watermark">Page 07 · Health Verification</div>
+    </div>
+
+    <div class="lab-grid">
+      <!-- BROWSER TEST -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">7</div>
+          <div class="card-header-title">Verify in Web Browser</div>
+        </div>
+        <div class="card-description">
+          1. Open a new tab in your web browser.<br>
+          2. Type <code>http://&lt;YOUR_VM_PUBLIC_IP&gt;</code> into the address bar and press Enter.<br>
+          3. Confirm that the dark-themed "Azure Lab 2 Complete" page loads immediately.<br><br>
+          <strong>Security Note:</strong> Notice that typing <code>https://</code> will not load because our NSG rules strictly allow port 80 (HTTP) and port 22 (SSH). All other inbound ports are blocked by default.
+        </div>
+      </div>
+
+      <!-- PORTAL MONITORING -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="step-num-badge">8</div>
+          <div class="card-header-title">Inspect Metrics in Azure Portal</div>
+        </div>
+        <div class="card-description">
+          1. Go back to your <code>vm-linux-web-01</code> blade in the Azure Portal.<br>
+          2. In the left menu, click <strong>Monitoring > Metrics</strong>.<br>
+          3. View real-time charts for <strong>Percentage CPU</strong>, <strong>Network In Total</strong>, and <strong>Disk Read Operations</strong>.<br>
+          4. Confirm that the VM state shows <strong>Running</strong> with normal operating health metrics.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: SUBMISSION EVIDENCE & RESUME PROOF -->
+  <section class="slide" id="slide-8">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Portfolio Proof · Engineering Documentation</div>
+        <h2 class="slide-title">Lab Submission &amp; <span>Career Bullet Points</span></h2>
+      </div>
+      <div class="slide-watermark">Page 08 · Proof &amp; Submission</div>
+    </div>
+
+    <div class="lab-grid">
+      <!-- SUBMISSION CHECKLIST -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="card-header-title">Evidence Artifacts to Capture</div>
+        </div>
+        <ul class="evidence-list">
+          <li class="evidence-item">
+            <div class="evidence-icon">✓</div>
+            <div><strong>Browser Webpage Proof:</strong> Screenshot showing your custom Nginx page loading from your VM public IP address.</div>
+          </li>
+          <li class="evidence-item">
+            <div class="evidence-icon">✓</div>
+            <div><strong>SSH Terminal Session:</strong> Terminal screenshot displaying successful cryptographic SSH login to <code>azureuser@vm-linux-web-01</code>.</div>
+          </li>
+          <li class="evidence-item">
+            <div class="evidence-icon">✓</div>
+            <div><strong>Azure Portal VM Overview:</strong> Screenshot displaying the VM overview page with active status, Standard_B1s size, and attached NSG.</div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- RESUME BULLET POINTS -->
+      <div class="lab-card">
+        <div class="card-title-row">
+          <div class="card-header-title">Resume &amp; Portfolio Integration</div>
+        </div>
+        <div class="card-description">
+          Add this high-impact technical accomplishment to your cloud engineering resume:
+        </div>
+        <div class="editorial-callout callout-exam" style="margin: 4px 0 0 0;">
+          <div class="callout-tag">💼 Ready-to-Copy Resume Bullet</div>
+          <div class="callout-body">
+            "Provisioned and hardened an enterprise Ubuntu 24.04 LTS Linux virtual machine on Azure using the Azure Portal, establishing stateful Network Security Group inbound filtering rules for SSH and HTTP, securing root administrative access with cryptographic keypairs, and deploying an optimized Nginx web server."
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: PORTAL CLEANUP & TEARDOWN -->
+  <section class="slide" id="slide-9">
+    <div class="slide-header-block">
+      <div class="slide-header-main">
+        <div class="slide-index-tag">Clean Operations · Cost Governance</div>
+        <h2 class="slide-title">Teardown &amp; <span>Resource Cleanup via Portal</span></h2>
+      </div>
+      <div class="slide-watermark">Page 09 · Resource Teardown</div>
+    </div>
+
+    <div class="editorial-callout callout-warn" style="margin-top: 0; margin-bottom: 16px;">
+      <div class="callout-tag">💰 Avoid Unintended Virtual Machine Charges</div>
+      <div class="callout-body">
+        Virtual machines incur charges when left running unless properly deallocated. Deleting the parent resource group removes the VM, OS disk volumes, network interfaces, public IP addresses, and security groups in one clean operation.
+      </div>
+    </div>
+
+    <div class="lab-grid">
+      <!-- PORTAL CLEANUP -->
+      <div class="lab-card" style="grid-column: span 2;">
+        <div class="card-title-row">
+          <div class="step-num-badge">🗑️</div>
+          <div class="card-header-title">Portal Deletion Steps</div>
+        </div>
+        <div class="card-description">
+          1. In the top search bar of the Azure Portal, search <strong>Resource groups</strong>.<br>
+          2. Click on <code>rg-virtual-machines-lab</code>.<br>
+          3. Click the <strong>Delete resource group</strong> button in the top toolbar.<br>
+          4. Type <code>rg-virtual-machines-lab</code> into the confirmation field.<br>
+          5. Click the red <strong>Delete</strong> button, then click <strong>Delete</strong> once more to confirm.<br><br>
+          Azure will delete the VM, disk storage, public IP, and network interface automatically.
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- FLOATING PRESENTATION DOCK -->
+<div class="deck-dock">
+  <button class="dock-nav-btn" onclick="prevSlide()" title="Previous page (Left Arrow)">‹</button>
+  <div class="dock-dots" id="dockDots">
+    <div class="dock-dot active" onclick="goToSlide(1)"></div><div class="dock-dot" onclick="goToSlide(2)"></div><div class="dock-dot" onclick="goToSlide(3)"></div><div class="dock-dot" onclick="goToSlide(4)"></div><div class="dock-dot" onclick="goToSlide(5)"></div><div class="dock-dot" onclick="goToSlide(6)"></div><div class="dock-dot" onclick="goToSlide(7)"></div><div class="dock-dot" onclick="goToSlide(8)"></div><div class="dock-dot" onclick="goToSlide(9)"></div>
+  </div>
+  <span class="dock-counter" id="dockCounter">01 / 09</span>
+  <button class="dock-nav-btn" onclick="nextSlide()" title="Next page (Right Arrow)">›</button>
+</div>
+
+
+<script>
+let currentSlide = 1;
+const totalSlides = 9;
+
+function updateDeckUI(slideNum) {
+  currentSlide = slideNum;
+  const counter = document.getElementById('dockCounter');
+  if (counter) {
+    counter.innerText = (currentSlide < 10 ? '0' + currentSlide : currentSlide) + ' / 0' + totalSlides;
+  }
+  document.querySelectorAll('.dock-dot').forEach((dot, idx) => {
+    dot.classList.toggle('active', idx + 1 === currentSlide);
+  });
+  if (history.replaceState) history.replaceState(null, null, '#slide-' + currentSlide);
+}
+
+function scrollToSlide(n) {
+  if (n < 1) n = 1;
+  if (n > totalSlides) n = totalSlides;
+  updateDeckUI(n);
+  const target = document.getElementById('slide-' + n);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function nextSlide() { if (currentSlide < totalSlides) scrollToSlide(currentSlide + 1); }
+function prevSlide() { if (currentSlide > 1) scrollToSlide(currentSlide - 1); }
+function goToSlide(n) { scrollToSlide(n); }
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const match = entry.target.id.match(/slide-(\d+)/);
+      if (match) updateDeckUI(parseInt(match[1]));
+    }
+  });
+}, { root: null, rootMargin: '-20% 0px -40% 0px', threshold: 0 });
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.slide').forEach(slide => observer.observe(slide));
+  if (window.location.hash) {
+    const match = window.location.hash.match(/slide-(\d+)/);
+    if (match) {
+      const num = parseInt(match[1]);
+      if (num >= 1 && num <= totalSlides) {
+        setTimeout(() => scrollToSlide(num), 120);
+      }
+    }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); nextSlide(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+});
+</script>
+
+</body>
+</html>
